@@ -1,0 +1,95 @@
+.face-scan-root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.face-scan-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.face-scan-corner-path {
+  stroke: rgba(255, 255, 255, 0.92);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.35));
+}
+
+.face-scan-oval {
+  stroke: rgba(255, 220, 170, 0.85);
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.face-scan-crosshair-line {
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 0.6;
+  stroke-linecap: round;
+}
+
+.face-scan-crosshair-glow {
+  fill: rgba(255, 255, 255, 0.1);
+}
+
+.face-scan-crosshair-dot {
+  fill: #fff;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.6));
+}
+
+.face-scan-landmark-label {
+  fill: rgba(255, 255, 255, 0.72);
+  font-size: 5.5px;
+  font-weight: 700;
+  font-family: system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.12em;
+}
+
+.face-scan-measure-line {
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 0.5;
+  stroke-dasharray: 3 3;
+  stroke-linecap: round;
+}
+
+.face-scan-measure-cap {
+  fill: rgba(255, 255, 255, 0.78);
+  font-size: 6px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  text-anchor: middle;
+}
+
+/* Horizontale Scan-Linie (wie Swift-Gradientbalken) */
+.face-scan-sweep {
+  position: absolute;
+  left: calc(var(--face-midx, 50%) - var(--face-linew, 200px) / 2);
+  width: var(--face-linew, 200px);
+  height: 2px;
+  top: 0;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0.2) 80%,
+    transparent 100%
+  );
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.45);
+  animation: face-scan-sweep-move 2.5s linear infinite;
+}
+
+@keyframes face-scan-sweep-move {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(var(--display-h, 340px) - 4px));
+  }
+}
