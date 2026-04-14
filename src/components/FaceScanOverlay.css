@@ -11,8 +11,13 @@
   display: block;
   width: 100%;
   height: 100%;
-  /* Lesbarkeit auf hellen Hauttönen (Safari/Chrome) */
-  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 3px rgba(0, 0, 0, 0.45));
+}
+
+/* Lesbarkeit: nur HUD/Messung, nicht die farbigen Konturen */
+.face-scan-svg .face-scan-corners,
+.face-scan-svg .face-scan-crosshair,
+.face-scan-svg .face-scan-measure {
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.92)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.4));
 }
 
 .face-scan-corner-path {
@@ -22,11 +27,43 @@
   stroke-linejoin: round;
 }
 
-.face-scan-oval {
-  stroke: rgba(255, 220, 170, 0.85);
-  stroke-width: 1.35;
+/* Swift `ContourLineView` Farben / Strichstärken */
+.face-scan-region {
+  fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.face-scan-region-jaw {
+  stroke: rgb(255, 224, 166);
+  stroke-width: 1.4;
+  filter: drop-shadow(0 0 5px rgba(255, 178, 77, 0.35));
+}
+
+.face-scan-region-leftEye,
+.face-scan-region-rightEye {
+  stroke: rgb(204, 235, 255);
+  stroke-width: 1;
+  filter: drop-shadow(0 0 4px rgba(128, 204, 255, 0.35));
+}
+
+.face-scan-region-leftBrow,
+.face-scan-region-rightBrow {
+  stroke: rgb(230, 235, 255);
+  stroke-width: 0.9;
+  filter: drop-shadow(0 0 3px rgba(179, 191, 255, 0.3));
+}
+
+.face-scan-region-noseBridge,
+.face-scan-region-nose {
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 0.7;
+}
+
+.face-scan-region-outerLips {
+  stroke: rgb(255, 199, 199);
+  stroke-width: 0.9;
+  filter: drop-shadow(0 0 4px rgba(255, 128, 128, 0.3));
 }
 
 .face-scan-crosshair-line {

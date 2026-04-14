@@ -1,10 +1,11 @@
 import type { CSSProperties } from 'react'
 import type { FaceScanGeometry } from '../lib/faceScanGeometry'
+import { smoothContourToSvgD } from '../lib/faceScanContourDraw'
 import './FaceScanOverlay.css'
 
 type Props = {
   geometry: FaceScanGeometry
-  /** 0–1, gleiche Logik wie Swift `AdaptiveFaceScanOverlay` */
+  /** 0–1, wie Swift `AdaptiveFaceScanOverlay` */
   progress: number
   displayWidth: number
   displayHeight: number
@@ -54,16 +55,16 @@ function CornerBraces({ rect }: { rect: { x: number; y: number; width: number; h
   )
 }
 
-export function FaceScanOverlay({ geometry, progress, displayWidth, displayHeight }: Props) {
-  const { faceRect, faceOval, leftEye, rightEye, foreheadCenter, chin, jawLeft, jawRight } = geometry
+function regionClass(id: string): string {
+  const safe = id.replace(/[^a-zA-Z0-9_-]/g, '')
+  return `face-scan-region face-scan-region-${safe}`
+}
 
-  const nOval = faceOval.length
-  const ovalReveal = Math.min(nOval, Math.max(0, Math.ceil(progress * nOval)))
-  const ovalPoints = faceOval.slice(0, ovalReveal)
-  const ovalD =
-    ovalPoints.length > 1
-      ? `M ${ovalPoints.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L ')} ${ovalReveal >= nOval ? ' Z' : ''}`
-      : ''
+export function FaceScanOverlay({ geometry, progress, displayWidth, displayHeight }: Props) {
+  const { faceRect, contours, leftEye, rightEye, foreheadCenter, chin, jawLeft, jawRight } = geometry
+
+  const totalContours = contours.length
+  const contourReveal = totalContours > 0 ? Math.min(totalContours, Math.max(0, Math.ceil(progress * totalContours))) : 0
 
   const lmCount = LANDMARKS_META.length
 
@@ -92,9 +93,11 @@ export function FaceScanOverlay({ geometry, progress, displayWidth, displayHeigh
       >
         <CornerBraces rect={faceRect} />
 
-        {ovalD ? (
-          <path d={ovalD} fill="none" className="face-scan-oval" />
-        ) : null}
+        {contours.slice(0, contourReveal).map((c, idx) => {
+          const d = smoothContourToSvgD(c.points, c.closed)
+          if (!d) return null
+          return <path key={`${c.id}-${idx}`} d={d} fill="none" className={regionClass(c.id)} />
+        })}
 
         {LANDMARKS_META.map((lm) => {
           if (progress <= lm.id / Math.max(lmCount, 1)) return null

@@ -1,11 +1,20 @@
 /**
- * Gesichts-Geometrie für die Scan-Overlay-Animation (Display-Koordinaten, object-fit: cover).
- * MediaPipe Face Mesh Indizes wie @mediapipe/face_mesh FACEMESH_FACE_OVAL / Augen.
+ * 1:1 zur iOS `detectFaceForOverlay` + `AdaptiveFaceScanOverlay`:
+ * - gleiches Display (z. B. 260×340), gleiches „cover“-Mapping wie Swift `scaledToFill`
+ * - Kontur-Reihenfolge wie `FaceView.detectFaceForOverlay` (jaw, Augen, Brauen, …)
+ * - Stirn wie Swift: Mittelpunkt zwischen Augen, y = leftEye.y - (mouth.y - leftEye.y) * 0.45
  */
 
 import type { Face, FaceLandmarksDetector, Keypoint } from '@tensorflow-models/face-landmarks-detection'
 
 export type ScanPoint = { x: number; y: number }
+
+/** Entspricht `FaceContourRegion` in FaceView.swift */
+export type FaceContourRegion = {
+  id: string
+  closed: boolean
+  points: ScanPoint[]
+}
 
 export type FaceScanGeometry = {
   faceRect: { x: number; y: number; width: number; height: number }
@@ -17,11 +26,10 @@ export type FaceScanGeometry = {
   chin: ScanPoint
   jawLeft: ScanPoint
   jawRight: ScanPoint
-  /** Gesichtskontur (geschlossen), für SVG polyline */
-  faceOval: ScanPoint[]
+  contours: FaceContourRegion[]
 }
 
-/** Kette wie FACEMESH_FACE_OVAL (Mediapipe) */
+/** FACEMESH_FACE_OVAL (Mediapipe) — wie Gesichtskontur / „jaw“-Outline */
 const FACE_OVAL_INDICES = [
   10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148,
   176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109,
@@ -35,43 +43,44 @@ const RIGHT_EYE_INDICES = [
   33, 7, 163, 144, 145, 153, 154, 155, 133, 246, 161, 160, 159, 158, 157, 173,
 ]
 
-/** Fallback wie Swift `AdaptiveFaceScanOverlay` ohne `faceData` */
-export function defaultFaceScanGeometry(displayW: number, displayH: number): FaceScanGeometry {
-  const w = displayW
-  const h = displayH
-  const mk = (fx: number, fy: number): ScanPoint => ({ x: w * fx, y: h * fy })
-  const faceRect = { x: w * 0.2, y: h * 0.15, width: w * 0.6, height: h * 0.7 }
-  const foreheadCenter = mk(0.5, 0.22)
-  const leftEye = mk(0.37, 0.34)
-  const rightEye = mk(0.63, 0.34)
-  const nose = mk(0.5, 0.47)
-  const mouth = mk(0.5, 0.58)
-  const chin = mk(0.5, 0.75)
-  const jawLeft = mk(0.3, 0.65)
-  const jawRight = mk(0.7, 0.65)
-  const faceOval = FACE_OVAL_INDICES.map((_, i) => {
-    const t = (i / FACE_OVAL_INDICES.length) * Math.PI * 2
-    const cx = w * 0.5
-    const cy = h * 0.48
-    const rx = w * 0.32
-    const ry = h * 0.42
-    return { x: cx + Math.cos(t) * rx, y: cy + Math.sin(t) * ry * 0.95 }
-  })
-  return {
-    faceRect,
-    foreheadCenter,
-    leftEye,
-    rightEye,
-    nose,
-    mouth,
-    chin,
-    jawLeft,
-    jawRight,
-    faceOval,
+/** @mediapipe/face_mesh FACEMESH_LEFT_EYEBROW Kantenfolge */
+const LEFT_BROW_INDICES = [276, 283, 282, 295, 285, 300, 293, 334, 296, 336]
+
+/** FACEMESH_RIGHT_EYEBROW */
+const RIGHT_BROW_INDICES = [46, 53, 52, 65, 55, 70, 63, 105, 66, 107]
+
+const NOSE_BRIDGE_INDICES = [6, 197, 195, 5]
+
+/** Nase (geschlossene Form) — typische MediaPipe-Indizes, radial sortiert */
+const NOSE_LOOP_INDICES = [
+  98, 97, 2, 326, 327, 294, 278, 344, 440, 275, 363, 420, 437, 456, 198, 131, 134, 102, 49, 220, 305,
+  290, 328, 460,
+]
+
+/** Äußere Lippenkontur (vereinigt obere/untere Kette) */
+const OUTER_LIP_INDICES = [
+  61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185,
+]
+
+function orderRadialByIndices(keypoints: Keypoint[], indices: number[], mapKp: (kp: Keypoint) => ScanPoint): ScanPoint[] {
+  const pts: ScanPoint[] = []
+  for (const i of indices) {
+    const p = keypoints[i]
+    if (p) pts.push(mapKp(p))
   }
+  if (pts.length < 2) return pts
+  let cx = 0
+  let cy = 0
+  for (const p of pts) {
+    cx += p.x
+    cy += p.y
+  }
+  cx /= pts.length
+  cy /= pts.length
+  return [...pts].sort((a, b) => Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx))
 }
 
-/** object-fit: cover — Bildpunkt → Anzeige im Kasten */
+/** object-fit: cover — entspricht Swift `scaledW/scaledH/offX/offY` für Bild → Display */
 export function mapImageToDisplayCover(
   ix: number,
   iy: number,
@@ -108,13 +117,15 @@ function averageLandmark(
 ): ScanPoint {
   let sx = 0
   let sy = 0
+  let n = 0
   for (const i of indices) {
     const p = keypoints[i]
     if (!p) continue
     sx += p.x
     sy += p.y
+    n++
   }
-  const n = indices.length
+  if (n === 0) return { x: dispW / 2, y: dispH / 2 }
   return mapKeypoint({ x: sx / n, y: sy / n }, imgW, imgH, dispW, dispH)
 }
 
@@ -132,6 +143,113 @@ function mapBoxToDisplay(
     y: tl.y,
     width: Math.max(1, br.x - tl.x),
     height: Math.max(1, br.y - tl.y),
+  }
+}
+
+/** Stirn wie Swift `detectFaceForOverlay` */
+function swiftForeheadCenter(leftEye: ScanPoint, rightEye: ScanPoint, mouth: ScanPoint): ScanPoint {
+  return {
+    x: (leftEye.x + rightEye.x) / 2,
+    y: leftEye.y - (mouth.y - leftEye.y) * 0.45,
+  }
+}
+
+/**
+ * Konturen in derselben Reihenfolge wie `detectFaceForOverlay` → `contours.append`
+ * (innerLips/median: Swift lineWidth 0 — weglassen)
+ */
+function buildContoursFromKeypoints(
+  keypoints: Keypoint[],
+  imgW: number,
+  imgH: number,
+  dispW: number,
+  dispH: number,
+): FaceContourRegion[] {
+  const mk = (kp: Keypoint) => mapKeypoint(kp, imgW, imgH, dispW, dispH)
+  const regions: FaceContourRegion[] = []
+
+  const jawPts = FACE_OVAL_INDICES.map((i) => keypoints[i]).filter(Boolean) as Keypoint[]
+  if (jawPts.length > 2) {
+    regions.push({
+      id: 'jaw',
+      closed: false,
+      points: FACE_OVAL_INDICES.map((i) => keypoints[i])
+        .filter(Boolean)
+        .map((kp) => mk(kp as Keypoint)),
+    })
+  }
+
+  const le = orderRadialByIndices(keypoints, LEFT_EYE_INDICES, (kp) => mk(kp))
+  if (le.length > 2) regions.push({ id: 'leftEye', closed: true, points: le })
+
+  const re = orderRadialByIndices(keypoints, RIGHT_EYE_INDICES, (kp) => mk(kp))
+  if (re.length > 2) regions.push({ id: 'rightEye', closed: true, points: re })
+
+  const lb = LEFT_BROW_INDICES.map((i) => keypoints[i])
+    .filter(Boolean)
+    .map((kp) => mk(kp as Keypoint))
+  if (lb.length > 2) regions.push({ id: 'leftBrow', closed: false, points: lb })
+
+  const rb = RIGHT_BROW_INDICES.map((i) => keypoints[i])
+    .filter(Boolean)
+    .map((kp) => mk(kp as Keypoint))
+  if (rb.length > 2) regions.push({ id: 'rightBrow', closed: false, points: rb })
+
+  const nb = NOSE_BRIDGE_INDICES.map((i) => keypoints[i])
+    .filter(Boolean)
+    .map((kp) => mk(kp as Keypoint))
+  if (nb.length > 1) regions.push({ id: 'noseBridge', closed: false, points: nb })
+
+  const ns = orderRadialByIndices(keypoints, NOSE_LOOP_INDICES, (kp) => mk(kp))
+  if (ns.length > 2) regions.push({ id: 'nose', closed: true, points: ns })
+
+  const lip = orderRadialByIndices(keypoints, OUTER_LIP_INDICES, (kp) => mk(kp))
+  if (lip.length > 2) regions.push({ id: 'outerLips', closed: true, points: lip })
+
+  return regions
+}
+
+/** Swift: Kieferpunkte aus Face-Contour bei 1/4 und 3/4 — hier MediaPipe-Oval-Indizes */
+function jawLeftRightFromOval(keypoints: Keypoint[], imgW: number, imgH: number, dispW: number, dispH: number) {
+  const n = FACE_OVAL_INDICES.length
+  const iL = Math.max(0, Math.floor(n / 4))
+  const iR = Math.max(0, Math.floor((3 * n) / 4))
+  const kpL = keypoints[FACE_OVAL_INDICES[iL]]
+  const kpR = keypoints[FACE_OVAL_INDICES[iR]]
+  const fallback = (x: number, y: number) => ({ x, y })
+  if (!kpL || !kpR) {
+    return {
+      jawLeft: fallback(dispW * 0.3, dispH * 0.65),
+      jawRight: fallback(dispW * 0.7, dispH * 0.65),
+    }
+  }
+  return {
+    jawLeft: mapKeypoint(kpL, imgW, imgH, dispW, dispH),
+    jawRight: mapKeypoint(kpR, imgW, imgH, dispW, dispH),
+  }
+}
+
+/** Fallback wie Swift `effectiveFace` ohne Konturen */
+export function defaultFaceScanGeometry(displayW: number, displayH: number): FaceScanGeometry {
+  const w = displayW
+  const h = displayH
+  const mk = (fx: number, fy: number): ScanPoint => ({ x: w * fx, y: h * fy })
+  const faceRect = { x: w * 0.2, y: h * 0.15, width: w * 0.6, height: h * 0.7 }
+  const leftEye = mk(0.37, 0.34)
+  const rightEye = mk(0.63, 0.34)
+  const mouth = mk(0.5, 0.58)
+  const foreheadCenter = swiftForeheadCenter(leftEye, rightEye, mouth)
+  return {
+    faceRect,
+    foreheadCenter,
+    leftEye,
+    rightEye,
+    nose: mk(0.5, 0.47),
+    mouth,
+    chin: mk(0.5, 0.75),
+    jawLeft: mk(0.3, 0.65),
+    jawRight: mk(0.7, 0.65),
+    contours: [],
   }
 }
 
@@ -163,9 +281,6 @@ async function getDetector(): Promise<FaceLandmarksDetector> {
   return detectorPromise
 }
 
-/**
- * Erkennt Gesichtslandmarks und projiziert in den Anzeige-Rahmen (z. B. 260×340).
- */
 export async function detectFaceScanGeometry(
   image: HTMLImageElement,
   displayW: number,
@@ -190,16 +305,15 @@ export async function detectFaceScanGeometry(
 
   const faceRect = mapBoxToDisplay(box, iw, ih, displayW, displayH)
 
-  const foreheadCenter = mapKeypoint(keypoints[10], iw, ih, displayW, displayH)
   const leftEye = averageLandmark(keypoints, LEFT_EYE_INDICES, iw, ih, displayW, displayH)
   const rightEye = averageLandmark(keypoints, RIGHT_EYE_INDICES, iw, ih, displayW, displayH)
-  const nose = mapKeypoint(keypoints[1], iw, ih, displayW, displayH)
-  const mouth = averageLandmark(keypoints, [13, 14], iw, ih, displayW, displayH)
+  const nose = averageLandmark(keypoints, NOSE_BRIDGE_INDICES, iw, ih, displayW, displayH)
+  const mouth = averageLandmark(keypoints, OUTER_LIP_INDICES, iw, ih, displayW, displayH)
   const chin = mapKeypoint(keypoints[152], iw, ih, displayW, displayH)
-  const jawLeft = mapKeypoint(keypoints[234], iw, ih, displayW, displayH)
-  const jawRight = mapKeypoint(keypoints[454], iw, ih, displayW, displayH)
+  const { jawLeft, jawRight } = jawLeftRightFromOval(keypoints, iw, ih, displayW, displayH)
+  const foreheadCenter = swiftForeheadCenter(leftEye, rightEye, mouth)
 
-  const faceOval = FACE_OVAL_INDICES.map((idx) => mapKeypoint(keypoints[idx], iw, ih, displayW, displayH))
+  const contours = buildContoursFromKeypoints(keypoints, iw, ih, displayW, displayH)
 
   return {
     faceRect,
@@ -211,6 +325,6 @@ export async function detectFaceScanGeometry(
     chin,
     jawLeft,
     jawRight,
-    faceOval,
+    contours,
   }
 }
