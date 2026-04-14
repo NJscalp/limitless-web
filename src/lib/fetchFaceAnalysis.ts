@@ -1,4 +1,5 @@
 import { deriveDemoScoresFromFile, mapFullAIAnalysis, type AnalysisMeta } from './mapFullAIAnalysis'
+import { extractAnalysisRecord } from './normalizeAnalysis'
 import type { DemoScores } from '../components/ResultsView'
 
 export type { AnalysisMeta } from './mapFullAIAnalysis'
@@ -50,9 +51,10 @@ export async function analyzeImageFile(file: File): Promise<AnalysisOutcome> {
       return { source: 'demo', scores: d.scores, meta: d.meta }
     }
 
-    const data = (await res.json()) as { analysis?: Record<string, unknown> }
-    if (data?.analysis && typeof data.analysis === 'object') {
-      const { scores, meta } = mapFullAIAnalysis(data.analysis)
+    const data = await res.json()
+    const rec = extractAnalysisRecord(data)
+    if (rec) {
+      const { scores, meta } = mapFullAIAnalysis(rec)
       return { source: 'ai', scores, meta }
     }
   } catch {

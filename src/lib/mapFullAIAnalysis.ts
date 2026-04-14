@@ -1,6 +1,5 @@
 /**
- * Mirrors FaceAnalyzer.faceAnalysisResultFromFullAI + FaceView category rows.
- * API / model uses 30–90 integer scales; Looksmax 1–10 → ×10 for merged tiles when present.
+ * Mirrors FaceAnalyzer.faceAnalysisResultFromFullAI + FaceView category rows + applyAnalysis (bonus 0).
  */
 
 import type { DemoScores } from '../components/ResultsView'
@@ -8,7 +7,6 @@ import type { DemoScores } from '../components/ResultsView'
 export type AnalysisMeta = {
   definitionLevel: string | null
   looksmaxPosePassed: boolean
-  /** 1–10 from API (LooksmaxScores1to10) — only keys that were present */
   looksmax?: Partial<{
     eye: number
     jawline: number
@@ -22,7 +20,7 @@ export function scoreClamp30_90(v: number): number {
   return Math.max(30, Math.min(90, Math.round(v)))
 }
 
-/** Same as FaceView.categoryScoreMergingLooksmax — when looksmax set, display is round(lm×10), capped 0–100 */
+/** Same as FaceView.categoryScoreMergingLooksmax */
 export function categoryScoreMergingLooksmax(base: number, looksmax: number | undefined | null): number {
   if (looksmax == null || Number.isNaN(looksmax)) {
     return Math.min(100, Math.max(0, Math.round(base)))
@@ -30,34 +28,66 @@ export function categoryScoreMergingLooksmax(base: number, looksmax: number | un
   return Math.min(100, Math.max(0, Math.round(looksmax * 10)))
 }
 
+/** Parse number from JSON (handles string decimals) */
+function num(v: unknown): number | null {
+  if (v == null) return null
+  if (typeof v === 'number' && !Number.isNaN(v)) return v
+  if (typeof v === 'string' && v.trim() !== '') {
+    const x = Number(v)
+    return Number.isNaN(x) ? null : x
+  }
+  return null
+}
+
 function parseInt30_90(v: unknown, fallback: number): number {
-  let x: number
-  if (typeof v === 'number' && !Number.isNaN(v)) x = v
-  else if (typeof v === 'string' && v.trim() !== '') {
-    const n = Number(v)
-    x = Number.isNaN(n) ? fallback : n
-  } else x = fallback
+  const x = num(v)
+  if (x == null) return scoreClamp30_90(fallback)
   return scoreClamp30_90(x)
 }
 
 function parseLooksmax1to10(v: unknown): number | undefined {
-  if (v == null) return undefined
-  const x = typeof v === 'number' ? v : Number(v)
-  if (Number.isNaN(x)) return undefined
+  const x = num(v)
+  if (x == null) return undefined
   return Math.min(10, Math.max(1, x))
 }
 
+/** Like applyAnalysis with weeklyTrainingBonus == 0 */
+function applyDisplayCaps(overallRaw: number, potentialRaw: number): { overall: number; potential: number } {
+  const overall = Math.min(99, Math.max(0, Math.round(overallRaw)))
+  let potential = Math.min(100, Math.max(0, Math.round(potentialRaw)))
+  potential = Math.max(potential, overall)
+  return { overall, potential }
+}
+
 /**
- * Full mapping from `/v1/face-analyze-full` `analysis` JSON (same keys as FullAIFaceAnalysisPayload).
+ * Full mapping from normalized `/v1/face-analyze-full` analysis object.
  */
 export function mapFullAIAnalysis(a: Record<string, unknown>): {
   scores: DemoScores
   meta: AnalysisMeta
 } {
-  const overall = parseInt30_90(a.overallScore, 55)
+  let overallRaw = num(a.overallScore)
+  if (overallRaw == null) {
+    const lm = num(a.looksmaxOverall)
+    if (lm != null) overallRaw = lm * 10
+    else overallRaw = num(a.landmarkStructuralOverall) ?? 55
+  }
+  overallRaw = scoreClamp30_90(overallRaw)
 
-  let potential = parseInt30_90(a.potentialScore, Math.max(overall, 58))
-  potential = scoreClamp30_90(Math.max(potential, overall))
+  let potentialRaw = num(a.potentialScore)
+  if (potentialRaw == null) {
+    const lmp = num(a.looksmaxPotential)
+    if (lmp != null) {
+      potentialRaw = scoreClamp30_90(Math.round(lmp * 10))
+    } else {
+      potentialRaw = scoreClamp30_90(Math.max(overallRaw + 4, 58))
+    }
+  } else {
+    potentialRaw = scoreClamp30_90(potentialRaw)
+  }
+  potentialRaw = scoreClamp30_90(Math.max(potentialRaw, overallRaw))
+
+  const { overall, potential } = applyDisplayCaps(overallRaw, potentialRaw)
 
   const jawBase = parseInt30_90(a.jawlineDefinition, 55)
   const sym = parseInt30_90(a.facialSymmetry, 55)
@@ -66,9 +96,20 @@ export function mapFullAIAnalysis(a: Record<string, unknown>): {
   const cheek = parseInt30_90(a.cheekboneDefinition, 55)
   const defn = parseInt30_90(a.facialDefinition, 55)
   const water = parseInt30_90(a.waterRetention, 55)
-  const fhRaw = parseInt30_90(a.foreheadSmoothness, 60)
-  const skinQ = parseInt30_90(a.skinQuality30to90, 60)
-  const forehead = scoreClamp30_90(Math.round((fhRaw + skinQ) / 2))
+
+  const fhRaw = num(a.foreheadSmoothness)
+  const skinQ = num(a.skinQuality30to90)
+  let skinForehead: number
+  if (fhRaw != null && skinQ != null) {
+    skinForehead = scoreClamp30_90(Math.round((scoreClamp30_90(fhRaw) + scoreClamp30_90(skinQ)) / 2))
+  } else if (skinQ != null) {
+    skinForehead = scoreClamp30_90(skinQ)
+  } else if (fhRaw != null) {
+    skinForehead = scoreClamp30_90(fhRaw)
+  } else {
+    skinForehead = 60
+  }
+
   const mid = parseInt30_90(a.midfaceFullness, 55)
   const nose = parseInt30_90(a.noseScore, 55)
   const lips = parseInt30_90(a.lipScore, 55)
@@ -100,7 +141,7 @@ export function mapFullAIAnalysis(a: Record<string, unknown>): {
     cheekbones: cheek,
     definition: defn,
     bloat: water,
-    skin: forehead,
+    skin: skinForehead,
     nose,
     lips,
     midface: mid,
@@ -122,7 +163,7 @@ export function mapFullAIAnalysis(a: Record<string, unknown>): {
   return { scores, meta }
 }
 
-/** Deterministic demo (no API) — same 30–90 scale + potential ≥ overall */
+/** Deterministic demo (no API) — mirrors caps + potential ≥ overall */
 export async function deriveDemoScoresFromFile(file: File): Promise<{
   scores: DemoScores
   meta: AnalysisMeta
@@ -137,9 +178,10 @@ export async function deriveDemoScoresFromFile(file: File): Promise<{
 
   const rnd = (shift: number) => scoreClamp30_90(32 + (((h >>> shift) & 0xff) % 52))
 
-  const overall = rnd(0)
-  let potential = scoreClamp30_90(overall + 2 + ((h >>> 4) & 0x0f))
-  potential = scoreClamp30_90(Math.max(potential, overall))
+  const overallRaw = rnd(0)
+  let potentialRaw = scoreClamp30_90(overallRaw + 2 + ((h >>> 4) & 0x0f))
+  potentialRaw = scoreClamp30_90(Math.max(potentialRaw, overallRaw))
+  const { overall, potential } = applyDisplayCaps(overallRaw, potentialRaw)
 
   const scores: DemoScores = {
     overall,
@@ -164,4 +206,11 @@ export async function deriveDemoScoresFromFile(file: File): Promise<{
       looksmaxPosePassed: true,
     },
   }
+}
+
+/** Dot center on track — same clamp as FaceScoreTrajectoryBar (Swift) */
+export function trajectoryDotLeftPercent(potential: number): number {
+  const pFrac = Math.min(100, Math.max(0, potential)) / 100
+  const halfDotPct = 1.5
+  return Math.min(100 - halfDotPct, Math.max(halfDotPct, pFrac * 100))
 }

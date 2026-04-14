@@ -2,7 +2,7 @@ import {
   limitlessScoreTierColor,
   scoreLabel,
 } from '../lib/faceAnalysisShared'
-import type { AnalysisMeta } from '../lib/mapFullAIAnalysis'
+import { trajectoryDotLeftPercent, type AnalysisMeta } from '../lib/mapFullAIAnalysis'
 import './ResultsView.css'
 
 export type DemoScores = {
@@ -62,7 +62,7 @@ export function ResultsView({
   const peakColors = ['#33c759', '#59eb82', '#63e6be']
 
   const oFrac = Math.min(100, Math.max(0, overall)) / 100
-  const pFrac = Math.min(100, Math.max(0, potential)) / 100
+  const dotLeftPct = trajectoryDotLeftPercent(potential)
 
   return (
     <div className="results-root">
@@ -140,7 +140,7 @@ export function ResultsView({
               <div
                 className="results-traj-dot"
                 style={{
-                  left: `${pFrac * 100}%`,
+                  left: `${dotLeftPct}%`,
                   borderColor: peakColors[0],
                   transform: 'translate(-50%, -50%)',
                 }}
@@ -148,7 +148,7 @@ export function ResultsView({
             </div>
             <div className="results-traj-labels">
               <span>Now</span>
-              <span>+{gap} pts</span>
+              <span>+{gap}</span>
               <span>Goal</span>
             </div>
           </div>
