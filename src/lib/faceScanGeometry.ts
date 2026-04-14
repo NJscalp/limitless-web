@@ -142,7 +142,12 @@ async function getDetector(): Promise<FaceLandmarksDetector> {
     detectorPromise = (async () => {
       const tf = await import('@tensorflow/tfjs-core')
       await import('@tensorflow/tfjs-backend-webgl')
-      await tf.setBackend('webgl')
+      try {
+        await tf.setBackend('webgl')
+      } catch {
+        await import('@tensorflow/tfjs-backend-cpu')
+        await tf.setBackend('cpu')
+      }
       await tf.ready()
       const faceLandmarksDetection = await import('@tensorflow-models/face-landmarks-detection')
       return faceLandmarksDetection.createDetector(

@@ -90,25 +90,10 @@ export function FaceScanOverlay({ geometry, progress, displayWidth, displayHeigh
         viewBox={`0 0 ${displayWidth} ${displayHeight}`}
         aria-hidden
       >
-        <defs>
-          <filter id="face-scan-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="1.2" result="b" />
-            <feMerge>
-              <feMergeNode in="b" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
         <CornerBraces rect={faceRect} />
 
         {ovalD ? (
-          <path
-            d={ovalD}
-            fill="none"
-            className="face-scan-oval"
-            filter="url(#face-scan-glow)"
-          />
+          <path d={ovalD} fill="none" className="face-scan-oval" />
         ) : null}
 
         {LANDMARKS_META.map((lm) => {
