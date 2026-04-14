@@ -176,6 +176,15 @@
   letter-spacing: -0.03em;
 }
 
+/* Solid numbers — reliable on Safari (gradient+transparent text often invisible) */
+.results-sp-num-solid {
+  display: block;
+}
+
+.results-sp-num-potential {
+  color: #28b446;
+}
+
 .results-sp-chev {
   font-size: 12px;
   font-weight: 700;

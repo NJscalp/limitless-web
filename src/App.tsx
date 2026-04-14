@@ -1,18 +1,22 @@
 import { useCallback, useRef, useState } from 'react'
 import { AnalyzingOverlay } from './components/AnalyzingOverlay'
 import { ResultsView, type DemoScores } from './components/ResultsView'
-import { deriveDemoScoresFromFile } from './lib/faceAnalysisShared'
+import { analyzeImageFile, type AnalysisOutcome } from './lib/fetchFaceAnalysis'
 import './App.css'
 
 type Phase = 'pick' | 'analyzing' | 'results'
+
+const MIN_SCAN_MS = 3200
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>('pick')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [scores, setScores] = useState<DemoScores | null>(null)
-  const [displayName, setDisplayName] = useState('Face')
+  const [analysisSource, setAnalysisSource] = useState<'ai' | 'demo'>('demo')
+  const [displayName, setDisplayName] = useState('')
   const fileRef = useRef<File | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const analysisPromiseRef = useRef<Promise<AnalysisOutcome> | null>(null)
 
   const cleanupUrl = useCallback(() => {
     if (imageUrl) {
@@ -24,27 +28,36 @@ export default function App() {
     if (!f || !f.type.startsWith('image/')) return
     cleanupUrl()
     fileRef.current = f
+    analysisPromiseRef.current = analyzeImageFile(f)
     const url = URL.createObjectURL(f)
     setImageUrl(url)
     setPhase('analyzing')
   }
 
   const handleAnalyzeComplete = useCallback(async () => {
-    const file = fileRef.current
-    if (!file) return
-    const s = await deriveDemoScoresFromFile(file)
-    setScores(s)
-    setPhase('results')
+    const p = analysisPromiseRef.current
+    if (!p) return
+    try {
+      const outcome = await p
+      setScores(outcome.scores)
+      setAnalysisSource(outcome.source)
+      setPhase('results')
+    } catch {
+      setPhase('pick')
+    }
   }, [])
 
   const handleNewScan = () => {
     cleanupUrl()
     setImageUrl(null)
     setScores(null)
+    analysisPromiseRef.current = null
     fileRef.current = null
     setPhase('pick')
     if (inputRef.current) inputRef.current.value = ''
   }
+
+  const resolvedName = displayName.trim() || 'Face'
 
   const scanDateLabel = scores
     ? new Date().toLocaleDateString(undefined, {
@@ -60,19 +73,24 @@ export default function App() {
         <div className="pick-screen">
           <p className="pick-limitless">LIMITLESS</p>
           <h1 className="pick-title">Face</h1>
-          <p className="pick-sub">Clipper web preview — same layout as the iOS Face tab.</p>
+          <p className="pick-sub">Same Face-tab layout as the iOS app. AI scores use your backend when configured on Vercel.</p>
 
-          <label className="pick-name-label">
+          <label className="pick-name-label" htmlFor="display-name-input">
             Display name
-            <input
-              type="text"
-              className="pick-name-input"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value || 'Face')}
-              placeholder="Face"
-              maxLength={32}
-            />
           </label>
+          <input
+            id="display-name-input"
+            type="text"
+            className="pick-name-input"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="Face"
+            maxLength={32}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="done"
+          />
 
           <input
             ref={inputRef}
@@ -94,15 +112,16 @@ export default function App() {
       )}
 
       {phase === 'analyzing' && imageUrl && (
-        <AnalyzingOverlay imageUrl={imageUrl} onComplete={handleAnalyzeComplete} />
+        <AnalyzingOverlay imageUrl={imageUrl} onComplete={handleAnalyzeComplete} minDurationMs={MIN_SCAN_MS} />
       )}
 
       {phase === 'results' && imageUrl && scores && (
         <ResultsView
           imageUrl={imageUrl}
-          displayName={displayName.trim() || 'Face'}
+          displayName={resolvedName}
           scanDateLabel={scanDateLabel}
           scores={scores}
+          analysisSource={analysisSource}
           onNewScan={handleNewScan}
         />
       )}

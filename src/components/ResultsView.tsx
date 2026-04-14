@@ -39,6 +39,8 @@ type Props = {
   displayName: string
   scanDateLabel: string
   scores: DemoScores
+  /** `ai` when Vercel proxy returned backend analysis; `demo` otherwise */
+  analysisSource: 'ai' | 'demo'
   onNewScan: () => void
 }
 
@@ -47,6 +49,7 @@ export function ResultsView({
   displayName,
   scanDateLabel,
   scores,
+  analysisSource,
   onNewScan,
 }: Props) {
   const { overall, potential } = scores
@@ -93,30 +96,14 @@ export function ResultsView({
           <div className="results-sp-row">
             <div className="results-sp-col">
               <span className="results-sp-label">Score</span>
-              <span
-                className="results-sp-num"
-                style={{
-                  background: `linear-gradient(135deg, ${nowColors[0]}, ${nowColors[1]})`,
-                  WebkitBackgroundClip: 'text',
-                  backgroundClip: 'text',
-                  color: 'transparent',
-                }}
-              >
+              <span className="results-sp-num results-sp-num-solid" style={{ color: tier }}>
                 {overall}
               </span>
             </div>
             <span className="results-sp-chev">›</span>
             <div className="results-sp-col results-sp-right">
               <span className="results-sp-label potential">Potential</span>
-              <span
-                className="results-sp-num"
-                style={{
-                  background: `linear-gradient(135deg, ${peakColors[0]}, ${peakColors[1]})`,
-                  WebkitBackgroundClip: 'text',
-                  backgroundClip: 'text',
-                  color: 'transparent',
-                }}
-              >
+              <span className="results-sp-num results-sp-num-solid results-sp-num-potential">
                 {potential}
               </span>
             </div>
@@ -201,8 +188,9 @@ export function ResultsView({
       </button>
 
       <p className="results-disclaimer">
-        Web demo only — scores are simulated from your image file for layout preview. The iOS app uses
-        full on-device + optional cloud analysis.
+        {analysisSource === 'ai'
+          ? 'Scores from your AI backend (same API as the iOS app when configured on Vercel: FACE_BACKEND_URL).'
+          : 'Demo mode: Vercel has no FACE_BACKEND_URL, or the API failed — scores are simulated from the image file. Add env vars on Vercel for real AI.'}
       </p>
     </div>
   )
