@@ -1,0 +1,16 @@
+/* Mirrors AppTheme (GlassModifiers.swift) — Face tab light style */
+:root {
+  --bg: rgb(242, 242, 245);
+  --card-bg: #ffffff;
+  --card-border: rgb(232, 232, 236);
+  --text-primary: #000000;
+  --text-secondary: rgb(112, 112, 120);
+  --text-tertiary: rgb(173, 173, 177);
+  --accent-orange: rgb(255, 148, 0);
+  --accent-blue: rgb(0, 122, 255);
+  --accent-green: rgb(51, 199, 89);
+  --accent-red: rgb(255, 59, 48);
+  --radius-card: 24px;
+  --radius-inner: 14px;
+  --shadow-card: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
