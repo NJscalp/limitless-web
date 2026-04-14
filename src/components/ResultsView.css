@@ -76,8 +76,9 @@
 
 .results-looks-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px 8px;
   padding: 10px 14px 6px;
   font-family: system-ui, -apple-system, sans-serif;
 }
@@ -100,6 +101,42 @@
   padding: 2px 6px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.06);
+}
+
+.results-chip {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.results-chip-def.is-lean {
+  color: #28a745;
+  background: rgba(40, 167, 69, 0.12);
+}
+
+.results-chip-def.is-avg {
+  color: #ff9500;
+  background: rgba(255, 149, 0, 0.12);
+}
+
+.results-chip-def.is-bloated {
+  color: #ff3b30;
+  background: rgba(255, 59, 48, 0.12);
+}
+
+.results-chip-frontal {
+  color: #ff9500;
+  background: rgba(255, 149, 0, 0.14);
+}
+
+.results-lm-engine {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 0 14px 8px;
+  line-height: 1.4;
 }
 
 .results-score-hero {

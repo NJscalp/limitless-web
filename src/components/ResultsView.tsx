@@ -2,6 +2,7 @@ import {
   limitlessScoreTierColor,
   scoreLabel,
 } from '../lib/faceAnalysisShared'
+import type { AnalysisMeta } from '../lib/mapFullAIAnalysis'
 import './ResultsView.css'
 
 export type DemoScores = {
@@ -39,6 +40,7 @@ type Props = {
   displayName: string
   scanDateLabel: string
   scores: DemoScores
+  analysisMeta: AnalysisMeta
   /** `ai` when Vercel proxy returned backend analysis; `demo` otherwise */
   analysisSource: 'ai' | 'demo'
   onNewScan: () => void
@@ -49,6 +51,7 @@ export function ResultsView({
   displayName,
   scanDateLabel,
   scores,
+  analysisMeta,
   analysisSource,
   onNewScan,
 }: Props) {
@@ -90,7 +93,23 @@ export function ResultsView({
           <span className="results-lm-icon">▤</span>
           <span className="results-lm-title">Looksmax</span>
           <span className="results-lm-badge">0–100</span>
+          {analysisMeta.definitionLevel && (
+            <span
+              className={`results-chip results-chip-def ${defLevelClass(analysisMeta.definitionLevel)}`}
+            >
+              {analysisMeta.definitionLevel}
+            </span>
+          )}
+          {!analysisMeta.looksmaxPosePassed && (
+            <span className="results-chip results-chip-frontal">Frontal</span>
+          )}
         </div>
+
+        {analysisMeta.looksmax && Object.keys(analysisMeta.looksmax).length > 0 && (
+          <div className="results-lm-engine" aria-label="Looksmax 1–10 engine">
+            {formatLooksmaxLine(analysisMeta.looksmax)}
+          </div>
+        )}
 
         <div className="results-score-hero">
           <div className="results-sp-row">
@@ -138,8 +157,8 @@ export function ResultsView({
         <div className="results-grid">
           {CATEGORIES.map((c) => {
             const sc = scores[c.key] as number
-            const tc = limitlessScoreTierColor(sc)
-            const frac = Math.min(100, Math.max(0, sc)) / 100
+            const tc = limitlessScoreTierColor(Math.min(100, sc))
+            const frac = Math.min(1, Math.max(0, sc / 100))
             return (
               <div key={c.name} className="stat-cell">
                 <div className="stat-ring-wrap">
@@ -160,7 +179,7 @@ export function ResultsView({
                       stroke={tc}
                       strokeWidth="3"
                       strokeLinecap="round"
-                      strokeDasharray={`${frac * 106.8} 106.8`}
+                      strokeDasharray={`${frac * 106.8} ${106.8}`}
                       transform="rotate(-90 20 20)"
                       style={{ filter: `drop-shadow(0 0 3px ${tc}4d)` }}
                     />
@@ -194,4 +213,21 @@ export function ResultsView({
       </p>
     </div>
   )
+}
+
+function defLevelClass(dl: string): string {
+  const u = dl.trim().toLowerCase()
+  if (u === 'lean') return 'is-lean'
+  if (u === 'bloated') return 'is-bloated'
+  return 'is-avg'
+}
+
+function formatLooksmaxLine(lm: NonNullable<AnalysisMeta['looksmax']>): string {
+  const parts: string[] = []
+  if (lm.eye != null) parts.push(`Eye ${lm.eye.toFixed(1)}`)
+  if (lm.jawline != null) parts.push(`Jaw ${lm.jawline.toFixed(1)}`)
+  if (lm.harmony != null) parts.push(`Harmony ${lm.harmony.toFixed(1)}`)
+  if (lm.overall != null) parts.push(`LM ${lm.overall.toFixed(1)}`)
+  if (lm.potential != null) parts.push(`LM+ ${lm.potential.toFixed(1)}`)
+  return parts.join(' · ')
 }

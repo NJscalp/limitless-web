@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { AnalyzingOverlay } from './components/AnalyzingOverlay'
 import { ResultsView, type DemoScores } from './components/ResultsView'
-import { analyzeImageFile, type AnalysisOutcome } from './lib/fetchFaceAnalysis'
+import { analyzeImageFile, type AnalysisMeta, type AnalysisOutcome } from './lib/fetchFaceAnalysis'
 import './App.css'
 
 type Phase = 'pick' | 'analyzing' | 'results'
@@ -12,6 +12,7 @@ export default function App() {
   const [phase, setPhase] = useState<Phase>('pick')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [scores, setScores] = useState<DemoScores | null>(null)
+  const [analysisMeta, setAnalysisMeta] = useState<AnalysisMeta | null>(null)
   const [analysisSource, setAnalysisSource] = useState<'ai' | 'demo'>('demo')
   const [displayName, setDisplayName] = useState('')
   const fileRef = useRef<File | null>(null)
@@ -40,6 +41,7 @@ export default function App() {
     try {
       const outcome = await p
       setScores(outcome.scores)
+      setAnalysisMeta(outcome.meta)
       setAnalysisSource(outcome.source)
       setPhase('results')
     } catch {
@@ -51,6 +53,7 @@ export default function App() {
     cleanupUrl()
     setImageUrl(null)
     setScores(null)
+    setAnalysisMeta(null)
     analysisPromiseRef.current = null
     fileRef.current = null
     setPhase('pick')
@@ -115,12 +118,13 @@ export default function App() {
         <AnalyzingOverlay imageUrl={imageUrl} onComplete={handleAnalyzeComplete} minDurationMs={MIN_SCAN_MS} />
       )}
 
-      {phase === 'results' && imageUrl && scores && (
+      {phase === 'results' && imageUrl && scores && analysisMeta && (
         <ResultsView
           imageUrl={imageUrl}
           displayName={resolvedName}
           scanDateLabel={scanDateLabel}
           scores={scores}
+          analysisMeta={analysisMeta}
           analysisSource={analysisSource}
           onNewScan={handleNewScan}
         />
