@@ -58,7 +58,8 @@ export function ResultsView({
   const { overall, potential } = scores
   const gap = Math.max(0, potential - overall)
   const tier = limitlessScoreTierColor(overall)
-  const nowColors = [tier, `${tier}cc`]
+  /** Second stop: blue tint (tier is `rgb(...)` — do not append hex alpha like `${tier}cc`, invalid in CSS) */
+  const scoreBarGradient = `linear-gradient(90deg, ${tier} 0%, #007aff 100%)`
   const peakColors = ['#33c759', '#59eb82', '#63e6be']
 
   const oFrac = Math.min(100, Math.max(0, overall)) / 100
@@ -133,8 +134,8 @@ export function ResultsView({
               <div
                 className="results-traj-fill"
                 style={{
-                  width: `${oFrac * 100}%`,
-                  background: `linear-gradient(90deg, ${nowColors[0]}, ${nowColors[1]})`,
+                  width: `${Math.max(oFrac * 100, oFrac > 0 ? 2 : 0)}%`,
+                  background: scoreBarGradient,
                 }}
               />
               <div

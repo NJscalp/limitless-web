@@ -199,11 +199,23 @@ export async function deriveDemoScoresFromFile(file: File): Promise<{
     midface: rnd(15),
   }
 
+  /** Demo Looksmax-Zeile (1–10) + Definition — gleiche UI wie bei KI, deterministisch aus Datei-Hash */
+  const fLm = (shift: number) =>
+    Math.round((1 + ((h >>> shift) & 127) / 127 * 9) * 10) / 10
+  const defLevels: Array<'Lean' | 'Average' | 'Bloated'> = ['Lean', 'Average', 'Bloated']
+
   return {
     scores,
     meta: {
-      definitionLevel: null,
+      definitionLevel: defLevels[h % 3],
       looksmaxPosePassed: true,
+      looksmax: {
+        eye: fLm(2),
+        jawline: fLm(4),
+        harmony: fLm(6),
+        overall: fLm(8),
+        potential: fLm(10),
+      },
     },
   }
 }
