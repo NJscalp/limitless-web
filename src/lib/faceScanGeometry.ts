@@ -6,6 +6,7 @@
  */
 
 import type { Face, FaceLandmarksDetector, Keypoint } from '@tensorflow-models/face-landmarks-detection'
+import { createDetectionCanvas } from './faceScanImagePrep'
 
 export type ScanPoint = { x: number; y: number }
 
@@ -229,7 +230,22 @@ function jawLeftRightFromOval(keypoints: Keypoint[], imgW: number, imgH: number,
   }
 }
 
-/** Fallback wie Swift `effectiveFace` ohne Konturen */
+/** Ellipse als Platzhalter-Kontur (wenn noch keine KI-Daten) */
+function placeholderJawContour(displayW: number, displayH: number): FaceContourRegion {
+  const cx = displayW * 0.5
+  const cy = displayH * 0.48
+  const rx = displayW * 0.32
+  const ry = displayH * 0.4
+  const n = 42
+  const pts: ScanPoint[] = []
+  for (let i = 0; i < n; i++) {
+    const t = (i / n) * Math.PI * 2
+    pts.push({ x: cx + Math.cos(t) * rx, y: cy + Math.sin(t) * ry * 0.96 })
+  }
+  return { id: 'jaw', closed: true, points: pts }
+}
+
+/** Fallback wie Swift `effectiveFace` — mit sichtbarer Kontur */
 export function defaultFaceScanGeometry(displayW: number, displayH: number): FaceScanGeometry {
   const w = displayW
   const h = displayH
@@ -249,7 +265,7 @@ export function defaultFaceScanGeometry(displayW: number, displayH: number): Fac
     chin: mk(0.5, 0.75),
     jawLeft: mk(0.3, 0.65),
     jawRight: mk(0.7, 0.65),
-    contours: [],
+    contours: [placeholderJawContour(displayW, displayH)],
   }
 }
 
@@ -273,7 +289,7 @@ async function getDetector(): Promise<FaceLandmarksDetector> {
         {
           runtime: 'tfjs',
           maxFaces: 1,
-          refineLandmarks: false,
+          refineLandmarks: true,
         },
       )
     })()
@@ -286,14 +302,17 @@ export async function detectFaceScanGeometry(
   displayW: number,
   displayH: number,
 ): Promise<FaceScanGeometry | null> {
-  const iw = image.naturalWidth
-  const ih = image.naturalHeight
+  const canvas = await createDetectionCanvas(image)
+  if (!canvas) return null
+
+  const iw = canvas.width
+  const ih = canvas.height
   if (!iw || !ih) return null
 
   let faces: Face[]
   try {
     const detector = await getDetector()
-    faces = await detector.estimateFaces(image, { flipHorizontal: false, staticImageMode: true })
+    faces = await detector.estimateFaces(canvas, { flipHorizontal: false, staticImageMode: true })
   } catch {
     return null
   }
