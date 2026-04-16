@@ -396,9 +396,6 @@
       -webkit-backdrop-filter: none !important;
     }
     /* Animationen für Screenshots anhalten, damit es scharf gerendert wird */
-    .is-capturing .shield-lock-hero-icon::after,
-    .is-capturing .shield-unlock-action,
-    .is-capturing .shield-unlock-arrow,
     .is-capturing .shield-scan-delta {
       animation: none !important;
     }
@@ -597,157 +594,85 @@
     }
 
     /* ============================================================
-       HERO LOCK BANNER — "TIKTOK BLOCKED" (Eye #1, emotional hit)
+       LOCK BLOCK — iOS-natives Premium-Design
+       Dünnes SF-Symbols-Lock-Glyph, klare Typografie, keine Effekte
        ============================================================ */
-    .shield-lock-hero {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      width: 100%;
-      max-width: 380px;
-      margin: 0 auto 12px;
-      padding: 14px 22px;
-      border-radius: 20px;
-      background:
-        radial-gradient(100% 160% at 50% 0%, rgba(255, 45, 85, 0.22) 0%, transparent 65%),
-        linear-gradient(135deg, rgba(255, 245, 246, 0.98) 0%, rgba(255, 236, 239, 0.95) 100%);
-      border: 1.5px solid rgba(255, 45, 85, 0.32);
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.7) inset,
-        0 8px 24px rgba(255, 45, 85, 0.18),
-        0 2px 6px rgba(255, 45, 85, 0.08);
-      position: relative;
-      overflow: visible;
-    }
-
-    .shield-lock-hero-icon {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #ff2d55;
-      flex-shrink: 0;
-      position: relative;
-    }
-
-    .shield-lock-hero-icon svg {
-      width: 100%;
-      height: 100%;
-      filter: drop-shadow(0 2px 4px rgba(255, 45, 85, 0.35));
-      position: relative;
-      z-index: 1;
-    }
-
-    .shield-lock-hero-icon::after {
-      content: '';
-      position: absolute;
-      inset: -4px;
-      border-radius: 50%;
-      background: rgba(255, 45, 85, 0.28);
-      animation: shield-lock-pulse 1.8s ease-out infinite;
-      z-index: 0;
-    }
-
-    @keyframes shield-lock-pulse {
-      0%   { transform: scale(0.75); opacity: 0.8; }
-      80%  { transform: scale(1.6);  opacity: 0;   }
-      100% { transform: scale(1.6);  opacity: 0;   }
-    }
-
-    .shield-lock-hero-text {
+    .shield-lock-block {
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
-      line-height: 1;
-      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      max-width: 340px;
+      margin: 0 auto 14px;
+      padding: 0;
+      text-align: center;
     }
 
-    .shield-lock-hero-top {
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: rgba(60, 60, 65, 0.75);
-      margin-bottom: 4px;
-    }
-
-    .shield-lock-hero-bottom {
-      font-size: 30px;
-      font-weight: 900;
-      letter-spacing: -0.025em;
-      background: linear-gradient(135deg, #ff2d55 0%, #e11d48 55%, #ff3b30 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.6));
-    }
-
-    /* ============================================================
-       UNLOCK ACTION PILL — "↓ UNLOCK ↓" (Eye #2, dopamine action)
-       ============================================================ */
-    .shield-unlock-action {
-      display: inline-flex;
+    .shield-lock-glyph {
+      width: 34px;
+      height: 34px;
+      display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      padding: 9px 20px;
-      margin: 0 auto 14px;
-      border-radius: 999px;
-      background: linear-gradient(135deg, #e8c25a 0%, #d1ad4d 50%, #b8913a 100%);
-      color: #0a0a0a;
-      font-size: 13px;
-      font-weight: 900;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.55) inset,
-        0 0 0 1.5px rgba(209, 173, 77, 0.55),
-        0 8px 20px rgba(209, 173, 77, 0.45);
+      color: rgba(26, 26, 30, 0.88);
+    }
+
+    .shield-lock-glyph svg {
+      width: 100%;
+      height: 100%;
+      stroke-width: 1.6;
+    }
+
+    .shield-lock-headline {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.1;
+      color: #1a1a1e;
+      margin: 0;
+    }
+
+    .shield-lock-sub {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      line-height: 1.4;
+      color: rgba(60, 60, 67, 0.6);
+      margin: 0;
+      max-width: 280px;
+    }
+
+    .shield-lock-sub strong {
+      color: rgba(26, 26, 30, 0.92);
+      font-weight: 600;
+    }
+
+    /* Dezenter App-Store-Footer im iOS-System-Stil (kein Button, nur Text) */
+    .shield-appstore-footer {
+      margin: 10px auto 0;
+      padding: 0;
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: rgba(60, 60, 67, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       line-height: 1;
-      white-space: nowrap;
-      animation: shield-unlock-glow 2.6s ease-in-out infinite;
     }
-
-    .shield-unlock-arrow {
-      display: inline-block;
-      font-size: 15px;
-      line-height: 1;
-      animation: shield-unlock-arrow-bounce 1.2s ease-in-out infinite;
+    .shield-appstore-footer-brand {
+      font-weight: 700;
+      color: rgba(26, 26, 30, 0.78);
+      letter-spacing: -0.01em;
     }
-
-    .shield-unlock-arrow:last-child {
-      animation-delay: 0.15s;
-    }
-
-    @keyframes shield-unlock-arrow-bounce {
-      0%, 100% { transform: translateY(-1px); }
-      50%      { transform: translateY(3px);  }
-    }
-
-    @keyframes shield-unlock-glow {
-      0%, 100% {
-        box-shadow:
-          0 1px 0 rgba(255, 255, 255, 0.55) inset,
-          0 0 0 1.5px rgba(209, 173, 77, 0.55),
-          0 8px 20px rgba(209, 173, 77, 0.45);
-      }
-      50% {
-        box-shadow:
-          0 1px 0 rgba(255, 255, 255, 0.55) inset,
-          0 0 0 1.5px rgba(209, 173, 77, 0.75),
-          0 10px 28px rgba(209, 173, 77, 0.65);
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .shield-lock-hero-icon::after,
-      .shield-unlock-action,
-      .shield-unlock-arrow {
-        animation: none !important;
-      }
+    .shield-appstore-footer-sep {
+      color: rgba(60, 60, 67, 0.35);
     }
 
     /**
@@ -998,35 +923,29 @@
       filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.5));
     }
 
-    /* „+Δ POTENTIAL" Delta-Badge: zentriert über der Potential-Spalte, schwebend */
+    /* Delta-Badge über der Potential-Spalte — statisch, dezent, premium */
     .shield-scan-delta {
       position: absolute;
       top: -2px;
       left: 50%;
       transform: translate(-50%, -100%);
-      padding: 3px 8px;
+      padding: 2.5px 7px;
       border-radius: 999px;
-      background: linear-gradient(135deg, #ff9500 0%, #ff2d55 100%);
-      color: #fff;
+      background: rgba(26, 26, 30, 0.92);
+      color: #d1ad4d;
       font-size: 9px;
-      font-weight: 900;
-      letter-spacing: 0.08em;
+      font-weight: 700;
+      letter-spacing: 0.04em;
       line-height: 1;
-      box-shadow: 0 4px 12px rgba(255, 45, 85, 0.32);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
       white-space: nowrap;
-      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-      animation: shield-delta-float 2.2s ease-in-out infinite;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
       pointer-events: none;
       z-index: 3;
     }
 
     .shield-scan-delta[hidden] {
       display: none !important;
-    }
-
-    @keyframes shield-delta-float {
-      0%, 100% { transform: translate(-50%, -100%); }
-      50%      { transform: translate(-50%, calc(-100% - 3px)); }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1306,30 +1225,19 @@
           <div class="shield-blur" aria-hidden="true"></div>
 
           <div class="shield-stack">
-            <!-- Eye #1: HERO LOCK BANNER — sofort erkennbar, dass TikTok blockiert ist -->
-            <div class="shield-lock-hero" role="alert" aria-label="TikTok is Blocked">
-              <div class="shield-lock-hero-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="4.5" y="10.5" width="15" height="11" rx="2.4"
-                        stroke="currentColor" stroke-width="2.4"
-                        fill="rgba(255,45,85,0.10)" />
-                  <path d="M7.5 10.5V7a4.5 4.5 0 1 1 9 0v3.5"
-                        stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
-                  <circle cx="12" cy="15.5" r="1.4" fill="currentColor" />
-                  <path d="M12 16.5V18.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <!-- iOS-natives Lock-Block: dünnes Glyph + klare Headline + Subline -->
+            <div class="shield-lock-block">
+              <div class="shield-lock-glyph" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                     stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4.75" y="10.5" width="14.5" height="10.25" rx="2.5" />
+                  <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
                 </svg>
               </div>
-              <div class="shield-lock-hero-text">
-                <span class="shield-lock-hero-top">TikTok is</span>
-                <span class="shield-lock-hero-bottom">BLOCKED</span>
-              </div>
-            </div>
-
-            <!-- Eye #2: UNLOCK ACTION PILL — klare Call-to-Action für den Viewer -->
-            <div class="shield-unlock-action" aria-label="Unlock with task below">
-              <span class="shield-unlock-arrow" aria-hidden="true">▼</span>
-              <span>Do Task to Unlock</span>
-              <span class="shield-unlock-arrow" aria-hidden="true">▼</span>
+              <h1 class="shield-lock-headline">TikTok is Blocked</h1>
+              <p class="shield-lock-sub">
+                Complete one <strong>face workout</strong> to unlock.
+              </p>
             </div>
 
             <div class="shield-hero-frame">
@@ -1386,18 +1294,12 @@
                 </label>
               </div>
 
-              <!-- Subtle App-Store CTA als Footer: zeigt App-Verfügbarkeit ohne die Top-Story zu stören -->
-              <a class="shield-appstore-slot shield-appstore-slot--compact"
-                 href="https://apps.apple.com/app/limitless"
-                 target="_blank"
-                 rel="noopener"
-                 aria-label="Limitless — LooksMax App Block auf dem App Store herunterladen">
-                <img src="assets/app-store-card.png"
-                     alt="Limitless – LooksMax App Block · App Store"
-                     width="1024" height="410"
-                     loading="eager" decoding="async" />
-                <span class="shield-appstore-pulse" aria-hidden="true">Tap</span>
-              </a>
+              <!-- Dezenter iOS-System-Footer: nur Text, keine Card -->
+              <p class="shield-appstore-footer" aria-label="Limitless on the App Store">
+                <span class="shield-appstore-footer-brand">Limitless</span>
+                <span class="shield-appstore-footer-sep" aria-hidden="true">·</span>
+                <span class="shield-appstore-footer-text">Available on the App&nbsp;Store</span>
+              </p>
 
               <button type="button" class="shield-secondary" id="btn-close">Close</button>
             </div>

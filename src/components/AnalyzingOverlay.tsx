@@ -4,13 +4,7 @@ import {
   indeterminateProgress,
   stepIndex,
 } from '../lib/faceAnalysisShared'
-import { defaultFaceScanGeometry, detectFaceScanGeometry, type FaceScanGeometry } from '../lib/faceScanGeometry'
-import { FaceScanOverlay } from './FaceScanOverlay'
-import { ScanFrameRing } from './ScanFrameRing'
 import './AnalyzingOverlay.css'
-
-const DISPLAY_W = 260
-const DISPLAY_H = 340
 
 type Props = {
   imageUrl: string
@@ -21,42 +15,12 @@ type Props = {
 export function AnalyzingOverlay({ imageUrl, onComplete, minDurationMs = 3200 }: Props) {
   const [progress, setProgress] = useState(0)
   const [stepIdx, setStepIdx] = useState(0)
-  const [faceGeometry, setFaceGeometry] = useState<FaceScanGeometry>(() =>
-    defaultFaceScanGeometry(DISPLAY_W, DISPLAY_H),
-  )
   const onCompleteRef = useRef(onComplete)
   const finishedRef = useRef(false)
 
   useEffect(() => {
     onCompleteRef.current = onComplete
   }, [onComplete])
-
-  useEffect(() => {
-    let cancelled = false
-    const img = new Image()
-    img.decoding = 'async'
-    img.src = imageUrl
-    setFaceGeometry(defaultFaceScanGeometry(DISPLAY_W, DISPLAY_H))
-
-    const run = async () => {
-      try {
-        await img.decode()
-      } catch {
-        return
-      }
-      if (cancelled) return
-      const detected = await detectFaceScanGeometry(img, DISPLAY_W, DISPLAY_H)
-      if (!cancelled) {
-        setFaceGeometry(detected ?? defaultFaceScanGeometry(DISPLAY_W, DISPLAY_H))
-      }
-    }
-
-    void run()
-
-    return () => {
-      cancelled = true
-    }
-  }, [imageUrl])
 
   useEffect(() => {
     finishedRef.current = false
@@ -106,17 +70,16 @@ export function AnalyzingOverlay({ imageUrl, onComplete, minDurationMs = 3200 }:
         <h1 className="analyze-title">Face Scan</h1>
 
         <div className="analyze-frame-wrap">
-          <div className="analyze-image-box">
+          <div className="analyze-scan-card">
+            <div className="analyze-scan-card-border" aria-hidden />
             <div className="analyze-image-stack">
-              <img src={imageUrl} alt="" className="analyze-img" />
-              <FaceScanOverlay
-                geometry={faceGeometry}
-                progress={progress}
-                displayWidth={DISPLAY_W}
-                displayHeight={DISPLAY_H}
-              />
+              <img src={imageUrl} alt="" className="analyze-img" decoding="async" />
+              <div className="analyze-scan-fx" aria-hidden>
+                <div className="analyze-scan-vignette" />
+                <div className="analyze-scan-sweep" />
+                <div className="analyze-scan-shine" />
+              </div>
             </div>
-            <ScanFrameRing progress={progress} width={DISPLAY_W} height={DISPLAY_H} radius={28} />
           </div>
         </div>
 

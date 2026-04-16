@@ -49,7 +49,7 @@
   justify-content: center;
   gap: 4px;
   margin-top: 6px;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
 }
 
 .results-name {
@@ -127,16 +127,10 @@
 }
 
 .results-chip-frontal {
+  font-size: 9px;
+  font-weight: 800;
   color: #ff9500;
   background: rgba(255, 149, 0, 0.14);
-}
-
-.results-lm-engine {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  padding: 0 14px 8px;
-  line-height: 1.4;
 }
 
 .results-score-hero {
@@ -199,6 +193,7 @@
   font-weight: 700;
   color: var(--text-secondary);
   margin-bottom: 2px;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
 }
 
 .results-sp-label.potential {
@@ -209,25 +204,22 @@
   font-size: 38px;
   font-weight: 900;
   line-height: 1;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
   letter-spacing: -0.03em;
-}
-
-/* Solid numbers — reliable on Safari (gradient+transparent text often invisible) */
-.results-sp-num-solid {
   display: block;
 }
 
-.results-sp-num-potential {
-  color: #28b446;
+/* FaceView.aiScorePotentialHero — gradient fill on digits (same stops as Swift) */
+.results-sp-num-gradient {
+  display: block;
+  min-height: 1em;
 }
 
 .results-sp-chev {
-  font-size: 12px;
-  font-weight: 700;
-  color: rgba(173, 173, 177, 0.35);
+  flex-shrink: 0;
   padding: 0 4px;
   align-self: center;
+  margin-bottom: 4px;
 }
 
 .results-traj {
@@ -274,17 +266,28 @@
   height: 12px;
   z-index: 2;
   border-radius: 50%;
-  background: #fff;
-  border: 2px solid #33c759;
+  box-sizing: border-box;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    var(--peak-ring, linear-gradient(135deg, rgb(51, 199, 89), rgb(89, 235, 166), rgb(99, 230, 190))) border-box;
+  border: 2px solid transparent;
   box-shadow: 0 1px 3px rgba(51, 199, 89, 0.35);
 }
 
 .results-traj-labels {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   font-size: 11px;
   font-weight: 700;
   color: var(--text-secondary);
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
+}
+
+.results-traj-gap {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
 }
 
 .results-grid {
@@ -326,7 +329,7 @@
   font-size: 13px;
   font-weight: 900;
   color: var(--text-primary);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
 }
 
 .stat-text {
@@ -344,6 +347,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
 }
 
 .stat-pill {
@@ -352,6 +356,7 @@
   align-self: flex-start;
   padding: 2px 6px;
   border-radius: 999px;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
 }
 
 .results-new-scan {
@@ -364,7 +369,7 @@
   padding: 18px;
   font-size: 17px;
   font-weight: 700;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
   color: #fff;
   border: none;
   border-radius: 16px;

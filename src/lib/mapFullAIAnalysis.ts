@@ -7,6 +7,12 @@ import type { DemoScores } from '../components/ResultsView'
 export type AnalysisMeta = {
   definitionLevel: string | null
   looksmaxPosePassed: boolean
+  /** Kopfhaltung aus derselben KI-Analyse wie die App (`yawDeg`/`pitchDeg`/`rollDeg`) — für Web-Overlay-Feinjustierung */
+  headPose?: {
+    yawDeg: number
+    pitchDeg: number
+    rollDeg: number
+  }
   looksmax?: Partial<{
     eye: number
     jawline: number
@@ -131,6 +137,18 @@ export function mapFullAIAnalysis(a: Record<string, unknown>): {
 
   const posePassed = typeof a.posePassed === 'boolean' ? a.posePassed : true
 
+  let headPose: AnalysisMeta['headPose'] | undefined
+  const hpRaw = a.headPose
+  if (hpRaw && typeof hpRaw === 'object') {
+    const hp = hpRaw as Record<string, unknown>
+    const yaw = num(hp.yawDeg)
+    const pitch = num(hp.pitchDeg)
+    const roll = num(hp.rollDeg)
+    if (yaw != null && pitch != null && roll != null) {
+      headPose = { yawDeg: yaw, pitchDeg: pitch, rollDeg: roll }
+    }
+  }
+
   const scores: DemoScores = {
     overall,
     potential,
@@ -157,6 +175,7 @@ export function mapFullAIAnalysis(a: Record<string, unknown>): {
   const meta: AnalysisMeta = {
     definitionLevel: defLevel,
     looksmaxPosePassed: posePassed,
+    ...(headPose ? { headPose } : {}),
     looksmax: Object.keys(lm).length ? lm : undefined,
   }
 
@@ -183,13 +202,26 @@ export async function deriveDemoScoresFromFile(file: File): Promise<{
   potentialRaw = scoreClamp30_90(Math.max(potentialRaw, overallRaw))
   const { overall, potential } = applyDisplayCaps(overallRaw, potentialRaw)
 
+  /** Same 1–10 raw as mapFullAIAnalysis; merged into Jawline / Classical Ideal / Eye Area like FaceView.categories */
+  const fLm = (shift: number) =>
+    Math.round((1 + ((h >>> shift) & 127) / 127 * 9) * 10) / 10
+  const jawBase = rnd(3)
+  const sym = rnd(5)
+  const classicalBase = rnd(6)
+  const eyeBase = rnd(7)
+  const lmEye = fLm(2)
+  const lmJaw = fLm(4)
+  const lmHarm = fLm(6)
+  const lmOverall = fLm(8)
+  const lmPotential = fLm(10)
+
   const scores: DemoScores = {
     overall,
     potential,
-    jawline: rnd(3),
-    symmetry: rnd(5),
-    classicalIdeal: rnd(6),
-    eyeArea: rnd(7),
+    jawline: categoryScoreMergingLooksmax(jawBase, lmJaw),
+    symmetry: sym,
+    classicalIdeal: categoryScoreMergingLooksmax(classicalBase, lmHarm),
+    eyeArea: categoryScoreMergingLooksmax(eyeBase, lmEye),
     cheekbones: rnd(9),
     definition: rnd(10),
     bloat: rnd(11),
@@ -199,9 +231,6 @@ export async function deriveDemoScoresFromFile(file: File): Promise<{
     midface: rnd(15),
   }
 
-  /** Demo Looksmax-Zeile (1–10) + Definition — gleiche UI wie bei KI, deterministisch aus Datei-Hash */
-  const fLm = (shift: number) =>
-    Math.round((1 + ((h >>> shift) & 127) / 127 * 9) * 10) / 10
   const defLevels: Array<'Lean' | 'Average' | 'Bloated'> = ['Lean', 'Average', 'Bloated']
 
   return {
@@ -210,11 +239,11 @@ export async function deriveDemoScoresFromFile(file: File): Promise<{
       definitionLevel: defLevels[h % 3],
       looksmaxPosePassed: true,
       looksmax: {
-        eye: fLm(2),
-        jawline: fLm(4),
-        harmony: fLm(6),
-        overall: fLm(8),
-        potential: fLm(10),
+        eye: lmEye,
+        jawline: lmJaw,
+        harmony: lmHarm,
+        overall: lmOverall,
+        potential: lmPotential,
       },
     },
   }

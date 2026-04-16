@@ -40,3 +40,17 @@ export async function createDetectionCanvas(img: HTMLImageElement): Promise<HTML
   ctx.drawImage(img, 0, 0, nw, nh)
   return canvas
 }
+
+/**
+ * JPEG-Base64 **ohne** Data-URL-Präfix — dieselben Pixel wie {@link createDetectionCanvas},
+ * damit ein Vision-Backend dieselbe Vorverarbeitung wie MediaPipe sieht.
+ */
+export function canvasToJpegBase64(canvas: HTMLCanvasElement, quality = 0.92): string {
+  try {
+    const dataUrl = canvas.toDataURL('image/jpeg', quality)
+    const comma = dataUrl.indexOf(',')
+    return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl
+  } catch {
+    return ''
+  }
+}

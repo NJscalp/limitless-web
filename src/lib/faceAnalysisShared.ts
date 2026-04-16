@@ -29,13 +29,35 @@ export function stepIndex(
   return Math.min(stepCount - 1, Math.max(0, Math.floor(elapsedSec / secondsPerStep)))
 }
 
-/** Orange → blue tier color by score 0–100 (limitlessScoreTierColor) */
-export function limitlessScoreTierColor(score: number): string {
+/** Same RGB math as AppTheme.limitlessScoreTierColor (GlassModifiers.swift). */
+export function limitlessScoreTierRgb(score: number): { r: number; g: number; b: number } {
   const t = Math.max(0, Math.min(100, score)) / 100
   const r = 1 * (1 - t) + 0 * t
   const g = 0.58 * (1 - t) + 0.48 * t
   const b = 0 * (1 - t) + 1 * t
-  return `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`
+  return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) }
+}
+
+/** Orange → blue tier color by score 0–100 (limitlessScoreTierColor) */
+export function limitlessScoreTierColor(score: number): string {
+  const { r, g, b } = limitlessScoreTierRgb(score)
+  return `rgb(${r},${g},${b})`
+}
+
+/** FaceView.scoreGradientForOverall → diagonal text / bar first segment */
+export function scoreGradientCssDiagonal(score: number): string {
+  const { r, g, b } = limitlessScoreTierRgb(score)
+  return `linear-gradient(135deg, rgb(${r},${g},${b}) 0%, rgba(${r},${g},${b},0.7) 100%)`
+}
+
+/** FaceView aiScorePotentialHero peakColors for Potential number */
+export function potentialScoreGradientCss(): string {
+  return 'linear-gradient(135deg, rgb(51, 199, 89) 0%, rgb(89, 235, 166) 45%, rgb(99, 230, 190) 100%)'
+}
+
+/** FaceScoreTrajectoryBar +gap label: accentGreen → teal */
+export function gapLabelGradientCss(): string {
+  return 'linear-gradient(90deg, rgb(51, 199, 89), rgb(48, 181, 199))'
 }
 
 export function scoreLabel(score: number): string {

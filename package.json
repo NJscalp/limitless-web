@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check-apis": "node scripts/check-face-apis.mjs"
   },
   "dependencies": {
     "@mediapipe/face_mesh": "^0.4.1633559619",

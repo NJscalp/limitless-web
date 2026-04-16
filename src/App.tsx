@@ -1,10 +1,15 @@
 import { useCallback, useRef, useState } from 'react'
 import { AnalyzingOverlay } from './components/AnalyzingOverlay'
 import { ResultsView, type DemoScores } from './components/ResultsView'
-import { analyzeImageFile, type AnalysisMeta, type AnalysisOutcome } from './lib/fetchFaceAnalysis'
+import {
+  analyzeImageFile,
+  FaceAnalysisUnavailableError,
+  type AnalysisMeta,
+  type AnalysisOutcome,
+} from './lib/fetchFaceAnalysis'
 import './App.css'
 
-type Phase = 'pick' | 'analyzing' | 'results'
+type Phase = 'pick' | 'analyzing' | 'results' | 'analysis_error'
 
 const MIN_SCAN_MS = 3200
 
@@ -15,6 +20,7 @@ export default function App() {
   const [analysisMeta, setAnalysisMeta] = useState<AnalysisMeta | null>(null)
   const [analysisSource, setAnalysisSource] = useState<'ai' | 'demo'>('demo')
   const [displayName, setDisplayName] = useState('')
+  const [analysisErrorMessage, setAnalysisErrorMessage] = useState<string | null>(null)
   const fileRef = useRef<File | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const analysisPromiseRef = useRef<Promise<AnalysisOutcome> | null>(null)
@@ -32,6 +38,7 @@ export default function App() {
     analysisPromiseRef.current = analyzeImageFile(f)
     const url = URL.createObjectURL(f)
     setImageUrl(url)
+    setAnalysisErrorMessage(null)
     setPhase('analyzing')
   }
 
@@ -44,8 +51,15 @@ export default function App() {
       setAnalysisMeta(outcome.meta)
       setAnalysisSource(outcome.source)
       setPhase('results')
-    } catch {
-      setPhase('pick')
+    } catch (e) {
+      if (e instanceof FaceAnalysisUnavailableError) {
+        setAnalysisErrorMessage(
+          'Die KI-Analyse ist gerade nicht erreichbar. Bitte prüfe die Verbindung und ob das Backend auf Vercel konfiguriert ist (FACE_BACKEND_URL).',
+        )
+        setPhase('analysis_error')
+      } else {
+        setPhase('pick')
+      }
     }
   }, [])
 
@@ -54,6 +68,7 @@ export default function App() {
     setImageUrl(null)
     setScores(null)
     setAnalysisMeta(null)
+    setAnalysisErrorMessage(null)
     analysisPromiseRef.current = null
     fileRef.current = null
     setPhase('pick')
@@ -111,11 +126,40 @@ export default function App() {
             <span className="pick-gallery-icon">🖼</span>
             Choose from Gallery
           </button>
+
+          <a className="pick-shield-link" href="/shield-lock-screen.html">
+            Shield Lock screen edit
+          </a>
         </div>
       )}
 
       {phase === 'analyzing' && imageUrl && (
         <AnalyzingOverlay imageUrl={imageUrl} onComplete={handleAnalyzeComplete} minDurationMs={MIN_SCAN_MS} />
+      )}
+
+      {phase === 'analysis_error' && imageUrl && fileRef.current && (
+        <div className="analysis-error-screen">
+          <p className="analysis-error-title">KI-Analyse fehlgeschlagen</p>
+          <p className="analysis-error-text">{analysisErrorMessage}</p>
+          <div className="analysis-error-actions">
+            <button
+              type="button"
+              className="analysis-error-retry"
+              onClick={() => {
+                const f = fileRef.current
+                if (!f) return
+                analysisPromiseRef.current = analyzeImageFile(f)
+                setAnalysisErrorMessage(null)
+                setPhase('analyzing')
+              }}
+            >
+              Erneut versuchen
+            </button>
+            <button type="button" className="analysis-error-new" onClick={handleNewScan}>
+              Neues Foto
+            </button>
+          </div>
+        </div>
       )}
 
       {phase === 'results' && imageUrl && scores && analysisMeta && (

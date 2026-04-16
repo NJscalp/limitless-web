@@ -245,23 +245,19 @@ function placeholderJawContour(displayW: number, displayH: number): FaceContourR
   return { id: 'jaw', closed: true, points: pts }
 }
 
-/** Fallback wie Swift `effectiveFace` — mit sichtbarer Kontur */
+/** Fallback exakt wie Swift `AdaptiveFaceScanOverlay.effectiveFace` (FaceView.swift) */
 export function defaultFaceScanGeometry(displayW: number, displayH: number): FaceScanGeometry {
   const w = displayW
   const h = displayH
   const mk = (fx: number, fy: number): ScanPoint => ({ x: w * fx, y: h * fy })
   const faceRect = { x: w * 0.2, y: h * 0.15, width: w * 0.6, height: h * 0.7 }
-  const leftEye = mk(0.37, 0.34)
-  const rightEye = mk(0.63, 0.34)
-  const mouth = mk(0.5, 0.58)
-  const foreheadCenter = swiftForeheadCenter(leftEye, rightEye, mouth)
   return {
     faceRect,
-    foreheadCenter,
-    leftEye,
-    rightEye,
+    foreheadCenter: mk(0.5, 0.22),
+    leftEye: mk(0.37, 0.34),
+    rightEye: mk(0.63, 0.34),
     nose: mk(0.5, 0.47),
-    mouth,
+    mouth: mk(0.5, 0.58),
     chin: mk(0.5, 0.75),
     jawLeft: mk(0.3, 0.65),
     jawRight: mk(0.7, 0.65),
@@ -270,6 +266,19 @@ export function defaultFaceScanGeometry(displayW: number, displayH: number): Fac
 }
 
 let detectorPromise: Promise<FaceLandmarksDetector> | null = null
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/** Beim App-Start aufrufen: lädt tf.js/WebGL + MediaPipe, damit der erste Scan nicht auf „kaltem“ Shader scheitert. */
+export async function warmUpFaceScanDetector(): Promise<void> {
+  try {
+    await getDetector()
+  } catch {
+    /* Erst-Scan nutzt dann Retries in detectFaceScanGeometryFromCanvas */
+  }
+}
 
 async function getDetector(): Promise<FaceLandmarksDetector> {
   if (!detectorPromise) {
@@ -297,29 +306,14 @@ async function getDetector(): Promise<FaceLandmarksDetector> {
   return detectorPromise
 }
 
-export async function detectFaceScanGeometry(
-  image: HTMLImageElement,
+function geometryFromFaceObservation(
+  face: Face,
+  iw: number,
+  ih: number,
   displayW: number,
   displayH: number,
-): Promise<FaceScanGeometry | null> {
-  const canvas = await createDetectionCanvas(image)
-  if (!canvas) return null
-
-  const iw = canvas.width
-  const ih = canvas.height
-  if (!iw || !ih) return null
-
-  let faces: Face[]
-  try {
-    const detector = await getDetector()
-    faces = await detector.estimateFaces(canvas, { flipHorizontal: false, staticImageMode: true })
-  } catch {
-    return null
-  }
-
-  if (!faces.length) return null
-
-  const { keypoints, box } = faces[0]
+): FaceScanGeometry | null {
+  const { keypoints, box } = face
   if (!keypoints?.length) return null
 
   const faceRect = mapBoxToDisplay(box, iw, ih, displayW, displayH)
@@ -328,7 +322,11 @@ export async function detectFaceScanGeometry(
   const rightEye = averageLandmark(keypoints, RIGHT_EYE_INDICES, iw, ih, displayW, displayH)
   const nose = averageLandmark(keypoints, NOSE_BRIDGE_INDICES, iw, ih, displayW, displayH)
   const mouth = averageLandmark(keypoints, OUTER_LIP_INDICES, iw, ih, displayW, displayH)
-  const chin = mapKeypoint(keypoints[152], iw, ih, displayW, displayH)
+  const chinIdx = FACE_OVAL_INDICES[Math.floor(FACE_OVAL_INDICES.length / 2)]
+  const chinKp = keypoints[chinIdx]
+  const chin = chinKp
+    ? mapKeypoint(chinKp, iw, ih, displayW, displayH)
+    : mapKeypoint(keypoints[152], iw, ih, displayW, displayH)
   const { jawLeft, jawRight } = jawLeftRightFromOval(keypoints, iw, ih, displayW, displayH)
   const foreheadCenter = swiftForeheadCenter(leftEye, rightEye, mouth)
 
@@ -346,4 +344,48 @@ export async function detectFaceScanGeometry(
     jawRight,
     contours,
   }
+}
+
+/**
+ * MediaPipe auf einem Canvas, dessen Pixelraum zu dem Bild passt, das mit
+ * `object-fit: cover` im Scan-Rahmen angezeigt wird (nach {@link createDetectionCanvas}).
+ * Mehrere Versuche: erster Lauf scheitert oft, wenn WebGL/tf.js noch kompiliert.
+ */
+export async function detectFaceScanGeometryFromCanvas(
+  canvas: HTMLCanvasElement,
+  displayW: number,
+  displayH: number,
+): Promise<FaceScanGeometry | null> {
+  const iw = canvas.width
+  const ih = canvas.height
+  if (!iw || !ih) return null
+
+  const maxAttempts = 5
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) {
+      await sleep(120 + attempt * 100)
+    }
+    try {
+      const detector = await getDetector()
+      const faces = await detector.estimateFaces(canvas, { flipHorizontal: false, staticImageMode: true })
+      if (faces.length) {
+        const g = geometryFromFaceObservation(faces[0], iw, ih, displayW, displayH)
+        if (g) return g
+      }
+    } catch {
+      /* nächster Versuch */
+    }
+  }
+
+  return null
+}
+
+export async function detectFaceScanGeometry(
+  image: HTMLImageElement,
+  displayW: number,
+  displayH: number,
+): Promise<FaceScanGeometry | null> {
+  const canvas = await createDetectionCanvas(image)
+  if (!canvas) return null
+  return detectFaceScanGeometryFromCanvas(canvas, displayW, displayH)
 }

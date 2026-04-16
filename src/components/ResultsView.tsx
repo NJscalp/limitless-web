@@ -1,5 +1,9 @@
+import type { CSSProperties } from 'react'
 import {
+  gapLabelGradientCss,
   limitlessScoreTierColor,
+  potentialScoreGradientCss,
+  scoreGradientCssDiagonal,
   scoreLabel,
 } from '../lib/faceAnalysisShared'
 import { trajectoryDotLeftPercent, type AnalysisMeta } from '../lib/mapFullAIAnalysis'
@@ -58,12 +62,18 @@ export function ResultsView({
   const { overall, potential } = scores
   const gap = Math.max(0, potential - overall)
   const tier = limitlessScoreTierColor(overall)
-  /** Second stop: blue tint (tier is `rgb(...)` — do not append hex alpha like `${tier}cc`, invalid in CSS) */
-  const scoreBarGradient = `linear-gradient(90deg, ${tier} 0%, #007aff 100%)`
-  const peakColors = ['#33c759', '#59eb82', '#63e6be']
+  const nowBarGradient = scoreGradientCssDiagonal(overall)
+  const peakRingGradient =
+    'linear-gradient(135deg, rgb(51, 199, 89) 0%, rgb(89, 235, 166) 50%, rgb(99, 230, 190) 100%)'
 
   const oFrac = Math.min(100, Math.max(0, overall)) / 100
   const dotLeftPct = trajectoryDotLeftPercent(potential)
+
+  const clipGradText: CSSProperties = {
+    WebkitBackgroundClip: 'text',
+    backgroundClip: 'text',
+    color: 'transparent',
+  }
 
   return (
     <div className="results-root">
@@ -91,7 +101,7 @@ export function ResultsView({
         <div className="results-divider" />
 
         <div className="results-looks-header">
-          <span className="results-lm-icon">▤</span>
+          <LooksmaxHeaderIcon className="results-lm-icon" accent={tier} />
           <span className="results-lm-title">Looksmax</span>
           <span className="results-lm-badge">0–100</span>
           {analysisMeta.definitionLevel && (
@@ -106,24 +116,30 @@ export function ResultsView({
           )}
         </div>
 
-        {analysisMeta.looksmax && Object.keys(analysisMeta.looksmax).length > 0 && (
-          <div className="results-lm-engine" aria-label="Looksmax 1–10 engine">
-            {formatLooksmaxLine(analysisMeta.looksmax)}
-          </div>
-        )}
-
         <div className="results-score-hero">
           <div className="results-sp-row">
             <div className="results-sp-col">
               <span className="results-sp-label">Score</span>
-              <span className="results-sp-num results-sp-num-solid" style={{ color: tier }}>
+              <span
+                className="results-sp-num results-sp-num-gradient"
+                style={{
+                  ...clipGradText,
+                  backgroundImage: scoreGradientCssDiagonal(overall),
+                }}
+              >
                 {overall}
               </span>
             </div>
-            <span className="results-sp-chev">›</span>
+            <ChevronBetween className="results-sp-chev" />
             <div className="results-sp-col results-sp-right">
               <span className="results-sp-label potential">Potential</span>
-              <span className="results-sp-num results-sp-num-solid results-sp-num-potential">
+              <span
+                className="results-sp-num results-sp-num-gradient"
+                style={{
+                  ...clipGradText,
+                  backgroundImage: potentialScoreGradientCss(),
+                }}
+              >
                 {potential}
               </span>
             </div>
@@ -135,21 +151,29 @@ export function ResultsView({
                 className="results-traj-fill"
                 style={{
                   width: `${Math.max(oFrac * 100, oFrac > 0 ? 2 : 0)}%`,
-                  background: scoreBarGradient,
+                  background: nowBarGradient,
                 }}
               />
               <div
                 className="results-traj-dot"
                 style={{
                   left: `${dotLeftPct}%`,
-                  borderColor: peakColors[0],
                   transform: 'translate(-50%, -50%)',
+                  ['--peak-ring' as string]: peakRingGradient,
                 }}
               />
             </div>
             <div className="results-traj-labels">
               <span>Now</span>
-              <span>+{gap}</span>
+              <span
+                className="results-traj-gap"
+                style={{
+                  ...clipGradText,
+                  backgroundImage: gapLabelGradientCss(),
+                }}
+              >
+                +{gap}
+              </span>
               <span>Goal</span>
             </div>
           </div>
@@ -209,8 +233,8 @@ export function ResultsView({
 
       <p className="results-disclaimer">
         {analysisSource === 'ai'
-          ? 'Scores from your AI backend (same API as the iOS app when configured on Vercel: FACE_BACKEND_URL).'
-          : 'Demo mode: Vercel has no FACE_BACKEND_URL, or the API failed — scores are simulated from the image file. Add env vars on Vercel for real AI.'}
+          ? 'Gleiche Felder wie in der App (Face-Tab / KI-Analyse). Backend über FACE_BACKEND_URL auf Vercel.'
+          : 'Demo: kein Backend oder API-Fehler — Zahlen deterministisch aus der Datei wie App-Layout (Looksmax-Werte in Jawline / Classical Ideal / Eye Area gemerged).'}
       </p>
     </div>
   )
@@ -223,12 +247,46 @@ function defLevelClass(dl: string): string {
   return 'is-avg'
 }
 
-function formatLooksmaxLine(lm: NonNullable<AnalysisMeta['looksmax']>): string {
-  const parts: string[] = []
-  if (lm.eye != null) parts.push(`Eye ${lm.eye.toFixed(1)}`)
-  if (lm.jawline != null) parts.push(`Jaw ${lm.jawline.toFixed(1)}`)
-  if (lm.harmony != null) parts.push(`Harmony ${lm.harmony.toFixed(1)}`)
-  if (lm.overall != null) parts.push(`LM ${lm.overall.toFixed(1)}`)
-  if (lm.potential != null) parts.push(`LM+ ${lm.potential.toFixed(1)}`)
-  return parts.join(' · ')
+/** chart.bar.doc.horizontal — FaceView.looksmaxHeroHeaderRow */
+function LooksmaxHeaderIcon({ className, accent }: { className?: string; accent: string }) {
+  return (
+    <svg
+      className={className}
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+    >
+      <path
+        d="M5 4h14v4H5V4zm0 6h10v4H5v-4zm0 6h7v4H5v-4z"
+        fill={accent}
+        opacity="0.95"
+      />
+      <path d="M17 10h4v10h-4V10z" fill={accent} />
+    </svg>
+  )
+}
+
+function ChevronBetween({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="10"
+      height="14"
+      viewBox="0 0 10 14"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+    >
+      <path
+        d="M3.5 2L7 7l-3.5 5"
+        stroke="rgba(173,173,177,0.35)"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
 }
