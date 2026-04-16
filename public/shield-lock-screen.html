@@ -456,35 +456,51 @@
     }
 
     /* Looksmax-Impact-Chips: gold, dezent, sagt „Tasks verbessern dein Gesicht" */
+    /* Inline Looksmax-Gains (statt Pills): „+4 Jaw · +3 Cheeks" — clean, premium */
     .shield-looksmax-row {
       display: flex;
-      gap: 5px;
+      gap: 0;
       justify-content: center;
       flex-wrap: wrap;
-      margin: 0 0 12px;
-      max-width: 300px;
+      margin: 10px auto 14px;
+      max-width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
     }
 
     .shield-chip {
       display: inline-flex;
-      align-items: center;
+      align-items: baseline;
       gap: 4px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: linear-gradient(135deg, rgba(209, 173, 77, 0.18) 0%, rgba(209, 173, 77, 0.08) 100%);
-      border: 1px solid rgba(209, 173, 77, 0.32);
-      color: #e8c25a;
-      font-size: 10.5px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
+      padding: 0 12px;
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: -0.005em;
       line-height: 1.1;
       white-space: nowrap;
+      position: relative;
+    }
+
+    .shield-chip + .shield-chip::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: #d1ad4d;
+      box-shadow: 0 0 6px rgba(209, 173, 77, 0.5);
     }
 
     .shield-chip-plus {
       font-weight: 800;
       color: #ffcf6b;
       font-variant-numeric: tabular-nums;
+      font-size: 13px;
     }
 
     /* Shield-App-Footer entfernt — App-Store-Card über der Scan-Card erzählt die gleiche Story */
@@ -576,12 +592,14 @@
     }
 
     .shield-title-name {
-      font-size: clamp(26px, 5.6vw, 32px);
-      font-weight: 900;
-      letter-spacing: -0.035em;
-      line-height: 1.08;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      font-size: clamp(34px, 6.8vw, 42px);
+      font-weight: 800;
+      letter-spacing: -0.045em;
+      line-height: 1;
       margin: 0;
-      color: var(--title);
+      color: #ffffff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     }
 
     /* Untertitel: textSub */
@@ -671,95 +689,116 @@
     }
 
     /* ============================================================
-       PSL RATING STRIP — catchy 7/10 Boxen-Visualisierung
+       TOP STATUS CHIP — "🔒 TikTok · Blocked" (subtil, nicht schreiend)
        ============================================================ */
-    .shield-psl {
-      grid-column: 1 / -1;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 6px 4px 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      margin-bottom: 6px;
+    .shield-status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 11px 5px 9px;
+      border-radius: 999px;
+      background: rgba(255, 69, 58, 0.1);
+      border: 1px solid rgba(255, 69, 58, 0.28);
+      color: #ff8b94;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      line-height: 1;
+      white-space: nowrap;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 2px 8px rgba(255, 69, 58, 0.15);
+      margin: 0 auto 14px;
     }
 
-    .shield-psl[hidden] {
-      display: none !important;
+    .shield-status-chip svg {
+      width: 11px;
+      height: 11px;
+      stroke-width: 2.2;
     }
 
-    .shield-psl-label {
+    .shield-status-chip strong {
+      color: #ffb9bf;
+      font-weight: 700;
+    }
+
+    /* ============================================================
+       UNLOCK MISSION Eyebrow — dezent, gold
+       ============================================================ */
+    .shield-eyebrow {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
       font-size: 10px;
       font-weight: 800;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.32em;
       text-transform: uppercase;
-      color: rgba(235, 235, 245, 0.48);
+      color: #d1ad4d;
+      margin: 0 auto 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      line-height: 1;
     }
 
-    .shield-psl-strip {
-      display: flex;
-      align-items: stretch;
-      gap: 6px;
-      width: 100%;
+    .shield-eyebrow::before,
+    .shield-eyebrow::after {
+      content: '';
+      width: 18px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(209, 173, 77, 0.5), transparent);
     }
 
-    .shield-psl-score {
+    /* ============================================================
+       HERO AURA — Gold-Radial-Glow hinter dem Task-Icon
+       ============================================================ */
+    .shield-hero-aura {
+      position: relative;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 6px 10px;
-      border-radius: 10px;
-      background: linear-gradient(180deg, rgba(209, 173, 77, 0.22) 0%, rgba(209, 173, 77, 0.08) 100%);
-      border: 1px solid rgba(209, 173, 77, 0.42);
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.08) inset,
-        0 4px 12px rgba(209, 173, 77, 0.18);
-      min-width: 54px;
-      flex-shrink: 0;
+      margin: 0 auto 10px;
+      padding: 16px;
+      isolation: isolate;
     }
 
-    .shield-psl-num {
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
-      font-size: 22px;
-      font-weight: 800;
-      line-height: 1;
-      color: #ffcf6b;
-      letter-spacing: -0.03em;
-      font-variant-numeric: tabular-nums;
+    .shield-hero-aura::before {
+      content: '';
+      position: absolute;
+      inset: -20%;
+      background:
+        radial-gradient(closest-side, rgba(209, 173, 77, 0.38) 0%, rgba(209, 173, 77, 0.12) 40%, transparent 72%);
+      filter: blur(6px);
+      z-index: -1;
+      animation: shield-aura-breathe 3.6s ease-in-out infinite;
     }
 
-    .shield-psl-den {
-      font-size: 8.5px;
+    @keyframes shield-aura-breathe {
+      0%, 100% { opacity: 0.75; transform: scale(0.95); }
+      50%      { opacity: 1;    transform: scale(1.05); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .shield-hero-aura::before { animation: none; }
+    }
+
+    /* ============================================================
+       MISSION TITLE — riesiger Task-Name, gold „face workout"
+       ============================================================ */
+    .shield-mission-meta {
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+      font-size: 13px;
       font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: rgba(255, 207, 107, 0.6);
-      margin-top: 2px;
+      letter-spacing: 0.01em;
+      color: #d1ad4d;
+      margin: 6px auto 0;
+      text-align: center;
+      line-height: 1.2;
     }
 
-    .shield-psl-boxes {
-      display: grid;
-      grid-template-columns: repeat(10, 1fr);
-      gap: 4px;
-      flex: 1;
-      align-items: stretch;
-    }
-
-    .shield-psl-box {
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      min-height: 32px;
-      transition: all 0.3s ease;
-    }
-
-    .shield-psl-box.filled {
-      background: linear-gradient(180deg, #e8c25a 0%, #c99c2e 100%);
-      border: 1px solid rgba(232, 194, 90, 0.65);
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.25) inset,
-        0 0 8px rgba(209, 173, 77, 0.35);
+    .shield-mission-meta-sep {
+      color: rgba(209, 173, 77, 0.4);
+      margin: 0 7px;
+      font-weight: 400;
     }
 
     /* Dezenter App-Store-Footer im iOS-System-Stil (kein Button, nur Text) */
@@ -875,13 +914,25 @@
       max-width: 240px;
     }
 
-    /* 3-Spalten-Layout: Score  ←  [Avatar]  →  Potential */
+    /* Rating-Karte: „Your Looksmax Path" — Now → Avatar → Potential */
     .shield-scan-filled {
       display: grid;
       grid-template-columns: 1fr auto 1fr;
       align-items: center;
       gap: 10px;
-      padding: 16px 14px 14px;
+      padding: 10px 16px 14px;
+    }
+
+    .shield-scan-caption {
+      grid-column: 1 / -1;
+      margin: 0 0 6px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: #d1ad4d;
+      text-align: center;
     }
 
     .shield-scan-filled[hidden] {
@@ -1336,33 +1387,40 @@
           <div class="shield-blur" aria-hidden="true"></div>
 
           <div class="shield-stack">
-            <!-- iOS-natives Lock-Block: dünnes Glyph + klare Headline + Subline -->
-            <div class="shield-lock-block">
-              <div class="shield-lock-glyph" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                     stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="4.75" y="10.5" width="14.5" height="10.25" rx="2.5" />
-                  <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
-                </svg>
-              </div>
-              <h1 class="shield-lock-headline">TikTok is Blocked</h1>
-              <p class="shield-lock-sub">
-                Complete one <strong>face workout</strong> to unlock.
-              </p>
-            </div>
+            <!-- Top-Status: subtiler Chip „🔒 TikTok Blocked" -->
+            <span class="shield-status-chip" aria-label="TikTok is Blocked">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="5" y="11" width="14" height="9" rx="2" />
+                <path d="M8 11V7.5a4 4 0 1 1 8 0V11" />
+              </svg>
+              <span>TikTok · <strong>Blocked</strong></span>
+            </span>
 
-            <div class="shield-hero-frame">
-              <div class="shield-icon-wrap" id="hero-icon" aria-hidden="true"></div>
-              <span class="shield-video-badge" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5z"/></svg>
-                <span id="task-seconds">30s</span>
-              </span>
+            <!-- Eyebrow: UNLOCK MISSION mit goldenen Strichen -->
+            <p class="shield-eyebrow" aria-hidden="true">Unlock Mission</p>
+
+            <!-- Hero: Task-Icon in Gold-Aura, zentrales Dopamin-Element -->
+            <div class="shield-hero-aura">
+              <div class="shield-hero-frame">
+                <div class="shield-icon-wrap" id="hero-icon" aria-hidden="true"></div>
+                <span class="shield-video-badge" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5z"/></svg>
+                  <span id="task-seconds">30s</span>
+                </span>
+              </div>
             </div>
 
             <div class="shield-title-block">
               <p class="shield-title-name" id="task-name">Drink Water</p>
+              <p class="shield-mission-meta">
+                <span class="shield-mission-meta-item">Face Workout</span>
+                <span class="shield-mission-meta-sep" aria-hidden="true">·</span>
+                <span class="shield-mission-meta-item" id="task-meta-seconds">30 sec</span>
+              </p>
             </div>
 
+            <!-- Inline Looksmax-Gains (gold bullets, keine Pills) -->
             <div class="shield-looksmax-row" id="task-chips" aria-label="Looksmax Impact"></div>
 
             <p class="shield-sub" id="task-sub" hidden>Looksmax unlock · Do 1 task to open Instagram</p>
@@ -1373,35 +1431,14 @@
                 <label for="scan-file" class="shield-scan-hit" id="shield-scan-hit">
                   <div class="shield-scan-mock" id="scan-mock">
                     <div class="shield-scan-empty" id="scan-empty">
-                      <span class="shield-scan-placeholder-title">Your face. Your score.</span>
-                      <span class="shield-scan-placeholder-hint">Foto auswählen — KI berechnet Score &amp; Looksmax-Potential</span>
+                      <span class="shield-scan-placeholder-title">See your Looksmax path</span>
+                      <span class="shield-scan-placeholder-hint">Tap to scan — AI reveals your Score &amp; Potential</span>
                     </div>
                     <div class="shield-scan-filled" id="scan-filled" hidden>
-                      <!-- PSL Rating Strip — catchy 7/10 Boxen-Visualisierung -->
-                      <div class="shield-psl" id="shield-psl">
-                        <span class="shield-psl-label">PSL Rating</span>
-                        <div class="shield-psl-strip">
-                          <div class="shield-psl-score">
-                            <span class="shield-psl-num" id="psl-num">—</span>
-                            <span class="shield-psl-den">out of 10</span>
-                          </div>
-                          <div class="shield-psl-boxes" id="psl-boxes" aria-hidden="true">
-                            <div class="shield-psl-box"></div>
-                            <div class="shield-psl-box"></div>
-                            <div class="shield-psl-box"></div>
-                            <div class="shield-psl-box"></div>
-                            <div class="shield-psl-box"></div>
-                            <div class="shield-psl-box"></div>
-                            <div class="shield-psl-box"></div>
-                            <div class="shield-psl-box"></div>
-                            <div class="shield-psl-box"></div>
-                            <div class="shield-psl-box"></div>
-                          </div>
-                        </div>
-                      </div>
+                      <p class="shield-scan-caption" aria-hidden="true">Your Looksmax Path</p>
 
                       <div class="shield-scan-side shield-scan-side--left">
-                        <span class="shield-scan-sp-label">Score</span>
+                        <span class="shield-scan-sp-label">Now</span>
                         <span class="shield-scan-sp-num" id="score-val">—</span>
                       </div>
                       <div class="shield-scan-avatar-row">
@@ -1670,6 +1707,8 @@
     var heroImg = heroEl.querySelector('img');
     applyShieldCreamToImage(heroImg, 768);
     if (taskSecondsEl) taskSecondsEl.textContent = (task.seconds || 30) + 's';
+    var taskMetaSec = document.getElementById('task-meta-seconds');
+    if (taskMetaSec) taskMetaSec.textContent = (task.seconds || 30) + ' sec';
     renderChips(task.impact);
   }
 
@@ -1968,28 +2007,9 @@
     }
   }
 
-  /* PSL-Rating auf 0–10 Skala: 72 Score → 7/10 Boxen gefüllt */
-  var pslNumEl = document.getElementById('psl-num');
-  var pslBoxesEl = document.getElementById('psl-boxes');
-
-  function updatePSL(overall) {
-    if (!pslNumEl || !pslBoxesEl) return;
-    var val = Math.round(Math.max(0, Math.min(100, overall)) / 10);
-    pslNumEl.textContent = String(val);
-    var boxes = pslBoxesEl.querySelectorAll('.shield-psl-box');
-    for (var i = 0; i < boxes.length; i++) {
-      if (i < val) boxes[i].classList.add('filled');
-      else         boxes[i].classList.remove('filled');
-    }
-  }
-  window.updatePSLFromShield = updatePSL;
-
-  function resetPSL() {
-    if (!pslNumEl || !pslBoxesEl) return;
-    pslNumEl.textContent = '—';
-    var boxes = pslBoxesEl.querySelectorAll('.shield-psl-box');
-    for (var i = 0; i < boxes.length; i++) boxes[i].classList.remove('filled');
-  }
+  /* PSL-Strip wurde entfernt (war zu nah am AscendMax-Vorbild) — No-Op stubs */
+  function updatePSL() {}
+  function resetPSL() {}
 
   function applyScoresToUi(overall, potential, source) {
     scoreEl.textContent = String(overall);
@@ -2159,22 +2179,6 @@
       var diff = (isFinite(pNum) ? pNum : 0) - (isFinite(sNum) ? sNum : 0);
       if (diff > 0) { deltaEl.textContent = '+' + diff + ' POTENTIAL'; deltaEl.hidden = false; }
       else { deltaEl.hidden = true; }
-    }
-    // PSL-Rating (0-10) aus Override-Score ableiten
-    if (s != null && typeof window.updatePSLFromShield === 'function') {
-      window.updatePSLFromShield(s);
-    } else {
-      var pslN = document.getElementById('psl-num');
-      var pslB = document.getElementById('psl-boxes');
-      if (pslN && pslB && s != null) {
-        var v = Math.round(Math.max(0, Math.min(100, s)) / 10);
-        pslN.textContent = String(v);
-        var bx = pslB.querySelectorAll('.shield-psl-box');
-        for (var i = 0; i < bx.length; i++) {
-          if (i < v) bx[i].classList.add('filled');
-          else       bx[i].classList.remove('filled');
-        }
-      }
     }
   }
   scoreInput.addEventListener('input', applyOverrides);
