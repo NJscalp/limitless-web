@@ -171,12 +171,20 @@
 
     /* Shield innerhalb des Screens */
     .shield-root {
+      /* Dark-Premium-Theme: überschreibt die hellen Variablen lokal */
+      --cream-hex: #0b0d12;
+      --cream: rgb(11, 13, 18);
+      --title: #ffffff;
+      --text-sub: rgba(235, 235, 245, 0.52);
       position: absolute;
       inset: 0;
       display: flex;
       flex-direction: column;
       align-items: stretch;
-      background: var(--cream-hex);
+      background:
+        radial-gradient(120% 80% at 50% 0%, rgba(40, 55, 90, 0.32) 0%, transparent 60%),
+        radial-gradient(90% 80% at 85% 90%, rgba(60, 40, 80, 0.22) 0%, transparent 60%),
+        linear-gradient(180deg, #0d1017 0%, #070809 100%);
       padding-top: 58px;
       border-radius: inherit;
     }
@@ -461,11 +469,11 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      padding: 3px 9px;
+      padding: 4px 10px;
       border-radius: 999px;
-      background: linear-gradient(135deg, rgba(209, 173, 77, 0.14) 0%, rgba(209, 173, 77, 0.06) 100%);
-      border: 1px solid rgba(209, 173, 77, 0.35);
-      color: #8a6a16;
+      background: linear-gradient(135deg, rgba(209, 173, 77, 0.18) 0%, rgba(209, 173, 77, 0.08) 100%);
+      border: 1px solid rgba(209, 173, 77, 0.32);
+      color: #e8c25a;
       font-size: 10.5px;
       font-weight: 700;
       letter-spacing: 0.02em;
@@ -475,7 +483,7 @@
 
     .shield-chip-plus {
       font-weight: 800;
-      color: #a98521;
+      color: #ffcf6b;
       font-variant-numeric: tabular-nums;
     }
 
@@ -502,8 +510,8 @@
     .shield-tint {
       position: absolute;
       inset: 0;
-      background: var(--cream-hex);
-      opacity: 0.82;
+      background: transparent;
+      opacity: 1;
       pointer-events: none;
     }
 
@@ -533,9 +541,12 @@
       align-items: center;
       justify-content: center;
       margin-bottom: var(--s-gap-icon-title);
-      background: var(--cream-hex);
+      background: linear-gradient(155deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
       border-radius: 22%;
-      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(0, 0, 0, 0.03);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.05) inset,
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 8px 24px rgba(0, 0, 0, 0.35);
     }
 
     .shield-icon-wrap img {
@@ -615,22 +626,31 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      color: rgba(26, 26, 30, 0.88);
+      color: rgba(255, 255, 255, 0.92);
+      padding: 6px;
+      border-radius: 10px;
+      background: linear-gradient(160deg, rgba(255, 59, 48, 0.18), rgba(255, 59, 48, 0.08));
+      box-shadow:
+        0 0 0 1px rgba(255, 59, 48, 0.32) inset,
+        0 6px 16px rgba(255, 59, 48, 0.15);
+      width: 44px;
+      height: 44px;
     }
 
     .shield-lock-glyph svg {
       width: 100%;
       height: 100%;
-      stroke-width: 1.6;
+      stroke-width: 1.8;
+      color: #ff6b75;
     }
 
     .shield-lock-headline {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 700;
-      letter-spacing: -0.025em;
+      letter-spacing: -0.03em;
       line-height: 1.1;
-      color: #1a1a1e;
+      color: #ffffff;
       margin: 0;
     }
 
@@ -640,14 +660,106 @@
       font-weight: 400;
       letter-spacing: -0.01em;
       line-height: 1.4;
-      color: rgba(60, 60, 67, 0.6);
+      color: rgba(235, 235, 245, 0.52);
       margin: 0;
       max-width: 280px;
     }
 
     .shield-lock-sub strong {
-      color: rgba(26, 26, 30, 0.92);
-      font-weight: 600;
+      color: #d1ad4d;
+      font-weight: 700;
+    }
+
+    /* ============================================================
+       PSL RATING STRIP — catchy 7/10 Boxen-Visualisierung
+       ============================================================ */
+    .shield-psl {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 6px 4px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      margin-bottom: 6px;
+    }
+
+    .shield-psl[hidden] {
+      display: none !important;
+    }
+
+    .shield-psl-label {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(235, 235, 245, 0.48);
+    }
+
+    .shield-psl-strip {
+      display: flex;
+      align-items: stretch;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .shield-psl-score {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: linear-gradient(180deg, rgba(209, 173, 77, 0.22) 0%, rgba(209, 173, 77, 0.08) 100%);
+      border: 1px solid rgba(209, 173, 77, 0.42);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.08) inset,
+        0 4px 12px rgba(209, 173, 77, 0.18);
+      min-width: 54px;
+      flex-shrink: 0;
+    }
+
+    .shield-psl-num {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1;
+      color: #ffcf6b;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .shield-psl-den {
+      font-size: 8.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: rgba(255, 207, 107, 0.6);
+      margin-top: 2px;
+    }
+
+    .shield-psl-boxes {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 4px;
+      flex: 1;
+      align-items: stretch;
+    }
+
+    .shield-psl-box {
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      min-height: 32px;
+      transition: all 0.3s ease;
+    }
+
+    .shield-psl-box.filled {
+      background: linear-gradient(180deg, #e8c25a 0%, #c99c2e 100%);
+      border: 1px solid rgba(232, 194, 90, 0.65);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.25) inset,
+        0 0 8px rgba(209, 173, 77, 0.35);
     }
 
     /* Dezenter App-Store-Footer im iOS-System-Stil (kein Button, nur Text) */
@@ -659,7 +771,7 @@
       font-size: 10.5px;
       font-weight: 500;
       letter-spacing: 0.02em;
-      color: rgba(60, 60, 67, 0.55);
+      color: rgba(235, 235, 245, 0.4);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -668,11 +780,11 @@
     }
     .shield-appstore-footer-brand {
       font-weight: 700;
-      color: rgba(26, 26, 30, 0.78);
+      color: rgba(255, 255, 255, 0.82);
       letter-spacing: -0.01em;
     }
     .shield-appstore-footer-sep {
-      color: rgba(60, 60, 67, 0.35);
+      color: rgba(235, 235, 245, 0.25);
     }
 
     /**
@@ -714,15 +826,14 @@
     .shield-scan-mock {
       position: relative;
       width: 100%;
-      border-radius: 20px;
+      border-radius: 18px;
       background:
-        radial-gradient(120% 180% at 100% 0%, rgba(209, 173, 77, 0.18) 0%, rgba(255, 255, 255, 0.0) 55%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(252, 249, 239, 0.95) 100%);
+        linear-gradient(160deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.015) 100%);
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.9) inset,
-        0 8px 24px rgba(209, 173, 77, 0.12),
-        0 2px 8px rgba(0, 0, 0, 0.06);
-      border: 1px solid rgba(209, 173, 77, 0.28);
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        0 0 0 1px rgba(255, 255, 255, 0.07) inset,
+        0 8px 28px rgba(0, 0, 0, 0.45);
+      border: none;
       transition: transform 0.12s ease, opacity 0.12s ease;
       display: flex;
       flex-direction: column;
@@ -835,8 +946,8 @@
       height: 100%;
       border-radius: 50%;
       overflow: hidden;
-      background: rgba(0, 0, 0, 0.06);
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9) inset;
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18) inset;
       transition: opacity 0.2s ease;
     }
 
@@ -893,13 +1004,13 @@
       font-weight: 900;
       letter-spacing: 0.18em;
       text-transform: uppercase;
-      color: rgba(115, 115, 125, 0.9);
+      color: rgba(235, 235, 245, 0.52);
       margin-bottom: 2px;
       font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
     }
 
     .shield-scan-sp-label.potential {
-      color: #a98521;
+      color: #d1ad4d;
     }
 
     /* Score-Zahl: HUGE, bold — der Clipper sieht sie auf 1m Abstand */
@@ -911,7 +1022,7 @@
       font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
       display: block;
       min-height: 1em;
-      color: #1a1a1e;
+      color: #ffffff;
       font-variant-numeric: tabular-nums;
     }
 
@@ -994,7 +1105,7 @@
       transform: translateY(-50%);
       height: 5px;
       border-radius: 999px;
-      background: rgba(0, 0, 0, 0.08);
+      background: rgba(255, 255, 255, 0.08);
       z-index: 0;
     }
 
@@ -1266,6 +1377,29 @@
                       <span class="shield-scan-placeholder-hint">Foto auswählen — KI berechnet Score &amp; Looksmax-Potential</span>
                     </div>
                     <div class="shield-scan-filled" id="scan-filled" hidden>
+                      <!-- PSL Rating Strip — catchy 7/10 Boxen-Visualisierung -->
+                      <div class="shield-psl" id="shield-psl">
+                        <span class="shield-psl-label">PSL Rating</span>
+                        <div class="shield-psl-strip">
+                          <div class="shield-psl-score">
+                            <span class="shield-psl-num" id="psl-num">—</span>
+                            <span class="shield-psl-den">out of 10</span>
+                          </div>
+                          <div class="shield-psl-boxes" id="psl-boxes" aria-hidden="true">
+                            <div class="shield-psl-box"></div>
+                            <div class="shield-psl-box"></div>
+                            <div class="shield-psl-box"></div>
+                            <div class="shield-psl-box"></div>
+                            <div class="shield-psl-box"></div>
+                            <div class="shield-psl-box"></div>
+                            <div class="shield-psl-box"></div>
+                            <div class="shield-psl-box"></div>
+                            <div class="shield-psl-box"></div>
+                            <div class="shield-psl-box"></div>
+                          </div>
+                        </div>
+                      </div>
+
                       <div class="shield-scan-side shield-scan-side--left">
                         <span class="shield-scan-sp-label">Score</span>
                         <span class="shield-scan-sp-num" id="score-val">—</span>
@@ -1834,6 +1968,29 @@
     }
   }
 
+  /* PSL-Rating auf 0–10 Skala: 72 Score → 7/10 Boxen gefüllt */
+  var pslNumEl = document.getElementById('psl-num');
+  var pslBoxesEl = document.getElementById('psl-boxes');
+
+  function updatePSL(overall) {
+    if (!pslNumEl || !pslBoxesEl) return;
+    var val = Math.round(Math.max(0, Math.min(100, overall)) / 10);
+    pslNumEl.textContent = String(val);
+    var boxes = pslBoxesEl.querySelectorAll('.shield-psl-box');
+    for (var i = 0; i < boxes.length; i++) {
+      if (i < val) boxes[i].classList.add('filled');
+      else         boxes[i].classList.remove('filled');
+    }
+  }
+  window.updatePSLFromShield = updatePSL;
+
+  function resetPSL() {
+    if (!pslNumEl || !pslBoxesEl) return;
+    pslNumEl.textContent = '—';
+    var boxes = pslBoxesEl.querySelectorAll('.shield-psl-box');
+    for (var i = 0; i < boxes.length; i++) boxes[i].classList.remove('filled');
+  }
+
   function applyScoresToUi(overall, potential, source) {
     scoreEl.textContent = String(overall);
     potentialEl.textContent = String(potential);
@@ -1848,6 +2005,7 @@
     trajDot.style.left = trajectoryDotLeftPercent(potential) + '%';
     scanTraj.hidden = false;
     updateDelta(overall, potential);
+    updatePSL(overall);
     scanStatus.innerHTML = '';
     if (source === 'ai') {
       scanStatus.innerHTML = '<span class="shield-scan-source-badge">KI</span>';
@@ -1863,6 +2021,7 @@
     potentialEl.style.backgroundImage = '';
     scanTraj.hidden = true;
     if (scoreDeltaEl) scoreDeltaEl.hidden = true;
+    resetPSL();
     scanRing.style.background =
       'conic-gradient(from 0deg, #ff9500, rgb(148, 120, 255), #007aff, rgb(148, 120, 255), #ff9500)';
   }
@@ -2000,6 +2159,22 @@
       var diff = (isFinite(pNum) ? pNum : 0) - (isFinite(sNum) ? sNum : 0);
       if (diff > 0) { deltaEl.textContent = '+' + diff + ' POTENTIAL'; deltaEl.hidden = false; }
       else { deltaEl.hidden = true; }
+    }
+    // PSL-Rating (0-10) aus Override-Score ableiten
+    if (s != null && typeof window.updatePSLFromShield === 'function') {
+      window.updatePSLFromShield(s);
+    } else {
+      var pslN = document.getElementById('psl-num');
+      var pslB = document.getElementById('psl-boxes');
+      if (pslN && pslB && s != null) {
+        var v = Math.round(Math.max(0, Math.min(100, s)) / 10);
+        pslN.textContent = String(v);
+        var bx = pslB.querySelectorAll('.shield-psl-box');
+        for (var i = 0; i < bx.length; i++) {
+          if (i < v) bx[i].classList.add('filled');
+          else       bx[i].classList.remove('filled');
+        }
+      }
     }
   }
   scoreInput.addEventListener('input', applyOverrides);
