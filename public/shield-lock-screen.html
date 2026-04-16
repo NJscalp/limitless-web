@@ -1,0 +1,2154 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fcf9ef">
+  <title>Limitless – Shield</title>
+  <meta name="description" content="Screen Time Shield — wie in der iOS-App (ManagedSettingsUI).">
+  <style>
+    /**
+     * ShieldConfigurationExtension: creamBackground, gold, textSub,
+     * backgroundBlurStyle .extraLight, Labels wie ShieldConfiguration.
+     */
+    :root {
+      --cream: rgb(252, 249, 239);
+      --cream-hex: #fcf9ef;
+      --gold: #d1ad4d;
+      --text-sub: rgb(115, 115, 125);
+      --title: #000000;
+      /**
+       * Abstände für das 3:4-Mockup — kompakter, damit alles locker reinpasst
+       */
+      --s-gap-icon-title: 12px;
+      --s-gap-title-sub: 4px;
+      --s-gap-sub-btns: 14px;
+      --s-gap-primary-secondary: 10px;
+      --s-h-margin: 28px;
+      --s-icon-max: 104px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      background: #0a0a0a;
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-family: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      color: var(--title);
+      background: radial-gradient(ellipse at top, #1a1a1e 0%, #0a0a0a 70%);
+      padding: 36px 16px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    /* Stage = darkmode desktop canvas for clippers */
+    .stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 22px;
+      width: 100%;
+    }
+
+    /* 3:4 Portrait-Frame (Clipper-Screenshot-Target) — 600×800 */
+    .phone-mockup {
+      position: relative;
+      width: 600px;
+      height: 800px;
+      max-width: calc(100vw - 32px);
+      border-radius: 40px;
+      background: #0a0a0a;
+      padding: 9px;
+      box-sizing: border-box;
+      box-shadow:
+        0 0 0 1.5px #1f1f22,
+        0 40px 90px rgba(0, 0, 0, 0.7),
+        0 14px 34px rgba(0, 0, 0, 0.5);
+      flex-shrink: 0;
+      isolation: isolate;
+    }
+
+    .phone-screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 32px;
+      overflow: hidden;
+      background: var(--cream-hex);
+      isolation: isolate;
+    }
+
+    .phone-island {
+      position: absolute;
+      top: 11px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 36px;
+      border-radius: 20px;
+      background: #000;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    .phone-status-bar {
+      position: absolute;
+      top: 15px;
+      left: 0;
+      right: 0;
+      height: 28px;
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 19;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: #000;
+      letter-spacing: -0.2px;
+      pointer-events: none;
+    }
+
+    .phone-status-bar .phone-time {
+      display: inline-flex;
+      align-items: center;
+      height: 100%;
+      line-height: 1;
+    }
+
+    .phone-status-bar .phone-icons {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #000;
+    }
+
+    .phone-status-bar svg {
+      display: block;
+      height: 12px;
+      width: auto;
+      fill: currentColor;
+    }
+
+    .phone-battery {
+      position: relative;
+      width: 26px;
+      height: 12px;
+      border: 1.2px solid #000;
+      border-radius: 3.5px;
+      box-sizing: border-box;
+    }
+
+    .phone-battery::after {
+      content: '';
+      position: absolute;
+      right: -3px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 2px;
+      height: 5px;
+      background: #000;
+      border-radius: 0 1px 1px 0;
+    }
+
+    .phone-battery-fill {
+      position: absolute;
+      inset: 1.2px;
+      background: #000;
+      border-radius: 1.8px;
+      width: calc((100% - 2.4px) * 1);
+    }
+
+    /* Shield innerhalb des Screens */
+    .shield-root {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      background: var(--cream-hex);
+      padding-top: 58px;
+      border-radius: inherit;
+    }
+
+    /* Clipper-Controls: nicht Teil des Screenshots */
+    .clipper-controls {
+      width: 100%;
+      max-width: 560px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 18px 18px 16px;
+      color: rgba(255, 255, 255, 0.92);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+    }
+
+    .ct-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .ct-title {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: #fff;
+    }
+
+    .ct-sub {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.55);
+      font-weight: 500;
+    }
+
+    .ct-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .ct-row-split {
+      flex-direction: row;
+      gap: 12px;
+    }
+
+    .ct-row-split > div {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .ct-row-actions {
+      flex-direction: row;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .ct-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    .ct-row textarea,
+    .ct-row input[type="number"] {
+      width: 100%;
+      min-height: 40px;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.3);
+      color: #fff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      resize: vertical;
+    }
+
+    .ct-row textarea {
+      max-height: 90px;
+      line-height: 1.4;
+    }
+
+    .ct-row input[type="number"]::-webkit-inner-spin-button,
+    .ct-row input[type="number"]::-webkit-outer-spin-button {
+      opacity: 1;
+    }
+
+    .ct-row textarea:focus,
+    .ct-row input[type="number"]:focus {
+      outline: none;
+      border-color: rgba(0, 122, 255, 0.6);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+    }
+
+    .ct-task-strip {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      padding: 4px 0;
+    }
+
+    .ct-task-strip::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .ct-task-strip::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 99px;
+    }
+
+    .ct-task-strip .task-thumb {
+      width: 40px;
+      height: 40px;
+      background: #fcf9ef;
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      padding: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .ct-task-strip .task-thumb[aria-pressed="true"] {
+      border-color: #d1ad4d;
+      box-shadow: 0 0 0 2px rgba(209, 173, 77, 0.35);
+    }
+
+    .ct-task-strip .task-thumb:hover {
+      transform: scale(1.05);
+    }
+
+    .ct-task-strip .task-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      background: #fcf9ef;
+    }
+
+    .ct-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      border: 1px solid transparent;
+      font-family: inherit;
+      text-decoration: none;
+      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .ct-btn:active {
+      transform: scale(0.98);
+    }
+
+    .ct-btn-ghost {
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.9);
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+
+    .ct-btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .ct-btn-primary {
+      background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%);
+      color: #000;
+      flex: 1;
+      min-width: 160px;
+      box-shadow: 0 6px 18px rgba(255, 149, 0, 0.32);
+    }
+
+    .ct-btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 26px rgba(255, 149, 0, 0.4);
+    }
+
+    .ct-btn-primary:disabled {
+      opacity: 0.7;
+      cursor: progress;
+      transform: none;
+    }
+
+    .ct-hint {
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.45);
+      margin-top: 2px;
+    }
+
+    /* Beim Capture: DOM-Elemente ausblenden, die html2canvas/html-to-image Probleme machen */
+    .is-capturing .shield-blur {
+      display: none !important;
+    }
+    .is-capturing .shield-video-badge {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+    /* Animationen für Screenshots anhalten, damit es scharf gerendert wird */
+    .is-capturing .shield-lock-hero-icon::after,
+    .is-capturing .shield-unlock-action,
+    .is-capturing .shield-unlock-arrow,
+    .is-capturing .shield-scan-delta {
+      animation: none !important;
+    }
+
+    /* ────────────────────────────────────────────────────────────────
+     * Story-Telling im Shield (integrierter, kein aufdringliches CTA):
+     *   ▶ Video-Badge  → zeigt „Video-Task"
+     *   Looksmax-Chips → zeigt „Face-Workouts, verbessern Aussehen"
+     *   App-Footer     → subtiler App-Store-Hinweis im iOS-Look
+     * ──────────────────────────────────────────────────────────────── */
+
+    .shield-hero-frame {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--s-gap-icon-title);
+    }
+
+    .shield-hero-frame .shield-icon-wrap {
+      margin-bottom: 0;
+    }
+
+    .shield-video-badge {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 9px 4px 7px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.82);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .shield-video-badge svg {
+      width: 9px;
+      height: 9px;
+      fill: #fff;
+    }
+
+    /* Looksmax-Impact-Chips: gold, dezent, sagt „Tasks verbessern dein Gesicht" */
+    .shield-looksmax-row {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 0 0 12px;
+      max-width: 300px;
+    }
+
+    .shield-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(209, 173, 77, 0.14) 0%, rgba(209, 173, 77, 0.06) 100%);
+      border: 1px solid rgba(209, 173, 77, 0.35);
+      color: #8a6a16;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .shield-chip-plus {
+      font-weight: 800;
+      color: #a98521;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Shield-App-Footer entfernt — App-Store-Card über der Scan-Card erzählt die gleiche Story */
+
+
+    @media (max-width: 640px) {
+      .phone-mockup {
+        transform: scale(calc((100vw - 32px) / 600));
+        transform-origin: top center;
+        margin-bottom: calc(-800px * (1 - (100vw - 32px) / 600));
+      }
+    }
+
+    .shield-blur {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.28);
+      backdrop-filter: saturate(1.8) blur(48px);
+      -webkit-backdrop-filter: saturate(1.8) blur(48px);
+      pointer-events: none;
+    }
+
+    .shield-tint {
+      position: absolute;
+      inset: 0;
+      background: var(--cream-hex);
+      opacity: 0.82;
+      pointer-events: none;
+    }
+
+    /* Task-Thumbs werden jetzt in den Clipper-Controls gerendert; Styling dort */
+
+    .shield-stack {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 4px var(--s-h-margin) 18px;
+      min-height: 0;
+    }
+
+    /* Hero-Icon: typ. kompakte Shield-Größe auf dem Phone (~120–132pt) */
+    .shield-icon-wrap {
+      width: min(38vw, var(--s-icon-max));
+      height: min(38vw, var(--s-icon-max));
+      max-height: 18vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--s-gap-icon-title);
+      background: var(--cream-hex);
+      border-radius: 22%;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(0, 0, 0, 0.03);
+    }
+
+    .shield-icon-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center center;
+      display: block;
+      background-color: var(--cream-hex);
+    }
+
+    /* Wie fallback „Unlock Task“ + gewählter Task-Name (ShieldConfigurationExtension) */
+    .shield-title-block {
+      text-align: center;
+      max-width: 300px;
+      margin-bottom: var(--s-gap-title-sub);
+    }
+
+    .shield-title-unlock {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 0 0 4px;
+      line-height: 1.2;
+    }
+
+    .shield-title-name {
+      font-size: clamp(26px, 5.6vw, 32px);
+      font-weight: 900;
+      letter-spacing: -0.035em;
+      line-height: 1.08;
+      margin: 0;
+      color: var(--title);
+    }
+
+    /* Untertitel: textSub */
+    .shield-sub {
+      font-size: clamp(14px, 3.8vw, 16px);
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      line-height: 1.35;
+      text-align: center;
+      color: var(--text-sub);
+      max-width: 300px;
+      padding: 0;
+      margin-bottom: var(--s-gap-sub-btns);
+    }
+
+    .shield-buttons {
+      width: 100%;
+      max-width: 100%;
+      padding: 0;
+      margin-top: 0;
+    }
+
+    /* ============================================================
+       HERO LOCK BANNER — "TIKTOK BLOCKED" (Eye #1, emotional hit)
+       ============================================================ */
+    .shield-lock-hero {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      width: 100%;
+      max-width: 380px;
+      margin: 0 auto 12px;
+      padding: 14px 22px;
+      border-radius: 20px;
+      background:
+        radial-gradient(100% 160% at 50% 0%, rgba(255, 45, 85, 0.22) 0%, transparent 65%),
+        linear-gradient(135deg, rgba(255, 245, 246, 0.98) 0%, rgba(255, 236, 239, 0.95) 100%);
+      border: 1.5px solid rgba(255, 45, 85, 0.32);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.7) inset,
+        0 8px 24px rgba(255, 45, 85, 0.18),
+        0 2px 6px rgba(255, 45, 85, 0.08);
+      position: relative;
+      overflow: visible;
+    }
+
+    .shield-lock-hero-icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ff2d55;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .shield-lock-hero-icon svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 2px 4px rgba(255, 45, 85, 0.35));
+      position: relative;
+      z-index: 1;
+    }
+
+    .shield-lock-hero-icon::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      background: rgba(255, 45, 85, 0.28);
+      animation: shield-lock-pulse 1.8s ease-out infinite;
+      z-index: 0;
+    }
+
+    @keyframes shield-lock-pulse {
+      0%   { transform: scale(0.75); opacity: 0.8; }
+      80%  { transform: scale(1.6);  opacity: 0;   }
+      100% { transform: scale(1.6);  opacity: 0;   }
+    }
+
+    .shield-lock-hero-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      line-height: 1;
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+    }
+
+    .shield-lock-hero-top {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(60, 60, 65, 0.75);
+      margin-bottom: 4px;
+    }
+
+    .shield-lock-hero-bottom {
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -0.025em;
+      background: linear-gradient(135deg, #ff2d55 0%, #e11d48 55%, #ff3b30 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.6));
+    }
+
+    /* ============================================================
+       UNLOCK ACTION PILL — "↓ UNLOCK ↓" (Eye #2, dopamine action)
+       ============================================================ */
+    .shield-unlock-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 9px 20px;
+      margin: 0 auto 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #e8c25a 0%, #d1ad4d 50%, #b8913a 100%);
+      color: #0a0a0a;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.55) inset,
+        0 0 0 1.5px rgba(209, 173, 77, 0.55),
+        0 8px 20px rgba(209, 173, 77, 0.45);
+      line-height: 1;
+      white-space: nowrap;
+      animation: shield-unlock-glow 2.6s ease-in-out infinite;
+    }
+
+    .shield-unlock-arrow {
+      display: inline-block;
+      font-size: 15px;
+      line-height: 1;
+      animation: shield-unlock-arrow-bounce 1.2s ease-in-out infinite;
+    }
+
+    .shield-unlock-arrow:last-child {
+      animation-delay: 0.15s;
+    }
+
+    @keyframes shield-unlock-arrow-bounce {
+      0%, 100% { transform: translateY(-1px); }
+      50%      { transform: translateY(3px);  }
+    }
+
+    @keyframes shield-unlock-glow {
+      0%, 100% {
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.55) inset,
+          0 0 0 1.5px rgba(209, 173, 77, 0.55),
+          0 8px 20px rgba(209, 173, 77, 0.45);
+      }
+      50% {
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.55) inset,
+          0 0 0 1.5px rgba(209, 173, 77, 0.75),
+          0 10px 28px rgba(209, 173, 77, 0.65);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .shield-lock-hero-icon::after,
+      .shield-unlock-action,
+      .shield-unlock-arrow {
+        animation: none !important;
+      }
+    }
+
+    /**
+     * Scan — wie ResultsView: rundes Foto, Score links, Potential rechts, KI via /api/face-analyze.
+     */
+    .shield-scan-wrap {
+      width: 100%;
+    }
+
+    .shield-scan-wrap.is-analyzing .shield-scan-hit {
+      pointer-events: none;
+      opacity: 0.92;
+    }
+
+    .shield-scan-file {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .shield-scan-hit {
+      display: block;
+      width: 100%;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .shield-scan-hit:active .shield-scan-mock:not(.is-analyzing-ui) {
+      transform: scale(0.992);
+    }
+
+    /* Hero-Scan-Karte: gross, catchy, cream/gold — erzählt „Score jetzt → Potential" */
+    .shield-scan-mock {
+      position: relative;
+      width: 100%;
+      border-radius: 20px;
+      background:
+        radial-gradient(120% 180% at 100% 0%, rgba(209, 173, 77, 0.18) 0%, rgba(255, 255, 255, 0.0) 55%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(252, 249, 239, 0.95) 100%);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.9) inset,
+        0 8px 24px rgba(209, 173, 77, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(209, 173, 77, 0.28);
+      transition: transform 0.12s ease, opacity 0.12s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      overflow: hidden;
+    }
+
+    .shield-scan-mock.is-analyzing-ui .shield-scan-avatar-inner {
+      opacity: 0.65;
+    }
+
+    .shield-scan-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 14px 14px;
+      min-height: 80px;
+      text-align: center;
+    }
+
+    .shield-scan-empty[hidden] {
+      display: none !important;
+    }
+
+    .shield-scan-placeholder-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--title);
+    }
+
+    .shield-scan-placeholder-hint {
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1.35;
+      color: var(--text-sub);
+      max-width: 240px;
+    }
+
+    /* 3-Spalten-Layout: Score  ←  [Avatar]  →  Potential */
+    .shield-scan-filled {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 14px 14px;
+    }
+
+    .shield-scan-filled[hidden] {
+      display: none !important;
+    }
+
+    .shield-scan-side {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-width: 0;
+      gap: 2px;
+    }
+
+    .shield-scan-side--left  { text-align: center; }
+    .shield-scan-side--right { text-align: center; }
+
+    /* Dezente Richtungspfeile → erzählen „jetzt → Potential" (beide zeigen rechts) */
+    .shield-scan-side::after {
+      content: '';
+      position: absolute;
+      top: calc(50% + 4px);
+      width: 0;
+      height: 0;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+      border-left: 8px solid rgba(209, 173, 77, 0.75);
+      transform: translateY(-50%);
+      opacity: 0.85;
+      pointer-events: none;
+      filter: drop-shadow(0 1px 2px rgba(209, 173, 77, 0.25));
+    }
+    .shield-scan-side--left::after  { right: -9px; }
+    .shield-scan-side--right::after { left: -9px; }
+
+    .shield-scan-avatar-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    /* Avatar-Ring: der Hero in der Mitte */
+    .shield-scan-ring {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      padding: 3.5px;
+      box-sizing: border-box;
+      filter:
+        drop-shadow(0 6px 14px rgba(209, 173, 77, 0.28))
+        drop-shadow(0 2px 6px rgba(0, 0, 0, 0.12));
+      transition: background 0.35s ease;
+    }
+
+    .shield-scan-avatar-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.06);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9) inset;
+      transition: opacity 0.2s ease;
+    }
+
+    .shield-scan-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center;
+      display: block;
+    }
+
+    /* Score/Potential-Bereich: groß, bold, hero */
+    .shield-scan-score-hero {
+      flex: 1;
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      position: static;
+    }
+
+    .shield-scan-score-hero::before {
+      display: none;
+    }
+
+    .shield-scan-sp-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 0 0 8px;
+    }
+
+    .shield-scan-sp-col {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .shield-scan-sp-right {
+      text-align: right;
+      align-items: flex-end;
+      position: relative;
+    }
+
+    .shield-scan-sp-label {
+      display: block;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(115, 115, 125, 0.9);
+      margin-bottom: 2px;
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+    }
+
+    .shield-scan-sp-label.potential {
+      color: #a98521;
+    }
+
+    /* Score-Zahl: HUGE, bold — der Clipper sieht sie auf 1m Abstand */
+    .shield-scan-sp-num {
+      font-size: 34px;
+      font-weight: 900;
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+      display: block;
+      min-height: 1em;
+      color: #1a1a1e;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .shield-scan-sp-num.is-gradient {
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      background-image: linear-gradient(135deg, #ff9500 0%, #d1ad4d 50%, #ff2d55 100%) !important;
+      filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.5));
+    }
+
+    /* „+Δ POTENTIAL" Delta-Badge: zentriert über der Potential-Spalte, schwebend */
+    .shield-scan-delta {
+      position: absolute;
+      top: -2px;
+      left: 50%;
+      transform: translate(-50%, -100%);
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #ff9500 0%, #ff2d55 100%);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      box-shadow: 0 4px 12px rgba(255, 45, 85, 0.32);
+      white-space: nowrap;
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+      animation: shield-delta-float 2.2s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .shield-scan-delta[hidden] {
+      display: none !important;
+    }
+
+    @keyframes shield-delta-float {
+      0%, 100% { transform: translate(-50%, -100%); }
+      50%      { transform: translate(-50%, calc(-100% - 3px)); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .shield-scan-delta { animation: none; }
+    }
+
+    /* Arrow-Chevron zwischen Score + Potential: größer, Gold-Tint */
+    .shield-scan-sp-chev {
+      flex-shrink: 0;
+      padding: 0;
+      align-self: center;
+      font-size: 28px;
+      font-weight: 300;
+      color: rgba(209, 173, 77, 0.7);
+      line-height: 1;
+      margin-top: 12px;
+    }
+
+    .shield-scan-traj {
+      padding: 6px 0 0;
+      position: relative;
+      z-index: 1;
+      grid-column: 1 / -1;
+    }
+
+    .shield-scan-status {
+      grid-column: 1 / -1;
+    }
+
+    .shield-scan-traj[hidden] {
+      display: none !important;
+    }
+
+    .shield-scan-traj-track {
+      position: relative;
+      height: 10px;
+      margin-bottom: 0;
+    }
+
+    .shield-scan-traj-track::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.08);
+      z-index: 0;
+    }
+
+    .shield-scan-traj-fill {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 5px;
+      border-radius: 999px;
+      max-width: 100%;
+      z-index: 1;
+      box-shadow: 0 0 12px rgba(209, 173, 77, 0.35);
+    }
+
+    .shield-scan-traj-dot {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 12px;
+      height: 12px;
+      z-index: 2;
+      border-radius: 50%;
+      box-sizing: border-box;
+      background:
+        linear-gradient(#fff, #fff) padding-box,
+        linear-gradient(135deg, rgb(51, 199, 89), rgb(89, 235, 166), rgb(99, 230, 190)) border-box;
+      border: 2px solid transparent;
+      box-shadow: 0 2px 6px rgba(51, 199, 89, 0.45), 0 0 0 3px rgba(51, 199, 89, 0.1);
+    }
+
+    /* App-Store-CTA-Slot: kompakt & oben im Shield */
+    .shield-appstore-slot {
+      position: relative;
+      display: block;
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      margin: 0 auto 12px;
+      text-decoration: none;
+      box-shadow:
+        0 6px 16px rgba(0, 122, 255, 0.16),
+        0 2px 5px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 122, 255, 0.2);
+      background: #000;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Kompakte Variante: schmaler Footprint, wirkt wie ein Pill-Banner */
+    .shield-appstore-slot--compact {
+      max-width: 260px;
+      border-radius: 12px;
+    }
+
+    .shield-appstore-slot:hover,
+    .shield-appstore-slot:active {
+      transform: translateY(-1px);
+      box-shadow:
+        0 10px 22px rgba(0, 122, 255, 0.24),
+        0 4px 10px rgba(0, 0, 0, 0.18);
+    }
+
+    .shield-appstore-slot img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* „Tap to install"-Puls-Dot oben rechts auf der Karte */
+    .shield-appstore-pulse {
+      position: absolute;
+      top: 6px;
+      right: 7px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px 2px 5px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      color: #fff;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      line-height: 1;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .shield-appstore-slot--compact .shield-appstore-pulse::before {
+      width: 5px;
+      height: 5px;
+    }
+
+    .shield-appstore-pulse::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #34c759;
+      box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.6);
+      animation: shield-appstore-pulse 1.8s ease-out infinite;
+    }
+
+    @keyframes shield-appstore-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.6); }
+      70%  { box-shadow: 0 0 0 10px rgba(52, 199, 89, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
+    }
+
+    .shield-appstore-eyebrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 0 0 6px;
+      font-size: 9.5px;
+      font-weight: 900;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(115, 115, 125, 0.9);
+    }
+
+    .shield-appstore-eyebrow .dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--gold);
+    }
+
+    .shield-appstore-eyebrow .accent {
+      color: var(--title);
+      font-weight: 900;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .shield-appstore-pulse::before { animation: none; }
+    }
+
+    .shield-scan-status {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-sub);
+      text-align: center;
+      padding: 0 12px 8px;
+      margin: 0;
+      min-height: 0;
+    }
+
+    .shield-scan-status:empty {
+      padding: 0;
+    }
+
+    .shield-scan-source-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(0, 122, 255, 0.12);
+      color: #007aff;
+      margin: 0;
+    }
+
+    .shield-scan-source-badge.is-demo {
+      background: rgba(255, 149, 0, 0.14);
+      color: #c45c00;
+    }
+
+    /* Secondary: unter Primary, typ. ~12pt Abstand */
+    .shield-secondary {
+      display: block;
+      width: 100%;
+      margin-top: var(--s-gap-primary-secondary);
+      appearance: none;
+      border: none;
+      background: none;
+      color: var(--text-sub);
+      font-family: inherit;
+      font-size: 17px;
+      font-weight: 400;
+      padding: 8px 12px;
+      min-height: 44px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .shield-secondary:active {
+      opacity: 0.55;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <!-- Clipper-Screenshot-Target: iPhone-Mockup mit Status-Bar & Dynamic Island -->
+    <div class="phone-mockup" id="phone-mockup" aria-label="iPhone Mockup mit Limitless Shield">
+      <div class="phone-screen">
+        <div class="phone-island" aria-hidden="true"></div>
+        <div class="phone-status-bar" aria-hidden="true">
+          <span class="phone-time" id="phone-time">9:41</span>
+          <div class="phone-icons">
+            <!-- Signal bars -->
+            <svg viewBox="0 0 18 12" width="18" height="12" aria-hidden="true">
+              <rect x="0"  y="8" width="3" height="4"  rx="0.8" />
+              <rect x="5"  y="6" width="3" height="6"  rx="0.8" />
+              <rect x="10" y="3" width="3" height="9"  rx="0.8" />
+              <rect x="15" y="0" width="3" height="12" rx="0.8" />
+            </svg>
+            <!-- Wi-Fi -->
+            <svg viewBox="0 0 16 12" width="16" height="12" aria-hidden="true">
+              <path d="M8 11.2a1.1 1.1 0 110-2.2 1.1 1.1 0 010 2.2zM3.6 7.4a6.3 6.3 0 018.8 0l-1.3 1.3a4.4 4.4 0 00-6.2 0L3.6 7.4zm-2.3-2.3a9.6 9.6 0 0113.4 0l-1.3 1.3a7.8 7.8 0 00-10.8 0L1.3 5.1z"/>
+            </svg>
+            <!-- Battery -->
+            <span class="phone-battery" aria-hidden="true">
+              <span class="phone-battery-fill"></span>
+            </span>
+          </div>
+        </div>
+
+        <div class="shield-root" id="shield-root">
+          <div class="shield-tint" aria-hidden="true"></div>
+          <div class="shield-blur" aria-hidden="true"></div>
+
+          <div class="shield-stack">
+            <!-- Eye #1: HERO LOCK BANNER — sofort erkennbar, dass TikTok blockiert ist -->
+            <div class="shield-lock-hero" role="alert" aria-label="TikTok is Blocked">
+              <div class="shield-lock-hero-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="4.5" y="10.5" width="15" height="11" rx="2.4"
+                        stroke="currentColor" stroke-width="2.4"
+                        fill="rgba(255,45,85,0.10)" />
+                  <path d="M7.5 10.5V7a4.5 4.5 0 1 1 9 0v3.5"
+                        stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+                  <circle cx="12" cy="15.5" r="1.4" fill="currentColor" />
+                  <path d="M12 16.5V18.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+              </div>
+              <div class="shield-lock-hero-text">
+                <span class="shield-lock-hero-top">TikTok is</span>
+                <span class="shield-lock-hero-bottom">BLOCKED</span>
+              </div>
+            </div>
+
+            <!-- Eye #2: UNLOCK ACTION PILL — klare Call-to-Action für den Viewer -->
+            <div class="shield-unlock-action" aria-label="Unlock with task below">
+              <span class="shield-unlock-arrow" aria-hidden="true">▼</span>
+              <span>Do Task to Unlock</span>
+              <span class="shield-unlock-arrow" aria-hidden="true">▼</span>
+            </div>
+
+            <div class="shield-hero-frame">
+              <div class="shield-icon-wrap" id="hero-icon" aria-hidden="true"></div>
+              <span class="shield-video-badge" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5z"/></svg>
+                <span id="task-seconds">30s</span>
+              </span>
+            </div>
+
+            <div class="shield-title-block">
+              <p class="shield-title-name" id="task-name">Drink Water</p>
+            </div>
+
+            <div class="shield-looksmax-row" id="task-chips" aria-label="Looksmax Impact"></div>
+
+            <p class="shield-sub" id="task-sub" hidden>Looksmax unlock · Do 1 task to open Instagram</p>
+
+            <div class="shield-buttons">
+              <div class="shield-scan-wrap" id="shield-scan-wrap">
+                <input type="file" id="scan-file" class="shield-scan-file" accept="image/*" />
+                <label for="scan-file" class="shield-scan-hit" id="shield-scan-hit">
+                  <div class="shield-scan-mock" id="scan-mock">
+                    <div class="shield-scan-empty" id="scan-empty">
+                      <span class="shield-scan-placeholder-title">Your face. Your score.</span>
+                      <span class="shield-scan-placeholder-hint">Foto auswählen — KI berechnet Score &amp; Looksmax-Potential</span>
+                    </div>
+                    <div class="shield-scan-filled" id="scan-filled" hidden>
+                      <div class="shield-scan-side shield-scan-side--left">
+                        <span class="shield-scan-sp-label">Score</span>
+                        <span class="shield-scan-sp-num" id="score-val">—</span>
+                      </div>
+                      <div class="shield-scan-avatar-row">
+                        <div class="shield-scan-ring" id="scan-ring">
+                          <div class="shield-scan-avatar-inner">
+                            <img id="scan-preview-img" class="shield-scan-img" alt="" width="256" height="256" decoding="async" />
+                          </div>
+                        </div>
+                      </div>
+                      <div class="shield-scan-side shield-scan-side--right">
+                        <span class="shield-scan-delta" id="score-delta" hidden>+—</span>
+                        <span class="shield-scan-sp-label potential">Potential</span>
+                        <span class="shield-scan-sp-num" id="potential-val">—</span>
+                      </div>
+                      <div class="shield-scan-traj" id="scan-traj" hidden>
+                        <div class="shield-scan-traj-track">
+                          <div class="shield-scan-traj-fill" id="traj-fill"></div>
+                          <div class="shield-scan-traj-dot" id="traj-dot"></div>
+                        </div>
+                      </div>
+                      <p class="shield-scan-status" id="scan-status"></p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Subtle App-Store CTA als Footer: zeigt App-Verfügbarkeit ohne die Top-Story zu stören -->
+              <a class="shield-appstore-slot shield-appstore-slot--compact"
+                 href="https://apps.apple.com/app/limitless"
+                 target="_blank"
+                 rel="noopener"
+                 aria-label="Limitless — LooksMax App Block auf dem App Store herunterladen">
+                <img src="assets/app-store-card.png"
+                     alt="Limitless – LooksMax App Block · App Store"
+                     width="1024" height="410"
+                     loading="eager" decoding="async" />
+                <span class="shield-appstore-pulse" aria-hidden="true">Tap</span>
+              </a>
+
+              <button type="button" class="shield-secondary" id="btn-close">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clipper Studio: nicht Teil des Screenshots -->
+    <aside class="clipper-controls" aria-label="Clipper Studio">
+      <div class="ct-header">
+        <span class="ct-title">Clipper Studio</span>
+        <span class="ct-sub">Anpassen &amp; als PNG herunterladen</span>
+      </div>
+
+      <div class="ct-row">
+        <span class="ct-label">Task</span>
+        <div class="ct-task-strip" id="task-strip" role="tablist" aria-label="Aufgabe wählen">
+          <div id="task-picker" style="display:contents"></div>
+        </div>
+      </div>
+
+      <div class="ct-row">
+        <label class="ct-label" for="subtitle-input">Untertitel</label>
+        <textarea
+          id="subtitle-input"
+          maxlength="300"
+          spellcheck="true"
+          rows="2"
+          placeholder="Looksmax unlock · Do 1 task to open Instagram"
+        >Looksmax unlock · Do 1 task to open Instagram</textarea>
+      </div>
+
+      <div class="ct-row ct-row-split">
+        <div>
+          <label class="ct-label" for="score-input">Score (0-99)</label>
+          <input type="number" id="score-input" min="0" max="99" step="1" placeholder="z. B. 72" />
+        </div>
+        <div>
+          <label class="ct-label" for="potential-input">Potential (0-100)</label>
+          <input type="number" id="potential-input" min="0" max="100" step="1" placeholder="z. B. 86" />
+        </div>
+      </div>
+      <p class="ct-hint">Scores leer lassen → KI-Analyse vom Foto. Manuell setzen → überschreibt Anzeige.</p>
+
+      <div class="ct-row ct-row-split">
+        <div>
+          <label class="ct-label" for="phone-time-input">Uhrzeit</label>
+          <input type="text" id="phone-time-input" placeholder="9:41" value="9:41"
+                 style="width:100%;min-height:40px;padding:10px 12px;background:rgba(0,0,0,0.3);color:#fff;font-family:inherit;font-size:13px;font-weight:500;border:1px solid rgba(255,255,255,0.1);border-radius:10px;" />
+        </div>
+        <div>
+          <label class="ct-label">&nbsp;</label>
+          <label for="scan-file" class="ct-btn ct-btn-ghost" style="height:40px;">Foto hochladen</label>
+        </div>
+      </div>
+
+      <div class="ct-row ct-row-actions">
+        <button type="button" class="ct-btn ct-btn-primary" id="btn-download-png">PNG herunterladen</button>
+      </div>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js" crossorigin="anonymous"></script>
+
+  <script>
+(function () {
+  var IMG_BASE = 'shield-images/';
+  var STORAGE_KEY = 'limitlessShieldSubtitle';
+  var STORAGE_KEY_SCAN = 'limitlessShieldScanImage';
+  var STORAGE_KEY_SCAN_SCORES = 'limitlessShieldScanScores';
+  var DEFAULT_SUB = 'Looksmax unlock · Do 1 task to open Instagram';
+
+  /**
+   * Jede Task hat:
+   *   seconds → zeigt Video-Dauer in Badge (z. B. „30 s")
+   *   impact  → Looksmax-Chips unter Task-Name (z. B. „Jaw +4")
+   * Das erzählt dem Viewer auf einen Blick: Video-Task → Looksmax.
+   */
+  var TASKS = [
+    { name: 'Drink Water',      accent: '#5AC8D5', file: 'drink-water.png',      seconds: 10, impact: [['Skin', 3], ['Glow', 2]] },
+    { name: 'Jaw Exercise',     accent: '#FF9500', file: 'jaw-exercise.png',     seconds: 30, impact: [['Jaw', 4], ['Mewing', 3]] },
+    { name: 'Eyebrow Raises',   accent: '#FF2D55', file: 'eyebrow-raises.png',   seconds: 15, impact: [['Eyes', 3], ['Symmetry', 2]] },
+    { name: 'Neck Stretches',   accent: '#00C7BE', file: 'neck-stretches.png',   seconds: 20, impact: [['Jaw', 3], ['Posture', 2]] },
+    { name: 'Fish Face',        accent: '#5856D6', file: 'fish-face.png',        seconds: 25, impact: [['Cheeks', 3], ['Jaw', 2]] },
+    { name: 'Cheek Lifts',      accent: '#FFCC00', file: 'cheek-lifts.png',      seconds: 20, impact: [['Cheeks', 4], ['Glow', 2]] },
+    { name: 'Jaw Side-to-Side', accent: '#FF9933', file: 'jaw-side-to-side.png', seconds: 25, impact: [['Jaw', 4], ['Mewing', 2]] },
+    { name: 'Head Rotations',   accent: '#66B2FF', file: 'head-rotations.png',   seconds: 30, impact: [['Neck', 3], ['Posture', 3]] },
+    { name: 'O-Shape Mouth',    accent: '#CC66CC', file: 'oshape-mouth.png',     seconds: 15, impact: [['Lips', 3], ['Cheeks', 2]] }
+  ];
+
+  function imgTag(file, className, alt) {
+    return '<img class="' + className + '" src="' + IMG_BASE + file + '" alt="' + (alt || '') + '" width="512" height="512" decoding="async" loading="eager" />';
+  }
+
+  /** ShieldConfigurationExtension.isLikelyShieldBackgroundPixel — 1:1 */
+  function isLikelyShieldBackgroundPixel(r, g, b, a) {
+    if (a < 12) return true;
+    var sum = r + g + b;
+    if (sum >= 735) return true;
+    if (sum >= 680) {
+      var dr = Math.abs(r - g);
+      var dg = Math.abs(g - b);
+      return dr < 18 && dg < 18;
+    }
+    return false;
+  }
+
+  /** flattenImageBackgroundToShieldCream — RGB wie shieldCreamRGBU8() */
+  var CREAM_R = 252;
+  var CREAM_G = 249;
+  var CREAM_B = 239;
+
+  /**
+   * Ersetzt helle/weiße Hintergrundpixel durch exakt Cream (#fcf9ef), wie im App-Bundle.
+   * @param {HTMLImageElement} img
+   * @param {number} maxDim max. Kantenlänge (Performance)
+   * @param {function(string|null)} done data URL oder null bei Fehler
+   */
+  function flattenPngToShieldCream(img, maxDim, done) {
+    var w0 = img.naturalWidth;
+    var h0 = img.naturalHeight;
+    if (!w0 || !h0) {
+      done(null);
+      return;
+    }
+    var scale = Math.min(1, maxDim / Math.max(w0, h0));
+    var cw = Math.max(1, Math.round(w0 * scale));
+    var ch = Math.max(1, Math.round(h0 * scale));
+    var canvas = document.createElement('canvas');
+    canvas.width = cw;
+    canvas.height = ch;
+    var ctx = canvas.getContext('2d');
+    if (!ctx) {
+      done(null);
+      return;
+    }
+    try {
+      ctx.drawImage(img, 0, 0, cw, ch);
+      var imageData = ctx.getImageData(0, 0, cw, ch);
+      var d = imageData.data;
+      for (var i = 0; i < d.length; i += 4) {
+        var r = d[i];
+        var g = d[i + 1];
+        var b = d[i + 2];
+        var a = d[i + 3];
+        if (isLikelyShieldBackgroundPixel(r, g, b, a)) {
+          d[i] = CREAM_R;
+          d[i + 1] = CREAM_G;
+          d[i + 2] = CREAM_B;
+          d[i + 3] = 255;
+        }
+      }
+      ctx.putImageData(imageData, 0, 0);
+      done(canvas.toDataURL('image/png'));
+    } catch (e) {
+      done(null);
+    }
+  }
+
+  function applyShieldCreamToImage(img, maxDim) {
+    function run() {
+      flattenPngToShieldCream(img, maxDim, function (dataUrl) {
+        if (dataUrl) img.src = dataUrl;
+      });
+    }
+    if (img.complete && img.naturalWidth) run();
+    else img.addEventListener('load', run, { once: true });
+  }
+
+  var picker = document.getElementById('task-picker');
+  var nameEl = document.getElementById('task-name');
+  var subEl = document.getElementById('task-sub');
+  var subtitleInput = document.getElementById('subtitle-input');
+  var heroEl = document.getElementById('hero-icon');
+
+  function syncSubtitleFromInput() {
+    var t = subtitleInput.value.trim() || DEFAULT_SUB;
+    subEl.textContent = t;
+    try {
+      localStorage.setItem(STORAGE_KEY, subtitleInput.value);
+    } catch (e) {}
+  }
+
+  try {
+    var saved = localStorage.getItem(STORAGE_KEY);
+    if (saved != null && saved !== '') {
+      subtitleInput.value = saved;
+    }
+  } catch (e) {}
+  syncSubtitleFromInput();
+  subtitleInput.addEventListener('input', syncSubtitleFromInput);
+  subtitleInput.addEventListener('change', syncSubtitleFromInput);
+
+  TASKS.forEach(function (task, i) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'task-thumb';
+    btn.style.color = task.accent;
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-label', task.name);
+    btn.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+    btn.innerHTML = imgTag(task.file, 'task-thumb-img', '');
+    var timg = btn.querySelector('img');
+    applyShieldCreamToImage(timg, 128);
+    btn.addEventListener('click', function () {
+      selectTask(i);
+    });
+    picker.appendChild(btn);
+  });
+
+  var taskSecondsEl = document.getElementById('task-seconds');
+  var taskChipsEl   = document.getElementById('task-chips');
+
+  function renderChips(impact) {
+    if (!taskChipsEl) return;
+    taskChipsEl.innerHTML = '';
+    if (!impact || !impact.length) return;
+    impact.forEach(function (pair) {
+      var chip = document.createElement('span');
+      chip.className = 'shield-chip';
+      chip.innerHTML = '<span>' + pair[0] + '</span><span class="shield-chip-plus">+' + pair[1] + '</span>';
+      taskChipsEl.appendChild(chip);
+    });
+  }
+
+  function selectTask(index) {
+    var task = TASKS[index];
+    document.querySelectorAll('.task-thumb').forEach(function (b, j) {
+      b.setAttribute('aria-pressed', j === index ? 'true' : 'false');
+    });
+    nameEl.textContent = task.name;
+    heroEl.innerHTML = imgTag(task.file, 'shield-hero-img', '');
+    var heroImg = heroEl.querySelector('img');
+    applyShieldCreamToImage(heroImg, 768);
+    if (taskSecondsEl) taskSecondsEl.textContent = (task.seconds || 30) + 's';
+    renderChips(task.impact);
+  }
+
+  document.getElementById('btn-close').addEventListener('click', function (e) {
+    e.preventDefault();
+  });
+
+  var scanFile = document.getElementById('scan-file');
+  var scanWrap = document.getElementById('shield-scan-wrap');
+  var scanMock = document.getElementById('scan-mock');
+  var scanEmpty = document.getElementById('scan-empty');
+  var scanFilled = document.getElementById('scan-filled');
+  var scanImg = document.getElementById('scan-preview-img');
+  var scanRing = document.getElementById('scan-ring');
+  var scoreEl = document.getElementById('score-val');
+  var potentialEl = document.getElementById('potential-val');
+  var scanStatus = document.getElementById('scan-status');
+  var scanTraj = document.getElementById('scan-traj');
+  var trajFill = document.getElementById('traj-fill');
+  var trajDot = document.getElementById('traj-dot');
+
+  var analyzeGen = 0;
+
+  function limitlessScoreTierRgb(score) {
+    var t = Math.max(0, Math.min(100, score)) / 100;
+    var r = Math.round((1 * (1 - t) + 0 * t) * 255);
+    var g = Math.round((0.58 * (1 - t) + 0.48 * t) * 255);
+    var b = Math.round((0 * (1 - t) + 1 * t) * 255);
+    return { r: r, g: g, b: b };
+  }
+
+  function scoreGradientCssDiagonal(score) {
+    var rgb = limitlessScoreTierRgb(score);
+    return (
+      'linear-gradient(135deg, rgb(' +
+      rgb.r +
+      ',' +
+      rgb.g +
+      ',' +
+      rgb.b +
+      ') 0%, rgba(' +
+      rgb.r +
+      ',' +
+      rgb.g +
+      ',' +
+      rgb.b +
+      ',0.7) 100%)'
+    );
+  }
+
+  var POTENTIAL_GRAD =
+    'linear-gradient(135deg, rgb(51, 199, 89) 0%, rgb(89, 235, 166) 45%, rgb(99, 230, 190) 100%)';
+
+  function trajectoryDotLeftPercent(potential) {
+    var pFrac = Math.min(100, Math.max(0, potential)) / 100;
+    var halfDotPct = 1.5;
+    return Math.min(100 - halfDotPct, Math.max(halfDotPct, pFrac * 100));
+  }
+
+  function num(v) {
+    if (v == null) return null;
+    if (typeof v === 'number' && !isNaN(v)) return v;
+    if (typeof v === 'string' && v.trim() !== '') {
+      var x = Number(v);
+      return isNaN(x) ? null : x;
+    }
+    return null;
+  }
+
+  function scoreClamp30_90(v) {
+    return Math.max(30, Math.min(90, Math.round(v)));
+  }
+
+  function applyDisplayCaps(overallRaw, potentialRaw) {
+    var overall = Math.min(99, Math.max(0, Math.round(overallRaw)));
+    var potential = Math.min(100, Math.max(0, Math.round(potentialRaw)));
+    potential = Math.max(potential, overall);
+    return { overall: overall, potential: potential };
+  }
+
+  function mapScoresFromAnalysisRecord(a) {
+    var overallRaw = num(a.overallScore);
+    if (overallRaw == null) {
+      var lm = num(a.looksmaxOverall);
+      if (lm != null) overallRaw = lm * 10;
+      else overallRaw = num(a.landmarkStructuralOverall) != null ? num(a.landmarkStructuralOverall) : 55;
+    }
+    overallRaw = scoreClamp30_90(overallRaw);
+    var potentialRaw = num(a.potentialScore);
+    if (potentialRaw == null) {
+      var lmp = num(a.looksmaxPotential);
+      if (lmp != null) {
+        potentialRaw = scoreClamp30_90(Math.round(lmp * 10));
+      } else {
+        potentialRaw = scoreClamp30_90(Math.max(overallRaw + 4, 58));
+      }
+    } else {
+      potentialRaw = scoreClamp30_90(potentialRaw);
+    }
+    potentialRaw = scoreClamp30_90(Math.max(potentialRaw, overallRaw));
+    return applyDisplayCaps(overallRaw, potentialRaw);
+  }
+
+  var SNAKE_TO_CAMEL = {
+    overall_score: 'overallScore',
+    potential_score: 'potentialScore',
+    landmark_structural_overall: 'landmarkStructuralOverall',
+    jawline_definition: 'jawlineDefinition',
+    water_retention: 'waterRetention',
+    facial_definition: 'facialDefinition',
+    facial_symmetry: 'facialSymmetry',
+    classical_ideal_score: 'classicalIdealScore',
+    eye_area: 'eyeArea',
+    cheekbone_definition: 'cheekboneDefinition',
+    chin_neck_definition: 'chinNeckDefinition',
+    forehead_smoothness: 'foreheadSmoothness',
+    midface_fullness: 'midfaceFullness',
+    nose_score: 'noseScore',
+    lip_score: 'lipScore',
+    jaw_shadow_index01: 'jawShadowIndex01',
+    cheek_shadow_index01: 'cheekShadowIndex01',
+    lighting_confidence01: 'lightingConfidence01',
+    definition_level: 'definitionLevel',
+    bloat_severity0to100: 'bloatSeverity0to100',
+    skin_quality30to90: 'skinQuality30to90',
+    looksmax_eye: 'looksmaxEye',
+    looksmax_jawline: 'looksmaxJawline',
+    looksmax_harmony: 'looksmaxHarmony',
+    looksmax_overall: 'looksmaxOverall',
+    looksmax_potential: 'looksmaxPotential',
+    pose_passed: 'posePassed',
+    yaw_deg: 'yawDeg',
+    pitch_deg: 'pitchDeg',
+    roll_deg: 'rollDeg',
+  };
+
+  function flattenKeys(obj) {
+    var out = {};
+    for (var k in obj) {
+      if (!Object.prototype.hasOwnProperty.call(obj, k)) continue;
+      var ck = SNAKE_TO_CAMEL[k] || k;
+      out[ck] = obj[k];
+    }
+    return out;
+  }
+
+  function numLike(v) {
+    if (typeof v === 'number' && !isNaN(v)) return true;
+    if (typeof v === 'string' && v.trim() !== '' && !isNaN(Number(v))) return true;
+    return false;
+  }
+
+  function extractAnalysisRecord(raw) {
+    if (raw == null || typeof raw !== 'object') return null;
+    var o = raw;
+    var inner = o.analysis;
+    if (inner == null && o.data != null && typeof o.data === 'object') {
+      inner = o.data.analysis;
+    }
+    if (typeof inner === 'string') {
+      try {
+        inner = JSON.parse(inner);
+      } catch (e) {
+        inner = null;
+      }
+    }
+    if (inner && typeof inner === 'object') {
+      return flattenKeys(inner);
+    }
+    if (numLike(o.overallScore) || numLike(o.potentialScore) || numLike(o.jawlineDefinition)) {
+      return flattenKeys(o);
+    }
+    return null;
+  }
+
+  function deriveDemoScoresFromFile(file) {
+    return file.slice(0, 65536).arrayBuffer().then(function (buf) {
+      var u8 = new Uint8Array(buf);
+      var h = 2166136261;
+      for (var i = 0; i < u8.length; i++) {
+        h ^= u8[i];
+        h = Math.imul(h, 16777619);
+      }
+      function rnd(shift) {
+        return scoreClamp30_90(32 + (((h >>> shift) & 0xff) % 52));
+      }
+      var overallRaw = rnd(0);
+      var potentialRaw = scoreClamp30_90(overallRaw + 2 + ((h >>> 4) & 0x0f));
+      potentialRaw = scoreClamp30_90(Math.max(potentialRaw, overallRaw));
+      return applyDisplayCaps(overallRaw, potentialRaw);
+    });
+  }
+
+  function sleep(ms) {
+    return new Promise(function (resolve) {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  function shouldRetryHttpStatus(status) {
+    return status >= 500 || status === 429 || status === 408;
+  }
+
+  function readFileAsBase64Data(file) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () {
+        var x = r.result;
+        if (typeof x !== 'string') {
+          reject(new Error('read_failed'));
+          return;
+        }
+        var comma = x.indexOf(',');
+        resolve(comma >= 0 ? x.slice(comma + 1) : x);
+      };
+      r.onerror = function () {
+        reject(r.error);
+      };
+      r.readAsDataURL(file);
+    });
+  }
+
+  function analyzeImageFile(file) {
+    return readFileAsBase64Data(file).then(function (b64) {
+      var attempts = 4;
+      var delay = 500;
+      function tryOnce(attempt) {
+        return fetch('/api/face-analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: b64 }),
+        })
+          .then(function (res) {
+            if (!res.ok) {
+              if (shouldRetryHttpStatus(res.status) && attempt < attempts - 1) {
+                return sleep(delay * Math.pow(2, attempt)).then(function () {
+                  return tryOnce(attempt + 1);
+                });
+              }
+              return null;
+            }
+            return res.json();
+          })
+          .then(function (data) {
+            if (data == null) return null;
+            var rec = extractAnalysisRecord(data);
+            if (rec) {
+              return { source: 'ai', scores: mapScoresFromAnalysisRecord(rec) };
+            }
+            if (attempt < attempts - 1) {
+              return sleep(delay * Math.pow(2, attempt)).then(function () {
+                return tryOnce(attempt + 1);
+              });
+            }
+            return null;
+          })
+          .catch(function () {
+            if (attempt < attempts - 1) {
+              return sleep(delay * Math.pow(2, attempt)).then(function () {
+                return tryOnce(attempt + 1);
+              });
+            }
+            return null;
+          });
+      }
+      return tryOnce(0).then(function (result) {
+        if (result) return result;
+        return deriveDemoScoresFromFile(file).then(function (sc) {
+          return { source: 'demo', scores: sc };
+        });
+      });
+    }).catch(function () {
+      return deriveDemoScoresFromFile(file).then(function (sc) {
+        return { source: 'demo', scores: sc };
+      });
+    });
+  }
+
+  function setRingForScore(overall) {
+    var tier = limitlessScoreTierRgb(overall);
+    var tc = 'rgb(' + tier.r + ',' + tier.g + ',' + tier.b + ')';
+    scanRing.style.background =
+      'conic-gradient(from 0deg, #ff9500, ' + tc + ', #007aff, ' + tc + ', #ff9500)';
+  }
+
+  var scoreDeltaEl = document.getElementById('score-delta');
+
+  function updateDelta(overall, potential) {
+    if (!scoreDeltaEl) return;
+    var d = Math.round((potential || 0) - (overall || 0));
+    if (d > 0) {
+      scoreDeltaEl.textContent = '+' + d + ' POTENTIAL';
+      scoreDeltaEl.hidden = false;
+    } else {
+      scoreDeltaEl.hidden = true;
+    }
+  }
+
+  function applyScoresToUi(overall, potential, source) {
+    scoreEl.textContent = String(overall);
+    potentialEl.textContent = String(potential);
+    scoreEl.classList.add('is-gradient');
+    potentialEl.classList.add('is-gradient');
+    scoreEl.style.backgroundImage = scoreGradientCssDiagonal(overall);
+    potentialEl.style.backgroundImage = POTENTIAL_GRAD;
+    setRingForScore(overall);
+    var oFrac = Math.min(100, Math.max(0, overall)) / 100;
+    trajFill.style.width = Math.max(oFrac * 100, oFrac > 0 ? 2 : 0) + '%';
+    trajFill.style.background = scoreGradientCssDiagonal(overall);
+    trajDot.style.left = trajectoryDotLeftPercent(potential) + '%';
+    scanTraj.hidden = false;
+    updateDelta(overall, potential);
+    scanStatus.innerHTML = '';
+    if (source === 'ai') {
+      scanStatus.innerHTML = '<span class="shield-scan-source-badge">KI</span>';
+    }
+  }
+
+  function resetScoresPlaceholder() {
+    scoreEl.textContent = '…';
+    potentialEl.textContent = '…';
+    scoreEl.classList.remove('is-gradient');
+    potentialEl.classList.remove('is-gradient');
+    scoreEl.style.backgroundImage = '';
+    potentialEl.style.backgroundImage = '';
+    scanTraj.hidden = true;
+    if (scoreDeltaEl) scoreDeltaEl.hidden = true;
+    scanRing.style.background =
+      'conic-gradient(from 0deg, #ff9500, rgb(148, 120, 255), #007aff, rgb(148, 120, 255), #ff9500)';
+  }
+
+  function showScanEmpty() {
+    scanEmpty.hidden = false;
+    scanFilled.hidden = true;
+    scanImg.removeAttribute('src');
+  }
+
+  function showScanFilled(dataUrl) {
+    scanEmpty.hidden = true;
+    scanFilled.hidden = false;
+    scanImg.src = dataUrl;
+  }
+
+  function persistScan(dataUrl, overall, potential, source) {
+    try {
+      localStorage.setItem(STORAGE_KEY_SCAN, dataUrl);
+      localStorage.setItem(
+        STORAGE_KEY_SCAN_SCORES,
+        JSON.stringify({ overall: overall, potential: potential, source: source }),
+      );
+    } catch (e) {}
+  }
+
+  function restoreScanFromStorage() {
+    try {
+      var saved = localStorage.getItem(STORAGE_KEY_SCAN);
+      var rawScores = localStorage.getItem(STORAGE_KEY_SCAN_SCORES);
+      if (!saved || saved.indexOf('data:image') !== 0) return;
+      var parsed = null;
+      if (rawScores) {
+        try {
+          parsed = JSON.parse(rawScores);
+        } catch (e) {}
+      }
+      showScanFilled(saved);
+      if (parsed && typeof parsed.overall === 'number' && typeof parsed.potential === 'number') {
+        applyScoresToUi(parsed.overall, parsed.potential, parsed.source === 'ai' ? 'ai' : 'demo');
+      } else {
+        resetScoresPlaceholder();
+        scoreEl.textContent = '—';
+        potentialEl.textContent = '—';
+      }
+    } catch (e) {}
+  }
+
+  scanFile.addEventListener('change', function () {
+    var f = scanFile.files && scanFile.files[0];
+    if (!f || !f.type || f.type.indexOf('image/') !== 0) return;
+    var myGen = ++analyzeGen;
+    var reader = new FileReader();
+    reader.onload = function () {
+      if (myGen !== analyzeGen) return;
+      var dataUrl = typeof reader.result === 'string' ? reader.result : '';
+      showScanFilled(dataUrl);
+      resetScoresPlaceholder();
+      scanStatus.textContent = 'KI analysiert…';
+      scanWrap.classList.add('is-analyzing');
+      scanMock.classList.add('is-analyzing-ui');
+      analyzeImageFile(f).then(function (out) {
+        if (myGen !== analyzeGen) return;
+        scanWrap.classList.remove('is-analyzing');
+        scanMock.classList.remove('is-analyzing-ui');
+        var s = out.scores;
+        applyScoresToUi(s.overall, s.potential, out.source);
+        persistScan(dataUrl, s.overall, s.potential, out.source);
+      });
+    };
+    reader.readAsDataURL(f);
+    scanFile.value = '';
+  });
+
+  restoreScanFromStorage();
+
+  selectTask(0);
+})();
+  </script>
+
+  <!-- Clipper-Studio-Logik: Override-Inputs, Uhrzeit, PNG-Download -->
+  <script>
+(function () {
+  var scoreInput     = document.getElementById('score-input');
+  var potentialInput = document.getElementById('potential-input');
+  var scoreValEl     = document.getElementById('score-val');
+  var potValEl       = document.getElementById('potential-val');
+  var scanFilled     = document.getElementById('scan-filled');
+  var scanEmpty      = document.getElementById('scan-empty');
+  var phoneTimeInput = document.getElementById('phone-time-input');
+  var phoneTimeEl    = document.getElementById('phone-time');
+  var btnDownload    = document.getElementById('btn-download-png');
+  var phoneMockup    = document.getElementById('phone-mockup');
+  var scanImg        = document.getElementById('scan-preview-img');
+
+  /* --- Uhrzeit im Status-Bar --- */
+  function applyTime() {
+    var v = (phoneTimeInput.value || '').trim();
+    phoneTimeEl.textContent = v || '9:41';
+  }
+  phoneTimeInput.addEventListener('input', applyTime);
+  applyTime();
+
+  /* --- Score/Potential manueller Override (sofort sichtbar, ohne KI) --- */
+  function clampInt(v, lo, hi) {
+    var n = parseInt(v, 10);
+    if (!isFinite(n)) return null;
+    return Math.max(lo, Math.min(hi, n));
+  }
+
+  function showFilledIfNeeded() {
+    // Wenn Clipper manuelle Werte eingibt, ohne Foto zu uploaden,
+    // zeigen wir trotzdem die Score-Karte an (leerer Ring)
+    if (scanEmpty && !scanEmpty.hidden) {
+      scanEmpty.hidden = true;
+    }
+    if (scanFilled && scanFilled.hidden) {
+      scanFilled.hidden = false;
+    }
+  }
+
+  var deltaEl = document.getElementById('score-delta');
+
+  function applyOverrides() {
+    var s = clampInt(scoreInput.value, 0, 99);
+    var p = clampInt(potentialInput.value, 0, 100);
+    if (s == null && p == null) return;
+    showFilledIfNeeded();
+    if (s != null && scoreValEl) scoreValEl.textContent = String(s);
+    if (p != null && potValEl)   potValEl.textContent   = String(p);
+    // Delta-Badge "+Δ POTENTIAL" live aktualisieren
+    var sNum = parseInt((scoreValEl && scoreValEl.textContent) || '0', 10);
+    var pNum = parseInt((potValEl && potValEl.textContent) || '0', 10);
+    if (deltaEl) {
+      var diff = (isFinite(pNum) ? pNum : 0) - (isFinite(sNum) ? sNum : 0);
+      if (diff > 0) { deltaEl.textContent = '+' + diff + ' POTENTIAL'; deltaEl.hidden = false; }
+      else { deltaEl.hidden = true; }
+    }
+  }
+  scoreInput.addEventListener('input', applyOverrides);
+  potentialInput.addEventListener('input', applyOverrides);
+
+  /* --- PNG-Download via html-to-image --- */
+  function triggerDownload(dataUrl) {
+    var a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'limitless-shield-' + Date.now() + '.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  async function downloadPhonePng() {
+    if (!window.htmlToImage) {
+      alert('Screenshot-Bibliothek konnte nicht geladen werden. Bitte Internet prüfen.');
+      return;
+    }
+    btnDownload.disabled = true;
+    var prev = btnDownload.textContent;
+    btnDownload.textContent = 'Rendere …';
+    document.body.classList.add('is-capturing');
+    try {
+      // Bei Cross-Origin-Foto: erst zu DataURL konvertieren, damit html-to-image rendern kann
+      if (scanImg && scanImg.src && !scanImg.src.startsWith('data:')) {
+        // intern hochgeladene Bilder sind bereits Data-URLs — überspringen
+      }
+      var dataUrl = await window.htmlToImage.toPng(phoneMockup, {
+        pixelRatio: 3,
+        cacheBust: true,
+        backgroundColor: '#0a0a0a',
+        filter: function (node) {
+          // html-to-image fremde <script> / <style> aus dem Head-Import ausschließen
+          return !(node.tagName === 'SCRIPT');
+        }
+      });
+      triggerDownload(dataUrl);
+    } catch (err) {
+      console.error('PNG-Render fehlgeschlagen', err);
+      alert('Screenshot konnte nicht erstellt werden. Details in der Konsole.');
+    } finally {
+      document.body.classList.remove('is-capturing');
+      btnDownload.disabled = false;
+      btnDownload.textContent = prev;
+    }
+  }
+
+  btnDownload.addEventListener('click', downloadPhonePng);
+})();
+  </script>
+</body>
+</html>
