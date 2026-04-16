@@ -503,6 +503,382 @@
       font-size: 13px;
     }
 
+    /* ============================================================
+       LOOKSMAX CARD — Hero aus der Limitless-App (ResultsView)
+       6 Category-Rings + Score→Potential Progression, catchy & uniqe
+       ============================================================ */
+    .lk-card {
+      width: 100%;
+      border-radius: 22px;
+      background:
+        linear-gradient(175deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.012) 100%);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.07) inset,
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 16px 40px rgba(0, 0, 0, 0.55);
+      padding: 12px 12px 12px;
+      margin: 0 0 10px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .lk-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(140deg, rgba(175, 82, 222, 0.22), rgba(0, 122, 255, 0.12) 45%, rgba(52, 199, 89, 0.24));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .lk-card > * { position: relative; z-index: 1; }
+
+    /* Header: Icon + Looksmax + Range-Chip + Tier */
+    .lk-head {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 2px 4px 10px;
+    }
+    .lk-head-icon {
+      width: 15px;
+      height: 15px;
+      color: #ffcf6b;
+      flex-shrink: 0;
+    }
+    .lk-head-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.005em;
+      line-height: 1;
+    }
+    .lk-head-badge {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      padding: 3px 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(235, 235, 245, 0.6);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .lk-head-spacer { flex: 1; }
+    .lk-head-chip {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3.5px 8px;
+      border-radius: 999px;
+      color: #34c759;
+      background: rgba(52, 199, 89, 0.16);
+      line-height: 1;
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+    }
+
+    /* Hero: Score → Potential mit Chevron */
+    .lk-hero {
+      position: relative;
+      border-radius: 16px;
+      background:
+        radial-gradient(120% 100% at 0% 0%, rgba(175, 82, 222, 0.1) 0%, transparent 55%),
+        radial-gradient(120% 100% at 100% 100%, rgba(52, 199, 89, 0.12) 0%, transparent 55%),
+        rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 10px 14px 12px;
+      margin: 0 0 10px;
+    }
+    .lk-hero-top {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .lk-hero-col {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .lk-hero-col--right { align-items: flex-end; text-align: right; }
+    .lk-hero-label {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(235, 235, 245, 0.55);
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+      line-height: 1;
+    }
+    .lk-hero-label.is-potential { color: rgba(52, 199, 89, 0.85); }
+    .lk-hero-num {
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+      font-size: 42px;
+      font-weight: 900;
+      line-height: 0.92;
+      letter-spacing: -0.045em;
+      color: #ffffff;
+      font-variant-numeric: tabular-nums;
+      display: block;
+      min-height: 1em;
+    }
+    .lk-hero-num.is-gradient {
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .lk-hero-chev {
+      align-self: center;
+      margin: 0 2px 8px;
+      color: rgba(209, 173, 77, 0.55);
+      flex-shrink: 0;
+    }
+
+    /* Trajectory bar: Now → Goal mit +Gap */
+    .lk-traj { margin-top: 9px; }
+    .lk-traj-track {
+      position: relative;
+      height: 10px;
+    }
+    .lk-traj-track::before {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .lk-traj-fill {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 5px;
+      border-radius: 999px;
+      max-width: 100%;
+      box-shadow: 0 0 10px rgba(255, 149, 0, 0.3);
+    }
+    .lk-traj-dot {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background:
+        linear-gradient(#fff, #fff) padding-box,
+        linear-gradient(135deg, rgb(51, 199, 89), rgb(99, 230, 190)) border-box;
+      border: 2px solid transparent;
+      box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.15), 0 2px 6px rgba(52, 199, 89, 0.4);
+    }
+    .lk-traj-labels {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 10px;
+      font-weight: 800;
+      color: rgba(235, 235, 245, 0.55);
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+      margin-top: 7px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .lk-traj-gap {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: -0.015em;
+      text-transform: none;
+      background: linear-gradient(92deg, #34c759 0%, #63e6be 60%, #63e6c0 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      padding: 0 6px;
+    }
+
+    /* Stats grid: 6 Kategorien aus der App (Jawline, Symmetry, ...) */
+    .lk-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 5px;
+    }
+    .lk-stat {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 7px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 0.5px solid rgba(255, 255, 255, 0.055);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+      min-width: 0;
+    }
+    .lk-ring {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+    .lk-ring svg { width: 32px; height: 32px; display: block; }
+    .lk-ring-num {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .lk-stat-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1;
+    }
+    .lk-stat-name {
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.92);
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: -0.005em;
+      line-height: 1.1;
+    }
+    .lk-stat-tier {
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      align-self: flex-start;
+      padding: 2px 5px;
+      border-radius: 999px;
+      line-height: 1;
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+    }
+
+    /* ============================================================
+       MISSION STRIP — kompakte Task-Action: "Unlock Mission"
+       ============================================================ */
+    .lk-mission {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 12px 12px 12px 12px;
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(209, 173, 77, 0.14) 0%, rgba(209, 173, 77, 0.04) 100%);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.08) inset,
+        0 0 0 1px rgba(209, 173, 77, 0.26) inset,
+        0 10px 24px rgba(209, 173, 77, 0.1);
+      margin: 0 0 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .lk-mission-icon {
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lk-mission-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: var(--cream-hex);
+      display: block;
+    }
+    .lk-mission-body {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .lk-mission-eyebrow {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #d1ad4d;
+      margin: 0;
+      line-height: 1;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .lk-mission-eyebrow .lk-mission-sec {
+      color: rgba(235, 235, 245, 0.55);
+      letter-spacing: 0.08em;
+      font-weight: 800;
+    }
+    .lk-mission-eyebrow-dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: rgba(209, 173, 77, 0.5);
+      display: inline-block;
+    }
+    .lk-mission-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      color: #ffffff;
+      margin: 2px 0 0;
+      line-height: 1.05;
+    }
+    .lk-mission-gains {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(235, 235, 245, 0.68);
+      margin-top: 4px;
+      line-height: 1.2;
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+      letter-spacing: -0.005em;
+    }
+    .lk-mission-gain { white-space: nowrap; display: inline-flex; align-items: baseline; gap: 3px; }
+    .lk-mission-gain .gain-plus { color: #ffcf6b; font-weight: 900; font-size: 12px; }
+
+    .lk-mission-play {
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f0c157 0%, #d1ad4d 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(209, 173, 77, 0.38), 0 0 0 4px rgba(209, 173, 77, 0.08);
+    }
+    .lk-mission-play svg { width: 14px; height: 14px; color: #111; margin-left: 2px; display: block; }
+
     /* Shield-App-Footer entfernt — App-Store-Card über der Scan-Card erzählt die gleiche Story */
 
 
@@ -1397,83 +1773,93 @@
               <span>TikTok · <strong>Blocked</strong></span>
             </span>
 
-            <!-- Eyebrow: UNLOCK MISSION mit goldenen Strichen -->
-            <p class="shield-eyebrow" aria-hidden="true">Unlock Mission</p>
-
-            <!-- Hero: Task-Icon in Gold-Aura, zentrales Dopamin-Element -->
-            <div class="shield-hero-aura">
-              <div class="shield-hero-frame">
-                <div class="shield-icon-wrap" id="hero-icon" aria-hidden="true"></div>
-                <span class="shield-video-badge" aria-hidden="true">
-                  <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5z"/></svg>
-                  <span id="task-seconds">30s</span>
-                </span>
+            <!-- HERO: Looksmax-Karte aus der App (eigene Identität, nicht AscendMax-Kopie) -->
+            <input type="file" id="scan-file" class="shield-scan-file" accept="image/*" />
+            <label for="scan-file" class="lk-card" id="scan-mock" aria-label="Tap to run AI scan">
+              <div class="lk-head">
+                <svg class="lk-head-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M3 4h5v5H3zm0 7h5v5H3zm0 7h5v3H3zm7-14h5v9h-5zm0 11h5v6h-5zm7-11h5v16h-5z" opacity="0.95"/>
+                </svg>
+                <span class="lk-head-title">Looksmax</span>
+                <span class="lk-head-badge">0–100</span>
+                <span class="lk-head-spacer"></span>
+                <span class="lk-head-chip" id="lk-def-chip">Lean</span>
               </div>
-            </div>
 
-            <div class="shield-title-block">
-              <p class="shield-title-name" id="task-name">Drink Water</p>
-              <p class="shield-mission-meta">
-                <span class="shield-mission-meta-item">Face Workout</span>
-                <span class="shield-mission-meta-sep" aria-hidden="true">·</span>
-                <span class="shield-mission-meta-item" id="task-meta-seconds">30 sec</span>
-              </p>
-            </div>
+              <!-- Ausgeblendete Reste der alten Scan-UI für Rückwärtskompatibilität -->
+              <div class="shield-scan-empty" id="scan-empty" hidden></div>
+              <div class="shield-scan-filled" id="scan-filled" hidden></div>
+              <img id="scan-preview-img" alt="" hidden />
 
-            <!-- Inline Looksmax-Gains (gold bullets, keine Pills) -->
-            <div class="shield-looksmax-row" id="task-chips" aria-label="Looksmax Impact"></div>
-
-            <p class="shield-sub" id="task-sub" hidden>Looksmax unlock · Do 1 task to open Instagram</p>
-
-            <div class="shield-buttons">
-              <div class="shield-scan-wrap" id="shield-scan-wrap">
-                <input type="file" id="scan-file" class="shield-scan-file" accept="image/*" />
-                <label for="scan-file" class="shield-scan-hit" id="shield-scan-hit">
-                  <div class="shield-scan-mock" id="scan-mock">
-                    <div class="shield-scan-empty" id="scan-empty">
-                      <span class="shield-scan-placeholder-title">See your Looksmax path</span>
-                      <span class="shield-scan-placeholder-hint">Tap to scan — AI reveals your Score &amp; Potential</span>
-                    </div>
-                    <div class="shield-scan-filled" id="scan-filled" hidden>
-                      <p class="shield-scan-caption" aria-hidden="true">Your Looksmax Path</p>
-
-                      <div class="shield-scan-side shield-scan-side--left">
-                        <span class="shield-scan-sp-label">Now</span>
-                        <span class="shield-scan-sp-num" id="score-val">—</span>
-                      </div>
-                      <div class="shield-scan-avatar-row">
-                        <div class="shield-scan-ring" id="scan-ring">
-                          <div class="shield-scan-avatar-inner">
-                            <img id="scan-preview-img" class="shield-scan-img" alt="" width="256" height="256" decoding="async" />
-                          </div>
-                        </div>
-                      </div>
-                      <div class="shield-scan-side shield-scan-side--right">
-                        <span class="shield-scan-delta" id="score-delta" hidden>+—</span>
-                        <span class="shield-scan-sp-label potential">Potential</span>
-                        <span class="shield-scan-sp-num" id="potential-val">—</span>
-                      </div>
-                      <div class="shield-scan-traj" id="scan-traj" hidden>
-                        <div class="shield-scan-traj-track">
-                          <div class="shield-scan-traj-fill" id="traj-fill"></div>
-                          <div class="shield-scan-traj-dot" id="traj-dot"></div>
-                        </div>
-                      </div>
-                      <p class="shield-scan-status" id="scan-status"></p>
-                    </div>
+              <div class="lk-hero">
+                <div class="lk-hero-top">
+                  <div class="lk-hero-col">
+                    <span class="lk-hero-label">Score</span>
+                    <span class="lk-hero-num" id="score-val">72</span>
                   </div>
-                </label>
+                  <svg class="lk-hero-chev" width="10" height="16" viewBox="0 0 10 16" fill="none" aria-hidden="true">
+                    <path d="M3.2 2 L7 8 L3.2 14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <div class="lk-hero-col lk-hero-col--right">
+                    <span class="lk-hero-label is-potential">Potential</span>
+                    <span class="lk-hero-num" id="potential-val">86</span>
+                  </div>
+                </div>
+
+                <div class="lk-traj" id="scan-traj">
+                  <div class="lk-traj-track">
+                    <div class="lk-traj-fill" id="traj-fill"></div>
+                    <div class="lk-traj-dot" id="traj-dot"></div>
+                  </div>
+                  <div class="lk-traj-labels">
+                    <span>Now</span>
+                    <span class="lk-traj-gap" id="score-delta">+14</span>
+                    <span>Goal</span>
+                  </div>
+                </div>
               </div>
 
-              <!-- Dezenter iOS-System-Footer: nur Text, keine Card -->
-              <p class="shield-appstore-footer" aria-label="Limitless on the App Store">
-                <span class="shield-appstore-footer-brand">Limitless</span>
-                <span class="shield-appstore-footer-sep" aria-hidden="true">·</span>
-                <span class="shield-appstore-footer-text">Available on the App&nbsp;Store</span>
-              </p>
+              <!-- 6 Kategorien aus unserer App als Ring-Charts -->
+              <div class="lk-stats" id="lk-stats" aria-label="Looksmax categories"></div>
 
-              <button type="button" class="shield-secondary" id="btn-close">Close</button>
+              <p class="shield-scan-status" id="scan-status" hidden></p>
+            </label>
+
+            <!-- UNLOCK MISSION: kompakte Task-Aktion unter dem Rating -->
+            <div class="lk-mission" id="lk-mission" aria-label="Unlock mission">
+              <div class="lk-mission-icon" id="hero-icon" aria-hidden="true"></div>
+              <div class="lk-mission-body">
+                <p class="lk-mission-eyebrow">
+                  <span>Unlock Mission</span>
+                  <span class="lk-mission-eyebrow-dot" aria-hidden="true"></span>
+                  <span class="lk-mission-sec" id="task-seconds">30s</span>
+                </p>
+                <h2 class="lk-mission-title" id="task-name">Mewing</h2>
+                <div class="lk-mission-gains" id="task-chips" aria-label="Looksmax impact"></div>
+              </div>
+              <div class="lk-mission-play" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7L8 5z"/>
+                </svg>
+              </div>
             </div>
+
+            <!-- Hidden Kompat-Elemente für bestehendes JS -->
+            <div class="shield-title-block" hidden>
+              <span id="task-meta-seconds"></span>
+            </div>
+            <p class="shield-sub" id="task-sub" hidden></p>
+            <div id="scan-ring" hidden></div>
+            <div id="shield-scan-wrap" hidden></div>
+            <span id="shield-scan-hit" hidden></span>
+
+            <!-- Footer + Close -->
+            <p class="shield-appstore-footer" aria-label="Limitless on the App Store">
+              <span class="shield-appstore-footer-brand">Limitless</span>
+              <span class="shield-appstore-footer-sep" aria-hidden="true">·</span>
+              <span class="shield-appstore-footer-text">Available on the App&nbsp;Store</span>
+            </p>
+            <button type="button" class="shield-secondary" id="btn-close">Close</button>
           </div>
         </div>
       </div>
@@ -1689,11 +2075,11 @@
     if (!taskChipsEl) return;
     taskChipsEl.innerHTML = '';
     if (!impact || !impact.length) return;
-    impact.forEach(function (pair) {
-      var chip = document.createElement('span');
-      chip.className = 'shield-chip';
-      chip.innerHTML = '<span>' + pair[0] + '</span><span class="shield-chip-plus">+' + pair[1] + '</span>';
-      taskChipsEl.appendChild(chip);
+    impact.slice(0, 3).forEach(function (pair) {
+      var g = document.createElement('span');
+      g.className = 'lk-mission-gain';
+      g.innerHTML = '<span>' + pair[0] + '</span><span class="gain-plus">+' + pair[1] + '</span>';
+      taskChipsEl.appendChild(g);
     });
   }
 
@@ -1956,7 +2342,7 @@
             if (data == null) return null;
             var rec = extractAnalysisRecord(data);
             if (rec) {
-              return { source: 'ai', scores: mapScoresFromAnalysisRecord(rec) };
+              return { source: 'ai', scores: mapScoresFromAnalysisRecord(rec), rec: rec };
             }
             if (attempt < attempts - 1) {
               return sleep(delay * Math.pow(2, attempt)).then(function () {
@@ -1987,11 +2373,8 @@
     });
   }
 
-  function setRingForScore(overall) {
-    var tier = limitlessScoreTierRgb(overall);
-    var tc = 'rgb(' + tier.r + ',' + tier.g + ',' + tier.b + ')';
-    scanRing.style.background =
-      'conic-gradient(from 0deg, #ff9500, ' + tc + ', #007aff, ' + tc + ', #ff9500)';
+  function setRingForScore(_overall) {
+    /* Old circular avatar ring removed in new layout — no-op */
   }
 
   var scoreDeltaEl = document.getElementById('score-delta');
@@ -1999,19 +2382,99 @@
   function updateDelta(overall, potential) {
     if (!scoreDeltaEl) return;
     var d = Math.round((potential || 0) - (overall || 0));
-    if (d > 0) {
-      scoreDeltaEl.textContent = '+' + d + ' POTENTIAL';
-      scoreDeltaEl.hidden = false;
-    } else {
-      scoreDeltaEl.hidden = true;
-    }
+    scoreDeltaEl.textContent = '+' + Math.max(0, d);
   }
 
-  /* PSL-Strip wurde entfernt (war zu nah am AscendMax-Vorbild) — No-Op stubs */
+  /* PSL-Strip wurde entfernt — No-Op stubs (Clipper-Override ruft das evtl. noch auf) */
   function updatePSL() {}
   function resetPSL() {}
 
-  function applyScoresToUi(overall, potential, source) {
+  /* ============================================================
+     CATEGORY RINGS — die 6 wichtigsten Looksmax-Kategorien aus
+     der Limitless-App (ResultsView). Unique feature, nicht kopiert.
+     ============================================================ */
+  var STAT_CATEGORIES = [
+    { name: 'Jawline',    key: 'jawline',    offset: 2 },
+    { name: 'Symmetry',   key: 'symmetry',   offset: -4 },
+    { name: 'Eye Area',   key: 'eyeArea',    offset: 5 },
+    { name: 'Cheekbones', key: 'cheekbones', offset: -2 },
+    { name: 'Skin',       key: 'skin',       offset: 8 },
+    { name: 'Definition', key: 'definition', offset: -3 }
+  ];
+  var lkStatsEl = document.getElementById('lk-stats');
+  var lkDefChipEl = document.getElementById('lk-def-chip');
+
+  function scoreLabelLm(s) {
+    if (s >= 80) return 'Elite';
+    if (s >= 65) return 'Great';
+    if (s >= 50) return 'Good';
+    if (s >= 35) return 'Low';
+    return 'Improve';
+  }
+
+  function deriveCategoryScores(overall, potential, aiRec) {
+    var out = {};
+    STAT_CATEGORIES.forEach(function (c) {
+      var fromAi = aiRec && typeof aiRec[c.key] === 'number' ? aiRec[c.key] : null;
+      if (fromAi != null) {
+        out[c.key] = Math.max(25, Math.min(95, Math.round(fromAi)));
+      } else {
+        var seed = (overall * 31 + potential * 17 + c.name.charCodeAt(0) * 7) >>> 0;
+        var jitter = ((seed % 11) - 5);
+        out[c.key] = Math.max(25, Math.min(95, overall + c.offset + jitter));
+      }
+    });
+    return out;
+  }
+
+  function renderStats(overall, potential, aiRec) {
+    if (!lkStatsEl) return;
+    var cats = deriveCategoryScores(overall, potential, aiRec);
+    var html = '';
+    STAT_CATEGORIES.forEach(function (c) {
+      var sc = cats[c.key];
+      var tier = limitlessScoreTierRgb(sc);
+      var color = 'rgb(' + tier.r + ',' + tier.g + ',' + tier.b + ')';
+      var frac = Math.max(0, Math.min(1, sc / 100));
+      var circ = 2 * Math.PI * 13;
+      var dash = (frac * circ).toFixed(2) + ' ' + circ.toFixed(2);
+      var tierLbl = scoreLabelLm(sc);
+      html +=
+        '<div class="lk-stat">' +
+          '<div class="lk-ring">' +
+            '<svg viewBox="0 0 32 32" aria-hidden="true">' +
+              '<circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="3"/>' +
+              '<circle cx="16" cy="16" r="13" fill="none" stroke="' + color + '" stroke-width="3" stroke-linecap="round" stroke-dasharray="' + dash + '" transform="rotate(-90 16 16)" style="filter: drop-shadow(0 0 3px ' + color + '80);"/>' +
+            '</svg>' +
+            '<span class="lk-ring-num">' + sc + '</span>' +
+          '</div>' +
+          '<div class="lk-stat-text">' +
+            '<span class="lk-stat-name">' + c.name + '</span>' +
+            '<span class="lk-stat-tier" style="color:' + color + ';background:' + color + '1f;">' + tierLbl + '</span>' +
+          '</div>' +
+        '</div>';
+    });
+    lkStatsEl.innerHTML = html;
+  }
+
+  function updateDefChip(overall) {
+    if (!lkDefChipEl) return;
+    if (overall >= 70) {
+      lkDefChipEl.textContent = 'Lean';
+      lkDefChipEl.style.color = '#34c759';
+      lkDefChipEl.style.background = 'rgba(52, 199, 89, 0.16)';
+    } else if (overall >= 50) {
+      lkDefChipEl.textContent = 'Average';
+      lkDefChipEl.style.color = '#ff9500';
+      lkDefChipEl.style.background = 'rgba(255, 149, 0, 0.16)';
+    } else {
+      lkDefChipEl.textContent = 'Bloated';
+      lkDefChipEl.style.color = '#ff3b30';
+      lkDefChipEl.style.background = 'rgba(255, 59, 48, 0.16)';
+    }
+  }
+
+  function applyScoresToUi(overall, potential, source, aiRec) {
     scoreEl.textContent = String(overall);
     potentialEl.textContent = String(potential);
     scoreEl.classList.add('is-gradient');
@@ -2023,12 +2486,16 @@
     trajFill.style.width = Math.max(oFrac * 100, oFrac > 0 ? 2 : 0) + '%';
     trajFill.style.background = scoreGradientCssDiagonal(overall);
     trajDot.style.left = trajectoryDotLeftPercent(potential) + '%';
-    scanTraj.hidden = false;
+    if (scanTraj) scanTraj.hidden = false;
     updateDelta(overall, potential);
+    updateDefChip(overall);
+    renderStats(overall, potential, aiRec || null);
     updatePSL(overall);
-    scanStatus.innerHTML = '';
-    if (source === 'ai') {
-      scanStatus.innerHTML = '<span class="shield-scan-source-badge">KI</span>';
+    if (scanStatus) {
+      scanStatus.innerHTML = '';
+      if (source === 'ai') {
+        scanStatus.innerHTML = '<span class="shield-scan-source-badge">KI</span>';
+      }
     }
   }
 
@@ -2039,23 +2506,30 @@
     potentialEl.classList.remove('is-gradient');
     scoreEl.style.backgroundImage = '';
     potentialEl.style.backgroundImage = '';
-    scanTraj.hidden = true;
-    if (scoreDeltaEl) scoreDeltaEl.hidden = true;
+    if (scoreDeltaEl) scoreDeltaEl.textContent = '+—';
     resetPSL();
-    scanRing.style.background =
-      'conic-gradient(from 0deg, #ff9500, rgb(148, 120, 255), #007aff, rgb(148, 120, 255), #ff9500)';
+  }
+
+  /* Placeholder scores, damit die Karte immer "gefüllt" aussieht — selbst vor dem ersten Scan */
+  function ensureTeaserScores() {
+    var s = parseInt(scoreEl.textContent, 10);
+    var p = parseInt(potentialEl.textContent, 10);
+    if (!isFinite(s) || s <= 0) s = 72;
+    if (!isFinite(p) || p <= 0) p = 86;
+    applyScoresToUi(s, p, 'demo', null);
   }
 
   function showScanEmpty() {
-    scanEmpty.hidden = false;
-    scanFilled.hidden = true;
-    scanImg.removeAttribute('src');
+    /* Karte bleibt sichtbar — keine Empty-UI mehr in neuem Layout */
+    if (scanEmpty) scanEmpty.hidden = true;
+    if (scanFilled) scanFilled.hidden = true;
+    if (scanImg) scanImg.removeAttribute('src');
   }
 
   function showScanFilled(dataUrl) {
-    scanEmpty.hidden = true;
-    scanFilled.hidden = false;
-    scanImg.src = dataUrl;
+    if (scanEmpty) scanEmpty.hidden = true;
+    if (scanFilled) scanFilled.hidden = true;
+    if (scanImg && dataUrl) scanImg.src = dataUrl;
   }
 
   function persistScan(dataUrl, overall, potential, source) {
@@ -2108,7 +2582,7 @@
         scanWrap.classList.remove('is-analyzing');
         scanMock.classList.remove('is-analyzing-ui');
         var s = out.scores;
-        applyScoresToUi(s.overall, s.potential, out.source);
+        applyScoresToUi(s.overall, s.potential, out.source, out.rec || null);
         persistScan(dataUrl, s.overall, s.potential, out.source);
       });
     };
@@ -2117,6 +2591,10 @@
   });
 
   restoreScanFromStorage();
+  ensureTeaserScores();
+
+  /* Für Clipper-Override-IIFE: gleiche Re-Render-Pipeline (Trajectory, Stats, Def-Chip) */
+  window.applyShieldScores = applyScoresToUi;
 
   selectTask(0);
 })();
@@ -2163,22 +2641,23 @@
     }
   }
 
-  var deltaEl = document.getElementById('score-delta');
-
   function applyOverrides() {
     var s = clampInt(scoreInput.value, 0, 99);
     var p = clampInt(potentialInput.value, 0, 100);
     if (s == null && p == null) return;
     showFilledIfNeeded();
-    if (s != null && scoreValEl) scoreValEl.textContent = String(s);
-    if (p != null && potValEl)   potValEl.textContent   = String(p);
-    // Delta-Badge "+Δ POTENTIAL" live aktualisieren
-    var sNum = parseInt((scoreValEl && scoreValEl.textContent) || '0', 10);
-    var pNum = parseInt((potValEl && potValEl.textContent) || '0', 10);
-    if (deltaEl) {
-      var diff = (isFinite(pNum) ? pNum : 0) - (isFinite(sNum) ? sNum : 0);
-      if (diff > 0) { deltaEl.textContent = '+' + diff + ' POTENTIAL'; deltaEl.hidden = false; }
-      else { deltaEl.hidden = true; }
+    // aktuelle Werte mergen (wenn nur ein Feld gesetzt ist)
+    var curS = parseInt((scoreValEl && scoreValEl.textContent) || '72', 10);
+    var curP = parseInt((potValEl && potValEl.textContent) || '86', 10);
+    var nextS = s != null ? s : (isFinite(curS) ? curS : 72);
+    var nextP = p != null ? p : (isFinite(curP) ? curP : 86);
+    if (nextP < nextS) nextP = nextS;
+    // Alles über die Haupt-Pipeline rendern: Score, Potential, Trajectory, Rings, Def-Chip
+    if (typeof window.applyShieldScores === 'function') {
+      window.applyShieldScores(nextS, nextP, 'demo', null);
+    } else {
+      if (scoreValEl) scoreValEl.textContent = String(nextS);
+      if (potValEl)   potValEl.textContent   = String(nextP);
     }
   }
   scoreInput.addEventListener('input', applyOverrides);
