@@ -897,17 +897,21 @@
       position: relative;
       width: 100%;
       margin: 0 0 12px;
-      padding: 9px 12px 10px;
-      border-radius: 14px;
+      padding: 10px 12px 14px;
+      border-radius: 16px;
       background: linear-gradient(
         145deg,
         #ffffff 0%,
         rgb(250, 247, 255) 40%,
         rgb(242, 252, 247) 100%);
       box-shadow:
-        0 10px 24px rgba(88, 86, 214, 0.08),
+        0 10px 28px rgba(88, 86, 214, 0.1),
         0 4px 10px rgba(0, 0, 0, 0.05);
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
     }
     .lk-psl::before {
       content: '';
@@ -926,13 +930,6 @@
     }
     .lk-psl > * { position: relative; z-index: 1; }
 
-    .lk-psl-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
     .lk-psl-head-label {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
       font-size: 10px;
@@ -941,42 +938,58 @@
       text-transform: uppercase;
       color: rgba(60, 60, 67, 0.55);
       line-height: 1;
-    }
-    .lk-psl-tier-pill {
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      padding: 4px 9px;
-      border-radius: 999px;
-      line-height: 1;
-      color: #111;
-      background: rgba(0, 0, 0, 0.04);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      white-space: nowrap;
-      transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-    }
-    .lk-psl-tier-pill.tier-trueadam {
-      background: linear-gradient(90deg, rgba(255, 45, 85, 0.14) 0%, rgba(175, 82, 222, 0.14) 100%);
-      border-color: rgba(255, 45, 85, 0.4);
-      color: #ff2d55;
+      margin-bottom: 4px;
     }
 
-    .lk-psl-body {
+    /* Halbkreis-Gauge (180° Arc) */
+    .lk-psl-gauge-wrap {
+      position: relative;
+      width: 180px;
+      max-width: 100%;
+      aspect-ratio: 200 / 116;
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: center;
+      margin: 0;
     }
-    .lk-psl-score {
+    .lk-psl-gauge {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+    }
+    .lk-psl-gauge-track {
+      fill: none;
+      stroke: rgba(0, 0, 0, 0.08);
+      stroke-width: 11;
+      stroke-linecap: round;
+    }
+    .lk-psl-gauge-fill {
+      fill: none;
+      stroke: url(#psl-gauge-grad);
+      stroke-width: 11;
+      stroke-linecap: round;
+      stroke-dasharray: 258 258;
+      stroke-dashoffset: 258;
+      filter: drop-shadow(0 0 6px rgba(10, 132, 255, 0.55));
+      transition: stroke-dashoffset 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.3s ease;
+    }
+
+    /* Zahl zentriert im Gauge */
+    .lk-psl-center {
+      position: absolute;
+      left: 50%;
+      bottom: 2px;
+      transform: translateX(-50%);
       display: inline-flex;
       align-items: baseline;
-      gap: 3px;
+      gap: 2px;
       line-height: 1;
-      flex-shrink: 0;
+      pointer-events: none;
     }
     .lk-psl-num {
       font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
-      font-size: 34px;
+      font-size: 44px;
       font-weight: 900;
       letter-spacing: -0.04em;
       line-height: 0.95;
@@ -987,36 +1000,44 @@
       color: transparent;
       transition: background 0.3s ease, filter 0.3s ease;
       filter:
-        drop-shadow(0 0 10px rgba(10, 132, 255, 0.45))
-        drop-shadow(0 0 2px rgba(10, 132, 255, 0.25));
+        drop-shadow(0 0 12px rgba(10, 132, 255, 0.5))
+        drop-shadow(0 0 2px rgba(10, 132, 255, 0.3));
     }
     .lk-psl-num.tier-trueadam {
       background: linear-gradient(90deg, #ff2d55 0%, #ffcf6b 50%, #af52de 100%);
       -webkit-background-clip: text;
               background-clip: text;
       color: transparent;
-      filter: drop-shadow(0 0 6px rgba(255, 45, 85, 0.35));
     }
     .lk-psl-denom {
       font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 700;
-      color: rgba(60, 60, 67, 0.45);
+      color: rgba(60, 60, 67, 0.5);
       letter-spacing: -0.02em;
     }
 
-    .lk-psl-bar-wrap {
-      flex: 1;
-      height: 6px;
+    /* Tier-Label fett unter dem Gauge */
+    .lk-psl-tier-pill {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      padding: 5px 16px;
       border-radius: 999px;
-      background: rgba(0, 0, 0, 0.08);
-      overflow: hidden;
-      position: relative;
+      line-height: 1;
+      color: #111;
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      white-space: nowrap;
+      text-transform: uppercase;
+      transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, text-shadow 0.3s ease;
     }
-    .lk-psl-bar {
-      height: 100%;
-      border-radius: 999px;
-      transition: width 0.5s ease, background 0.3s ease;
+    .lk-psl-tier-pill.tier-trueadam {
+      background: linear-gradient(90deg, rgba(255, 45, 85, 0.14) 0%, rgba(175, 82, 222, 0.14) 100%);
+      border-color: rgba(255, 45, 85, 0.4);
+      color: #ff2d55;
+      text-shadow: 0 0 10px rgba(255, 45, 85, 0.4);
     }
 
     /* Chad-Tier Stat-Grid: 6 Karten (Jawline, Symmetry, …) im Light-Theme */
@@ -1037,14 +1058,15 @@
     .lk-chad-card {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      padding: 6px 8px 4px;
+      gap: 3px;
+      padding: 6px 8px 5px;
       min-width: 0;
+      position: relative;
     }
     .lk-chad-label {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
       font-size: 10px;
-      font-weight: 600;
+      font-weight: 700;
       color: rgba(60, 60, 67, 0.6);
       letter-spacing: -0.005em;
       line-height: 1;
@@ -1052,33 +1074,110 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
+    /* Zahlen-Rating pro Stat mit farbigem Glow */
+    .lk-chad-score-row {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 3px;
+      line-height: 1;
+      margin-top: 1px;
+    }
+    .lk-chad-num {
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.035em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      background: linear-gradient(135deg, #5ac8fa 0%, #0a84ff 100%);
+      -webkit-background-clip: text;
+              background-clip: text;
+      color: transparent;
+      transition: background 0.3s ease, filter 0.3s ease;
+      filter: drop-shadow(0 0 7px rgba(10, 132, 255, 0.45));
+    }
+    .lk-chad-num.tier-trueadam {
+      background: linear-gradient(90deg, #ff2d55 0%, #ffcf6b 50%, #af52de 100%);
+      -webkit-background-clip: text;
+              background-clip: text;
+      color: transparent;
+    }
+    .lk-chad-denom {
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(60, 60, 67, 0.42);
+      letter-spacing: -0.01em;
+    }
     .lk-chad-tier {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
-      font-size: 17px;
+      font-size: 10px;
       font-weight: 800;
-      color: #000000;
-      letter-spacing: -0.025em;
-      line-height: 1.05;
-      text-shadow: 0 0 10px rgba(10, 132, 255, 0.22);
+      color: #000;
+      letter-spacing: 0.1em;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 1px;
     }
     .lk-chad-tier.tier-trueadam {
       background: linear-gradient(90deg, #ff2d55 0%, #ffcf6b 50%, #af52de 100%);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
-      filter: drop-shadow(0 0 6px rgba(255, 45, 85, 0.3));
+      filter: drop-shadow(0 0 5px rgba(255, 45, 85, 0.3));
     }
     .lk-chad-bar-wrap {
-      height: 4.5px;
+      height: 4px;
       border-radius: 3px;
       background: rgba(0, 0, 0, 0.08);
       overflow: hidden;
-      margin-top: 4px;
+      margin-top: 3px;
     }
     .lk-chad-bar {
       height: 100%;
       border-radius: 3px;
       transition: width 0.45s ease, background 0.3s ease;
+    }
+
+    /* "Task: …" micro-Label unter jeder Chad-Card */
+    .lk-chad-task {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 8.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: rgba(60, 60, 67, 0.75);
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lk-chad-task::before {
+      content: "";
+      flex-shrink: 0;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background:
+        radial-gradient(60% 60% at 35% 30%, rgba(255, 236, 170, 0.9) 0%, rgba(240, 193, 87, 0.38) 55%, rgba(209, 173, 77, 0.14) 100%);
+      box-shadow:
+        0 0 0 1px rgba(240, 193, 87, 0.55) inset,
+        0 0 6px rgba(240, 193, 87, 0.45);
+    }
+    .lk-chad-task-name {
+      color: #b8933b;
+      font-weight: 800;
+      text-shadow: 0 0 8px rgba(240, 193, 87, 0.45);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* ============================================================
@@ -2375,23 +2474,40 @@
                    width="1024" height="406" decoding="async" loading="eager" />
             </a>
 
-            <!-- LIMITLESS RATING 1–10 (Limitless-App-Style Score-Card, kompakt) -->
+            <!-- LIMITLESS RATING: Halbkreis-Gauge mit Zahl im Zentrum + Tier-Label fett darunter -->
             <div class="lk-psl" id="psl-strip">
-              <div class="lk-psl-head">
-                <span class="lk-psl-head-label">Limitless Rating</span>
-                <span class="lk-psl-tier-pill" id="psl-tier-pill">MTN</span>
-              </div>
-              <div class="lk-psl-body">
-                <span class="lk-psl-score" id="psl-score">
+              <span class="lk-psl-head-label">Limitless Rating</span>
+              <div class="lk-psl-gauge-wrap">
+                <svg class="lk-psl-gauge" viewBox="0 0 200 116" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="psl-gauge-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop id="psl-grad-0"   offset="0%"   stop-color="#ff3b30" />
+                      <stop id="psl-grad-100" offset="100%" stop-color="#0a84ff" />
+                    </linearGradient>
+                    <filter id="psl-gauge-glow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feGaussianBlur stdDeviation="3.2" result="coloredBlur" />
+                      <feMerge>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  <!-- Track (Hintergrund-Linie) -->
+                  <path class="lk-psl-gauge-track"
+                        d="M 18 100 A 82 82 0 0 1 182 100" />
+                  <!-- Fill (Tier-Gradient, Glow) -->
+                  <path class="lk-psl-gauge-fill" id="psl-gauge-fill"
+                        d="M 18 100 A 82 82 0 0 1 182 100" />
+                </svg>
+                <div class="lk-psl-center">
                   <span class="lk-psl-num" id="psl-num">7</span>
                   <span class="lk-psl-denom">/10</span>
-                </span>
-                <div class="lk-psl-bar-wrap">
-                  <div class="lk-psl-bar" id="psl-bar"></div>
                 </div>
               </div>
+              <span class="lk-psl-tier-pill" id="psl-tier-pill">MTN</span>
             </div>
             <span id="psl-boxes" hidden></span>
+            <span id="psl-bar" hidden></span>
 
             <!-- CHAD-TIER GRID: 6 Kategorien mit 1–10 + Chad-Label -->
             <div class="lk-chad-grid" id="chad-grid" aria-label="Looksmax categories"></div>
@@ -3123,12 +3239,12 @@
 
   /* 6 Kategorien — Jawline first (gewünscht) + Symmetry, Eye Area, Cheekbones, Skin, Definition */
   var STAT_CATEGORIES = [
-    { name: 'Jawline',    key: 'jawline',    offset: 2 },
-    { name: 'Symmetry',   key: 'symmetry',   offset: -4 },
-    { name: 'Eye Area',   key: 'eyeArea',    offset: 5 },
-    { name: 'Cheekbones', key: 'cheekbones', offset: -2 },
-    { name: 'Skin',       key: 'skin',       offset: 8 },
-    { name: 'Definition', key: 'definition', offset: -3 }
+    { name: 'Jawline',    key: 'jawline',    offset: 2,  task: 'Jaw Exercise' },
+    { name: 'Symmetry',   key: 'symmetry',   offset: -4, task: 'Eyebrow Raises' },
+    { name: 'Eye Area',   key: 'eyeArea',    offset: 5,  task: 'Eyebrow Raises' },
+    { name: 'Cheekbones', key: 'cheekbones', offset: -2, task: 'Fish Face' },
+    { name: 'Skin',       key: 'skin',       offset: 8,  task: 'Drink Water' },
+    { name: 'Definition', key: 'definition', offset: -3, task: 'Neck Stretches' }
   ];
 
   function deriveCategoryScores(overall, potential, aiRec) {
@@ -3146,11 +3262,15 @@
     return out;
   }
 
-  /* Limitless Rating Card — kompakter Limitless-App-Score-Hero-Style */
+  /* Limitless Rating Card — Halbkreis-Gauge (180° Arc) */
   var pslNumEl      = document.getElementById('psl-num');
   var pslTierPillEl = document.getElementById('psl-tier-pill');
-  var pslBarEl      = document.getElementById('psl-bar');
+  var pslGaugeFill  = document.getElementById('psl-gauge-fill');
+  var pslGrad0      = document.getElementById('psl-grad-0');
+  var pslGrad100    = document.getElementById('psl-grad-100');
   var chadGridEl    = document.getElementById('chad-grid');
+  /* Pfadlänge ≈ π·r·(angle/180) = π·82 ≈ 257.6 */
+  var PSL_ARC_LEN   = 258;
 
   function renderPSL(overall100) {
     var r = to10(overall100);
@@ -3164,7 +3284,7 @@
         pslNumEl.classList.add('tier-trueadam');
         pslNumEl.style.background = '';
         pslNumEl.style.filter =
-          'drop-shadow(0 0 12px rgba(255, 45, 85, 0.55)) drop-shadow(0 0 4px rgba(175, 82, 222, 0.35))';
+          'drop-shadow(0 0 14px rgba(255, 45, 85, 0.6)) drop-shadow(0 0 4px rgba(175, 82, 222, 0.4))';
       } else {
         pslNumEl.classList.remove('tier-trueadam');
         pslNumEl.style.background =
@@ -3172,7 +3292,7 @@
         pslNumEl.style.webkitBackgroundClip = 'text';
         pslNumEl.style.backgroundClip = 'text';
         pslNumEl.style.filter =
-          'drop-shadow(0 0 10px ' + c + '80) drop-shadow(0 0 2px ' + c + '40)';
+          'drop-shadow(0 0 12px ' + c + '90) drop-shadow(0 0 2px ' + c + '50)';
       }
     }
 
@@ -3183,40 +3303,67 @@
         pslTierPillEl.style.background = '';
         pslTierPillEl.style.borderColor = '';
         pslTierPillEl.style.color = '';
+        pslTierPillEl.style.textShadow = '';
       } else {
         pslTierPillEl.classList.remove('tier-trueadam');
-        pslTierPillEl.style.background = c + '1f';
+        pslTierPillEl.style.background = c + '14';
         pslTierPillEl.style.borderColor = c + '66';
         pslTierPillEl.style.color = c;
+        pslTierPillEl.style.textShadow = '0 0 8px ' + c + '55';
       }
     }
 
-    if (pslBarEl) {
-      pslBarEl.style.width = (r / 10) * 100 + '%';
-      pslBarEl.style.background = isTrue
-        ? 'linear-gradient(90deg, #ff2d55 0%, #ffcf6b 50%, #af52de 100%)'
-        : 'linear-gradient(90deg, ' + c + ' 0%, ' + c + 'cc 100%)';
+    if (pslGaugeFill) {
+      var offset = PSL_ARC_LEN * (1 - r / 10);
+      pslGaugeFill.style.strokeDashoffset = String(offset);
+      pslGaugeFill.style.filter = isTrue
+        ? 'drop-shadow(0 0 10px rgba(255, 45, 85, 0.7)) drop-shadow(0 0 3px rgba(175, 82, 222, 0.5))'
+        : 'drop-shadow(0 0 8px ' + c + 'aa) drop-shadow(0 0 2px ' + c + '55)';
+    }
+    if (pslGrad0 && pslGrad100) {
+      if (isTrue) {
+        pslGrad0.setAttribute('stop-color', '#ff2d55');
+        pslGrad100.setAttribute('stop-color', '#af52de');
+      } else {
+        pslGrad0.setAttribute('stop-color', c);
+        pslGrad100.setAttribute('stop-color', c);
+      }
     }
   }
 
-  /* Chad-Tier-Grid: 6 Kategorien mit 1–10 Rating + Tier-Label */
+  /* Chad-Tier-Grid: 6 Kategorien mit 1–10 Zahl-Rating + Glow + Task-Zuweisung */
   function renderChadStats(overall, potential, aiRec) {
     if (!chadGridEl) return;
     var cats = deriveCategoryScores(overall, potential, aiRec);
     var html = '';
-    STAT_CATEGORIES.forEach(function (c) {
-      var sc100 = cats[c.key];
+    STAT_CATEGORIES.forEach(function (cat) {
+      var sc100 = cats[cat.key];
       var r10 = to10(sc100);
       var tier = chadTier(r10);
+      var isTrue = r10 === 10;
+      var col = tierColor(r10);
       var barBg = tierBarBg(r10);
       var pct = (r10 / 10) * 100;
-      var tierClass = r10 === 10 ? 'lk-chad-tier tier-trueadam' : 'lk-chad-tier';
+      var numClass  = isTrue ? 'lk-chad-num tier-trueadam' : 'lk-chad-num';
+      var tierClass = isTrue ? 'lk-chad-tier tier-trueadam' : 'lk-chad-tier';
+      var numStyle = isTrue
+        ? ''
+        : 'background: linear-gradient(135deg, ' + col + ' 0%, ' + col + 'aa 100%);' +
+          '-webkit-background-clip: text; background-clip: text;' +
+          'filter: drop-shadow(0 0 7px ' + col + '80) drop-shadow(0 0 2px ' + col + '40);';
       html +=
         '<div class="lk-chad-card">' +
-          '<span class="lk-chad-label">' + c.name + '</span>' +
+          '<span class="lk-chad-label">' + cat.name + '</span>' +
+          '<span class="lk-chad-score-row">' +
+            '<span class="' + numClass + '" style="' + numStyle + '">' + r10 + '</span>' +
+            '<span class="lk-chad-denom">/10</span>' +
+          '</span>' +
           '<span class="' + tierClass + '">' + tier + '</span>' +
           '<div class="lk-chad-bar-wrap">' +
             '<div class="lk-chad-bar" style="width:' + pct + '%; background:' + barBg + ';"></div>' +
+          '</div>' +
+          '<div class="lk-chad-task" title="Unlock Task für ' + cat.name + '">' +
+            '<span class="lk-chad-task-name">' + cat.task + '</span>' +
           '</div>' +
         '</div>';
     });
@@ -3228,7 +3375,7 @@
   function resetPSL() {
     if (pslNumEl) pslNumEl.textContent = '—';
     if (pslTierPillEl) pslTierPillEl.textContent = '—';
-    if (pslBarEl) pslBarEl.style.width = '0%';
+    if (pslGaugeFill) pslGaugeFill.style.strokeDashoffset = String(PSL_ARC_LEN);
   }
   function updateDefChip() {}
 
