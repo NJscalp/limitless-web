@@ -4004,6 +4004,52 @@
   window.applyShieldScores = applyScoresToUi;
 
   selectTask(0);
+
+  /* Auto-Pickup: Bild wurde auf der "Choose from Gallery" Seite gewählt
+     und in sessionStorage ("limitless-pending-scan") abgelegt. Wir rekonstruieren
+     die Datei und feuern denselben Analyse-Flow wie bei einem manuellen Upload. */
+  try {
+    var PENDING_KEY = 'limitless-pending-scan';
+    var raw = sessionStorage.getItem(PENDING_KEY);
+    if (raw) {
+      sessionStorage.removeItem(PENDING_KEY);
+      var payload = JSON.parse(raw);
+      if (payload && typeof payload.dataUrl === 'string' && payload.dataUrl.indexOf('data:image/') === 0) {
+        var dataUrl = payload.dataUrl;
+        fetch(dataUrl)
+          .then(function (r) { return r.blob(); })
+          .then(function (blob) {
+            var fname = payload.name || ('scan-' + Date.now() + '.png');
+            var ftype = payload.type || blob.type || 'image/png';
+            var file = new File([blob], fname, { type: ftype });
+
+            var myGen = ++analyzeGen;
+            showScanFilled(dataUrl);
+            resetScoresPlaceholder();
+            if (scanStatus) scanStatus.textContent = 'KI analysiert…';
+            if (scanWrap) scanWrap.classList.add('is-analyzing');
+            if (scanMock) scanMock.classList.add('is-analyzing-ui');
+
+            showAnalyzeOverlay(dataUrl);
+
+            analyzeImageFile(file).then(function (out) {
+              if (myGen !== analyzeGen) return;
+              if (scanWrap) scanWrap.classList.remove('is-analyzing');
+              if (scanMock) scanMock.classList.remove('is-analyzing-ui');
+              var s = out.scores;
+              persistScan(dataUrl, s.overall, s.potential, out.source);
+              submitAnalyzeResult(s, out.source, out.rec || null);
+            }).catch(function () {
+              if (scanWrap) scanWrap.classList.remove('is-analyzing');
+              if (scanMock) scanMock.classList.remove('is-analyzing-ui');
+            });
+          })
+          .catch(function () { /* schlucken — User kann manuell nochmal hochladen */ });
+      }
+    }
+  } catch (e) {
+    /* sessionStorage unavailable (z.B. Privatmodus) — ignorieren */
+  }
 })();
   </script>
 
