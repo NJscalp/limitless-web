@@ -520,8 +520,8 @@
 
     .lk-avatar {
       flex-shrink: 0;
-      width: 136px;
-      height: 136px;
+      width: 128px;
+      height: 128px;
       position: relative;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
@@ -594,102 +594,159 @@
       flex-direction: column;
       justify-content: center;
       padding-top: 2px;
+      gap: 8px;
     }
 
-    .lk-task-title {
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
-      font-size: 30px;
-      font-weight: 800;
-      letter-spacing: -0.04em;
-      color: #ffffff;
-      margin: 0 0 7px;
+    /* Blocked-App Headline: Icon links + großer Name "TikTok" + "Blocked" Label */
+    .lk-blocked {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .lk-blocked-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.07) inset;
+      overflow: hidden;
+    }
+    .lk-blocked-icon svg { width: 22px; height: 22px; display: block; }
+    .lk-blocked-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .lk-blocked-text {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
       line-height: 1;
     }
-
-    .lk-task-details {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
-      font-size: 12px;
-      font-weight: 500;
-      color: rgba(235, 235, 245, 0.58);
-      line-height: 1.55;
-      letter-spacing: -0.005em;
-    }
-    .lk-task-details li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .lk-task-details b {
-      color: rgba(255, 255, 255, 0.92);
-      font-weight: 700;
-    }
-    .lk-task-details .gain-plus {
-      color: #ffcf6b;
+    .lk-blocked-name {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      font-size: 24px;
       font-weight: 800;
-      letter-spacing: -0.01em;
-    }
-
-    /* App-CTA-Pills: Limitless-App + App-Store-Search */
-    .lk-pills-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      width: 100%;
-      margin: 0 0 14px;
-    }
-
-    .lk-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 12px;
-      border-radius: 12px;
-      border: 1.2px solid rgba(255, 255, 255, 0.2);
-      background: rgba(255, 255, 255, 0.04);
+      letter-spacing: -0.035em;
       color: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-      text-decoration: none;
+      line-height: 1;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
-      -webkit-tap-highlight-color: transparent;
-      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease;
     }
-    .lk-pill:hover, .lk-pill:active {
-      background: rgba(255, 255, 255, 0.07);
-      transform: translateY(-1px);
+    .lk-blocked-tag {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      color: #ff453a;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-top: 5px;
+      line-height: 1;
+      text-shadow: 0 0 12px rgba(255, 69, 58, 0.55);
     }
 
-    .lk-pill-icon {
-      width: 22px;
-      height: 22px;
-      border-radius: 6px;
+    /* Trenner zwischen Blocked-App und Unlock-Task */
+    .lk-divider {
+      height: 1px;
+      width: 100%;
+      background: linear-gradient(90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.18) 30%,
+        rgba(255, 255, 255, 0.18) 70%,
+        rgba(255, 255, 255, 0) 100%);
+      margin: 1px 0 2px;
+    }
+
+    /* Unlock-Task Eyebrow */
+    .lk-eyebrow {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #d1ad4d;
+      margin: 0;
       display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      line-height: 1;
+    }
+    .lk-eyebrow-dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.6;
+    }
+
+    /* Task Now: Icon + großer Task-Name */
+    .lk-task-now {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+    .lk-task-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(240, 193, 87, 0.22) 0%, rgba(209, 173, 77, 0.14) 100%);
+      box-shadow: 0 0 0 1px rgba(240, 193, 87, 0.3) inset, 0 4px 12px rgba(209, 173, 77, 0.22);
+      display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      background: #ffffff;
       overflow: hidden;
     }
-    .lk-pill-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .lk-pill-icon svg { width: 16px; height: 16px; color: #000; }
-    .lk-pill-icon--appstore {
-      background: linear-gradient(135deg, #2997ff 0%, #0a84ff 100%);
+    .lk-task-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
-    .lk-pill-icon--appstore svg { color: #ffffff; }
-    .lk-pill-search-text {
-      flex: 1;
-      min-width: 0;
+    .lk-task-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      color: #ffffff;
+      margin: 0;
+      line-height: 1;
+      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
     }
-    .lk-pill-search-text svg { width: 12px; height: 12px; color: rgba(235, 235, 245, 0.55); flex-shrink: 0; }
+
+    /* Unsere App-Store-Card als Full-Width CTA */
+    .lk-appstore-card {
+      display: block;
+      width: 100%;
+      margin: 0 0 14px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow:
+        0 12px 30px rgba(0, 0, 0, 0.42),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.14s ease, box-shadow 0.14s ease;
+      background: #0a0a0a;
+      aspect-ratio: 1024 / 406;
+    }
+    .lk-appstore-card:hover,
+    .lk-appstore-card:active {
+      transform: translateY(-1px);
+      box-shadow:
+        0 16px 40px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+    }
+    .lk-appstore-card img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
 
     /* PSL Rating 1–10 Strip */
     .lk-psl-label {
@@ -2079,7 +2136,7 @@
           <div class="shield-blur" aria-hidden="true"></div>
 
           <div class="shield-stack">
-            <!-- HERO ROW: Foto-Avatar links + Unlock-Task-Info rechts -->
+            <!-- HERO ROW: Foto-Avatar links + Blocked-App + Unlock-Task rechts -->
             <input type="file" id="scan-file" class="shield-scan-file" accept="image/*" />
             <div class="lk-hero-row">
               <label for="scan-file" class="lk-avatar" id="lk-avatar" aria-label="Tap to scan face">
@@ -2090,47 +2147,35 @@
                 <span class="lk-avatar-hint" id="lk-avatar-hint">Tap · Scan</span>
               </label>
               <div class="lk-task-info">
-                <h1 class="lk-task-title" id="task-name">Mewing</h1>
-                <ul class="lk-task-details">
-                  <li>App blocked: <b id="blocked-app">TikTok</b></li>
-                  <li>Unlock Task: <b id="task-meta-seconds">30 sec</b> · <b>Face Workout</b></li>
-                  <li>Goal: <b>Glow Up</b></li>
-                  <li id="task-chips-row">Gains: <b id="task-chips" class="lk-task-gains-inline"></b></li>
-                </ul>
+                <!-- Blocked-App: großes Headline mit App-Icon -->
+                <div class="lk-blocked">
+                  <span class="lk-blocked-icon" id="blocked-app-icon" aria-hidden="true"></span>
+                  <div class="lk-blocked-text">
+                    <span class="lk-blocked-name" id="blocked-app">TikTok</span>
+                    <span class="lk-blocked-tag">Blocked</span>
+                  </div>
+                </div>
+                <div class="lk-divider" aria-hidden="true"></div>
+                <!-- Unlock Task: Eyebrow + Task-Icon + Name + Seconds -->
+                <p class="lk-eyebrow">
+                  <span>Unlock Task</span>
+                  <span class="lk-eyebrow-dot" aria-hidden="true"></span>
+                  <span id="task-meta-seconds">30 sec</span>
+                </p>
+                <div class="lk-task-now">
+                  <span class="lk-task-icon" id="task-icon" aria-hidden="true"></span>
+                  <h1 class="lk-task-title" id="task-name">Mewing</h1>
+                </div>
               </div>
             </div>
 
-            <!-- APP CTA: Limitless-App-Pill + App-Store-Search-Pill -->
-            <div class="lk-pills-row">
-              <a class="lk-pill" id="lk-pill-brand"
-                 href="https://apps.apple.com/app/limitless-app-blocker/id0000000000"
-                 target="_blank" rel="noopener">
-                <span class="lk-pill-icon" id="lk-pill-brand-icon" aria-hidden="true"
-                      style="background: linear-gradient(135deg, #0a1630 0%, #1a2a5c 100%);">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#d1ad4d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">
-                    <path d="M12 2 4 5v6c0 5.2 3.4 9.8 8 11 4.6-1.2 8-5.8 8-11V5l-8-3Z"/>
-                    <path d="M9 12l2 2 4-4"/>
-                  </svg>
-                </span>
-                <span>Limitless App</span>
-              </a>
-              <a class="lk-pill"
-                 href="https://apps.apple.com/search?term=Limitless"
-                 target="_blank" rel="noopener">
-                <span class="lk-pill-icon lk-pill-icon--appstore" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8.8 17.8h-2.4l-.6 1.1a1.2 1.2 0 1 1-2.1-1.2L8.4 9.2a3.4 3.4 0 0 1-.3-3c.3-1 1-1.7 1.9-2a1.2 1.2 0 0 1 1 2.2c-.4.2-.6.4-.7.8-.1.4 0 .8.2 1.1l4.3 7.5c.3.6.1 1.3-.5 1.6a1.2 1.2 0 0 1-1.6-.5l-.3-.6H9.2l-.4.7zM11 15l-.8-1.4-.8 1.4h1.6zm7 3h.4a1.2 1.2 0 1 1 0 2.4H18a2.4 2.4 0 0 1-2-1.1l-3-5.2a1.2 1.2 0 1 1 2.1-1.2l1.4 2.5 1-1.7a1.2 1.2 0 0 1 2 1.2L18.4 18l-.4 0z"/>
-                  </svg>
-                </span>
-                <span class="lk-pill-search-text">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-                    <circle cx="11" cy="11" r="6"/>
-                    <path d="m20 20-3.5-3.5"/>
-                  </svg>
-                  <span>Search: ‘Limitless’</span>
-                </span>
-              </a>
-            </div>
+            <!-- APP CTA: unser Limitless App-Store-Card -->
+            <a class="lk-appstore-card" id="lk-appstore-card"
+               href="https://apps.apple.com/app/limitless-app-blocker/id0000000000"
+               target="_blank" rel="noopener" aria-label="Limitless on the App Store">
+              <img src="./assets/app-store-card.png" alt="Limitless on the App Store"
+                   width="1024" height="406" decoding="async" loading="eager" />
+            </a>
 
             <!-- PSL RATING STRIP 1–10 -->
             <p class="lk-psl-label">Limitless Rating</p>
@@ -2186,7 +2231,14 @@
       </div>
 
       <div class="ct-row">
-        <span class="ct-label">Task</span>
+        <span class="ct-label">Geblockte App</span>
+        <div class="ct-task-strip" id="blocked-strip" role="tablist" aria-label="Geblockte App wählen">
+          <div id="blocked-picker" style="display:contents"></div>
+        </div>
+      </div>
+
+      <div class="ct-row">
+        <span class="ct-label">Unlock Task</span>
         <div class="ct-task-strip" id="task-strip" role="tablist" aria-label="Aufgabe wählen">
           <div id="task-picker" style="display:contents"></div>
         </div>
@@ -2398,17 +2450,124 @@
 
   function selectTask(index) {
     var task = TASKS[index];
-    document.querySelectorAll('.task-thumb').forEach(function (b, j) {
+    document.querySelectorAll('#task-picker .task-thumb').forEach(function (b, j) {
       b.setAttribute('aria-pressed', j === index ? 'true' : 'false');
     });
     nameEl.textContent = task.name;
     heroEl.innerHTML = imgTag(task.file, 'shield-hero-img', '');
     var heroImg = heroEl.querySelector('img');
     applyShieldCreamToImage(heroImg, 768);
+    /* Task-Icon neben Task-Name im Hero (PNG im Original, ohne Cream-Flatten) */
+    var taskIconEl = document.getElementById('task-icon');
+    if (taskIconEl) {
+      taskIconEl.innerHTML = imgTag(task.file, 'lk-task-icon-img', '');
+    }
     if (taskSecondsEl) taskSecondsEl.textContent = (task.seconds || 30) + 's';
     var taskMetaSec = document.getElementById('task-meta-seconds');
     if (taskMetaSec) taskMetaSec.textContent = (task.seconds || 30) + ' sec';
     renderChips(task.impact);
+  }
+
+  /* ============================================================
+     BLOCKED APPS — auswählbar via Clipper-Studio
+     Inline-SVG Logos (markensicher, scharf auf jedem Display)
+     ============================================================ */
+  var BLOCKED_APPS = [
+    {
+      name: 'TikTok',
+      bg: '#000000',
+      svg: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true">' +
+           '<path d="M21.5 5.5c.4 2.3 1.7 4.2 3.6 5.4 1 .6 2.1 1 3.3 1.1v3.8c-2.1 0-4-.5-5.7-1.5-1.1-.6-2-1.5-2.7-2.5v9.8c0 4.8-3.9 8.7-8.7 8.7S2.6 26.4 2.6 21.6s3.9-8.7 8.7-8.7c.5 0 1 0 1.4.1v4c-.5-.1-.9-.2-1.4-.2-2.6 0-4.8 2.1-4.8 4.8s2.1 4.8 4.8 4.8 4.8-2.1 4.8-4.8V5.5h5.4z" fill="#fff" opacity=".9"/>' +
+           '<path d="M23 5.5c.4 2.3 1.6 4.2 3.5 5.4l.1.1c-.8-1.1-1.3-2.5-1.4-4-0-.5 0-1 0-1.5H23z" fill="#25f4ee"/>' +
+           '<path d="M19.6 24.7c1.2-.8 2-2.1 2.2-3.6.1-.6.1-1.1.1-1.7V9.6c.7 1 1.7 1.9 2.7 2.5C22.8 11 21.5 9.1 21 6.8h-5.4v14.8c0 2.7-2.1 4.8-4.8 4.8-.7 0-1.4-.2-2.1-.5 1 1.4 2.7 2.3 4.5 2.3 2.5 0 4.6-1.2 5.6-2.6.3-.4.5-.7.8-1v-.1z" fill="#fe2c55"/>' +
+           '</svg>'
+    },
+    {
+      name: 'Instagram',
+      bg: 'radial-gradient(circle at 30% 110%, #ffdb4d 0%, #fe7348 25%, #e93382 55%, #b936b8 80%, #4a5dff 100%)',
+      svg: '<svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+           '<rect x="5" y="5" width="22" height="22" rx="6"/>' +
+           '<circle cx="16" cy="16" r="5.2"/>' +
+           '<circle cx="22.5" cy="9.5" r="1.2" fill="#fff"/>' +
+           '</svg>'
+    },
+    {
+      name: 'YouTube',
+      bg: '#ff0000',
+      svg: '<svg viewBox="0 0 32 32" fill="#fff" aria-hidden="true">' +
+           '<path d="M13.2 21V11l8.5 5-8.5 5z"/>' +
+           '</svg>'
+    },
+    {
+      name: 'Snapchat',
+      bg: '#fffc00',
+      svg: '<svg viewBox="0 0 32 32" fill="#fff" stroke="#111" stroke-width="0.6" aria-hidden="true">' +
+           '<path d="M16 4c3.8 0 6.8 3.1 6.8 6.9v2.4c0 .6.1 1 .5 1.4.7.8 1.8.9 2.3 1 .4.1.6.3.6.6 0 .4-.2.8-1.1 1.2-.6.3-1.3.5-1.6.8-.2.3-.2.6.3 1.4.7 1.1 1.8 2.2 3.6 2.9.3.1.5.3.4.6-.1.6-1.8 1.2-3.5 1.4-.3 0-.5.2-.6.6-.1.3-.1.7-.3.9-.2.2-.6.2-1.3 0-.6-.1-1.5-.2-2.5 0-1 .2-1.9.7-2.9 1.4-.9.6-1.5 1-2.7 1-1.2 0-1.8-.4-2.7-1-1-.7-1.9-1.2-2.9-1.4-1-.2-1.9-.1-2.5 0-.7.2-1.1.2-1.3 0-.2-.2-.2-.6-.3-.9-.1-.4-.3-.6-.6-.6-1.7-.2-3.4-.8-3.5-1.4 0-.3.1-.5.4-.6 1.8-.7 2.9-1.8 3.6-2.9.5-.8.5-1.1.3-1.4-.3-.3-1-.5-1.6-.8-.9-.4-1.1-.8-1.1-1.2 0-.3.2-.5.6-.6.5-.1 1.6-.2 2.3-1 .4-.4.5-.8.5-1.4v-2.4C9.2 7.1 12.2 4 16 4z"/>' +
+           '</svg>'
+    },
+    {
+      name: 'X',
+      bg: '#000000',
+      svg: '<svg viewBox="0 0 32 32" fill="#fff" aria-hidden="true">' +
+           '<path d="M20.8 5h3.1l-6.7 7.7L25 27h-6.2l-4.8-6.3L8.4 27H5.3l7.1-8.2L5 5h6.4l4.4 5.8L20.8 5zm-1.1 20.2h1.7L10.3 6.7H8.4l11.3 18.5z"/>' +
+           '</svg>'
+    },
+    {
+      name: 'Reddit',
+      bg: '#ff4500',
+      svg: '<svg viewBox="0 0 32 32" fill="#fff" aria-hidden="true">' +
+           '<circle cx="16" cy="17.5" r="9.5"/>' +
+           '<circle cx="12.7" cy="17" r="1.3" fill="#ff4500"/>' +
+           '<circle cx="19.3" cy="17" r="1.3" fill="#ff4500"/>' +
+           '<path d="M11.8 20.2c1 .9 2.5 1.4 4.2 1.4s3.2-.5 4.2-1.4" stroke="#ff4500" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
+           '<circle cx="22.5" cy="8.5" r="2" fill="#fff"/>' +
+           '<path d="M16 8v-2l5 .5" stroke="#fff" stroke-width="1.2" fill="none" stroke-linecap="round"/>' +
+           '</svg>'
+    },
+    {
+      name: 'Facebook',
+      bg: '#0866ff',
+      svg: '<svg viewBox="0 0 32 32" fill="#fff" aria-hidden="true">' +
+           '<path d="M18.2 27.9V17.5h3.5l.5-4H18.2v-2.6c0-1.2.3-2 2-2h2.2V5.3c-.4-.1-1.7-.2-3.2-.2-3.2 0-5.3 1.9-5.3 5.4v3H10v4h3.8v10.4h4.3z"/>' +
+           '</svg>'
+    }
+  ];
+
+  var blockedPicker = document.getElementById('blocked-picker');
+  var blockedNameEl = document.getElementById('blocked-app');
+  var blockedIconEl = document.getElementById('blocked-app-icon');
+
+  function selectBlockedApp(index) {
+    var app = BLOCKED_APPS[index];
+    if (!app) return;
+    document.querySelectorAll('#blocked-picker .task-thumb').forEach(function (b, j) {
+      b.setAttribute('aria-pressed', j === index ? 'true' : 'false');
+    });
+    if (blockedNameEl) blockedNameEl.textContent = app.name;
+    if (blockedIconEl) {
+      blockedIconEl.style.background = app.bg;
+      blockedIconEl.innerHTML = app.svg;
+    }
+  }
+
+  if (blockedPicker) {
+    BLOCKED_APPS.forEach(function (app, i) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'task-thumb';
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-label', app.name);
+      btn.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+      btn.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+      btn.innerHTML =
+        '<span style="width:36px;height:36px;border-radius:10px;background:' + app.bg +
+        ';display:flex;align-items:center;justify-content:center;overflow:hidden;">' +
+        app.svg.replace('<svg ', '<svg style="width:22px;height:22px;" ') +
+        '</span>';
+      btn.addEventListener('click', function () { selectBlockedApp(i); });
+      blockedPicker.appendChild(btn);
+    });
+    selectBlockedApp(0);
   }
 
   document.getElementById('btn-close').addEventListener('click', function (e) {
