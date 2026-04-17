@@ -2624,10 +2624,11 @@
       color: #ffffff;
     }
 
-    .edit-actions {
+    .edit-top-row {
       display: flex;
-      gap: 8px;
-      margin-bottom: 14px;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
     }
     .edit-btn {
       display: inline-flex;
@@ -2663,34 +2664,54 @@
     }
     .edit-btn-primary svg { display: block; }
 
-    .edit-overall-row {
-      display: flex;
+    /* Overall-Rating inline, rechts neben dem Foto-CTA */
+    .edit-overall-inline {
+      display: inline-flex;
       align-items: center;
-      gap: 10px;
-      padding: 6px 2px;
-      margin-bottom: 10px;
-      background: transparent;
-      border: none;
+      gap: 8px;
+      padding: 0 4px;
+      flex-shrink: 0;
     }
-    .edit-overall-row .edit-label {
-      font-size: 12px;
+    .edit-overall-inline .edit-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(235, 235, 245, 0.6);
+    }
+    .edit-overall-inline .edit-denom {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(235, 235, 245, 0.4);
+    }
+
+    /* Sections: Task-Picker + Stats-Grid */
+    .edit-section {
+      margin-bottom: 10px;
+    }
+    .edit-section-label {
+      display: block;
+      font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.14em;
       text-transform: uppercase;
       color: rgba(235, 235, 245, 0.55);
-      flex: 1;
+      margin-bottom: 6px;
+      padding-left: 2px;
     }
-    .edit-overall-row .edit-denom {
-      font-size: 12px;
-      font-weight: 700;
-      color: rgba(235, 235, 245, 0.4);
+    .edit-task-strip {
+      background: transparent;
+      padding: 2px 0 6px;
+    }
+    .edit-task-strip::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.14);
     }
 
     .edit-stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 10px;
+      gap: 6px 12px;
+      margin-bottom: 6px;
     }
     .edit-stat {
       display: flex;
@@ -2922,13 +2943,15 @@
     </div>
   </div>
 
-  <!-- Kompaktes Edit-Panel unter dem Handy: Foto wechseln + Ratings bearbeiten -->
+  <!-- Kompaktes Edit-Panel unter dem Handy: Foto wechseln + Task wählen + Ratings bearbeiten -->
   <aside class="edit-panel" aria-label="Ratings bearbeiten">
     <div class="edit-head">
       <span class="edit-title">Anpassen</span>
       <button type="button" class="edit-reset" id="edit-reset" aria-label="Zurücksetzen">Reset</button>
     </div>
-    <div class="edit-actions">
+
+    <!-- Top-Row: Foto-CTA links | Overall-Rating rechts -->
+    <div class="edit-top-row">
       <label for="scan-file" class="edit-btn edit-btn-primary">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -2936,12 +2959,22 @@
         </svg>
         <span>Neues Foto</span>
       </label>
+      <div class="edit-overall-inline">
+        <span class="edit-label">Overall</span>
+        <input type="number" min="1" max="10" step="1" class="edit-input" id="edit-overall" placeholder="—" inputmode="numeric" />
+        <span class="edit-denom">/10</span>
+      </div>
     </div>
-    <div class="edit-overall-row">
-      <span class="edit-label">Overall</span>
-      <input type="number" min="1" max="10" step="1" class="edit-input" id="edit-overall" placeholder="—" inputmode="numeric" />
-      <span class="edit-denom">/ 10</span>
+
+    <!-- Task-Picker: Unlock-Task-Bilder wieder auswählbar -->
+    <div class="edit-section">
+      <span class="edit-section-label">Unlock Task</span>
+      <div class="ct-task-strip edit-task-strip" role="tablist" aria-label="Task wählen">
+        <div id="task-picker" style="display:contents"></div>
+      </div>
     </div>
+
+    <!-- Stats-Grid: 6 Kategorien 1–10 -->
     <div class="edit-stats-grid" id="edit-stats-grid">
       <!-- Wird per JS gerendert, damit Reihenfolge mit STAT_CATEGORIES synchron bleibt -->
     </div>
