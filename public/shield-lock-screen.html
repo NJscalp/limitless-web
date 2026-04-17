@@ -906,7 +906,7 @@
       align-items: center;
       gap: 4px;
     }
-    /* Weicher Radial-Glow hinter dem Gauge (kein Kasten, nur Licht) */
+    /* Weicher Blau-Glow hinter dem Gauge (kein Kasten, nur Licht) */
     .lk-psl::before {
       content: "";
       position: absolute;
@@ -916,10 +916,10 @@
       height: 110px;
       transform: translate(-50%, -50%);
       background:
-        radial-gradient(50% 55% at 50% 60%, rgba(175, 82, 222, 0.22) 0%, transparent 70%),
-        radial-gradient(50% 50% at 30% 40%, rgba(90, 200, 250, 0.18) 0%, transparent 70%),
-        radial-gradient(50% 50% at 70% 40%, rgba(99, 230, 190, 0.18) 0%, transparent 70%);
-      filter: blur(12px);
+        radial-gradient(50% 55% at 50% 60%, rgba(10, 132, 255, 0.28) 0%, transparent 70%),
+        radial-gradient(55% 50% at 30% 45%, rgba(90, 200, 250, 0.22) 0%, transparent 70%),
+        radial-gradient(55% 50% at 70% 45%, rgba(90, 200, 250, 0.22) 0%, transparent 70%);
+      filter: blur(14px);
       pointer-events: none;
       z-index: 0;
     }
@@ -983,8 +983,8 @@
       stroke-dasharray: 258 258;
       stroke-dashoffset: 258;
       filter:
-        drop-shadow(0 0 8px rgba(175, 82, 222, 0.55))
-        drop-shadow(0 0 4px rgba(90, 200, 250, 0.45));
+        drop-shadow(0 0 10px rgba(10, 132, 255, 0.7))
+        drop-shadow(0 0 4px rgba(90, 200, 250, 0.5));
       transition: stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1), filter 0.3s ease;
     }
 
@@ -1007,14 +1007,14 @@
       letter-spacing: -0.04em;
       line-height: 0.95;
       font-variant-numeric: tabular-nums;
-      background: linear-gradient(135deg, #af52de 0%, #5ac8fa 55%, #63e6be 100%);
+      background: linear-gradient(135deg, #0a84ff 0%, #5ac8fa 100%);
       -webkit-background-clip: text;
               background-clip: text;
       color: transparent;
       transition: background 0.3s ease, filter 0.3s ease;
       filter:
-        drop-shadow(0 0 14px rgba(175, 82, 222, 0.55))
-        drop-shadow(0 0 4px rgba(90, 200, 250, 0.45));
+        drop-shadow(0 0 14px rgba(10, 132, 255, 0.65))
+        drop-shadow(0 0 4px rgba(90, 200, 250, 0.5));
     }
     .lk-psl-num.tier-trueadam {
       background: linear-gradient(90deg, #ff2d55 0%, #ffcf6b 50%, #af52de 100%);
@@ -2485,9 +2485,8 @@
                 <svg class="lk-psl-gauge" viewBox="0 0 200 116" aria-hidden="true">
                   <defs>
                     <linearGradient id="psl-gauge-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop id="psl-grad-0"   offset="0%"   stop-color="#af52de" />
-                      <stop id="psl-grad-50"  offset="50%"  stop-color="#5ac8fa" />
-                      <stop id="psl-grad-100" offset="100%" stop-color="#63e6be" />
+                      <stop id="psl-grad-0"   offset="0%"   stop-color="#0a84ff" />
+                      <stop id="psl-grad-100" offset="100%" stop-color="#5ac8fa" />
                     </linearGradient>
                     <filter id="psl-gauge-glow" x="-30%" y="-30%" width="160%" height="160%">
                       <feGaussianBlur stdDeviation="3.2" result="coloredBlur" />
@@ -3244,12 +3243,12 @@
 
   /* 6 Kategorien — Jawline first (gewünscht) + Symmetry, Eye Area, Cheekbones, Skin, Definition */
   var STAT_CATEGORIES = [
-    { name: 'Jawline',    key: 'jawline',    offset: 2,  task: 'Jaw Exercise',    color: '#af52de', color2: '#ff2d55' },
-    { name: 'Symmetry',   key: 'symmetry',   offset: -4, task: 'Eyebrow Raises',  color: '#5ac8fa', color2: '#0a84ff' },
-    { name: 'Eye Area',   key: 'eyeArea',    offset: 5,  task: 'Eyebrow Raises',  color: '#63e6be', color2: '#5ac8fa' },
-    { name: 'Cheekbones', key: 'cheekbones', offset: -2, task: 'Fish Face',       color: '#ff2d55', color2: '#ff9500' },
-    { name: 'Skin',       key: 'skin',       offset: 8,  task: 'Drink Water',     color: '#ffcc00', color2: '#ff9500' },
-    { name: 'Definition', key: 'definition', offset: -3, task: 'Neck Stretches',  color: '#0a84ff', color2: '#af52de' }
+    { name: 'Jawline',    key: 'jawline',    offset: 2,  task: 'Jaw Exercise' },
+    { name: 'Symmetry',   key: 'symmetry',   offset: -4, task: 'Eyebrow Raises' },
+    { name: 'Eye Area',   key: 'eyeArea',    offset: 5,  task: 'Eyebrow Raises' },
+    { name: 'Cheekbones', key: 'cheekbones', offset: -2, task: 'Fish Face' },
+    { name: 'Skin',       key: 'skin',       offset: 8,  task: 'Drink Water' },
+    { name: 'Definition', key: 'definition', offset: -3, task: 'Neck Stretches' }
   ];
 
   function deriveCategoryScores(overall, potential, aiRec) {
@@ -3267,7 +3266,7 @@
     return out;
   }
 
-  /* Limitless Rating Card — Halbkreis-Gauge (180° Arc) */
+  /* Limitless Rating Card — Halbkreis-Gauge (180° Arc) in einheitlichem Limitless-Blau */
   var pslNumEl      = document.getElementById('psl-num');
   var pslTierPillEl = document.getElementById('psl-tier-pill');
   var pslGaugeFill  = document.getElementById('psl-gauge-fill');
@@ -3276,28 +3275,26 @@
   var chadGridEl    = document.getElementById('chad-grid');
   /* Pfadlänge ≈ π·r·(angle/180) = π·82 ≈ 257.6 */
   var PSL_ARC_LEN   = 258;
+  /* Unified Limitless-Blau */
+  var BRAND_BLUE    = '#0a84ff';
+  var BRAND_CYAN    = '#5ac8fa';
 
   function renderPSL(overall100) {
     var r = to10(overall100);
     var tier = chadTier(r);
     var isTrue = r === 10;
-    var c = tierColor(r);
 
     if (pslNumEl) {
       pslNumEl.textContent = String(r);
+      pslNumEl.classList.remove('tier-trueadam');
       if (isTrue) {
         pslNumEl.classList.add('tier-trueadam');
         pslNumEl.style.background = '';
         pslNumEl.style.filter =
           'drop-shadow(0 0 14px rgba(255, 45, 85, 0.6)) drop-shadow(0 0 4px rgba(175, 82, 222, 0.4))';
       } else {
-        pslNumEl.classList.remove('tier-trueadam');
-        pslNumEl.style.background =
-          'linear-gradient(135deg, ' + c + ' 0%, ' + c + 'aa 100%)';
-        pslNumEl.style.webkitBackgroundClip = 'text';
-        pslNumEl.style.backgroundClip = 'text';
-        pslNumEl.style.filter =
-          'drop-shadow(0 0 12px ' + c + '90) drop-shadow(0 0 2px ' + c + '50)';
+        pslNumEl.style.background = '';
+        pslNumEl.style.filter = '';
       }
     }
 
@@ -3311,10 +3308,10 @@
         pslTierPillEl.style.textShadow = '';
       } else {
         pslTierPillEl.classList.remove('tier-trueadam');
-        pslTierPillEl.style.background = c + '14';
-        pslTierPillEl.style.borderColor = c + '66';
-        pslTierPillEl.style.color = c;
-        pslTierPillEl.style.textShadow = '0 0 8px ' + c + '55';
+        pslTierPillEl.style.background = 'rgba(10, 132, 255, 0.08)';
+        pslTierPillEl.style.borderColor = 'rgba(10, 132, 255, 0.45)';
+        pslTierPillEl.style.color = BRAND_BLUE;
+        pslTierPillEl.style.textShadow = '0 0 10px rgba(10, 132, 255, 0.45)';
       }
     }
 
@@ -3323,58 +3320,56 @@
       pslGaugeFill.style.strokeDashoffset = String(offset);
       pslGaugeFill.style.filter = isTrue
         ? 'drop-shadow(0 0 10px rgba(255, 45, 85, 0.7)) drop-shadow(0 0 3px rgba(175, 82, 222, 0.5))'
-        : 'drop-shadow(0 0 8px ' + c + 'aa) drop-shadow(0 0 2px ' + c + '55)';
+        : 'drop-shadow(0 0 10px rgba(10, 132, 255, 0.7)) drop-shadow(0 0 4px rgba(90, 200, 250, 0.5))';
     }
     if (pslGrad0 && pslGrad100) {
       if (isTrue) {
         pslGrad0.setAttribute('stop-color', '#ff2d55');
         pslGrad100.setAttribute('stop-color', '#af52de');
       } else {
-        pslGrad0.setAttribute('stop-color', c);
-        pslGrad100.setAttribute('stop-color', c);
+        pslGrad0.setAttribute('stop-color', BRAND_BLUE);
+        pslGrad100.setAttribute('stop-color', BRAND_CYAN);
       }
     }
   }
 
-  /* Chad-Tier-Grid: 6 Kategorien mit kategorie-eigener App-Farbe + Zahl-Rating + Glow + Task */
+  /* Chad-Tier-Grid: 6 Kategorien — einheitliches Limitless-Blau für maximalen Eye-Catch */
   function renderChadStats(overall, potential, aiRec) {
     if (!chadGridEl) return;
     var cats = deriveCategoryScores(overall, potential, aiRec);
+    var c1 = BRAND_BLUE;
+    var c2 = BRAND_CYAN;
+    var numStyle =
+      'background: linear-gradient(135deg, ' + c1 + ' 0%, ' + c2 + ' 100%);' +
+      '-webkit-background-clip: text; background-clip: text;' +
+      'filter: drop-shadow(0 0 9px rgba(10, 132, 255, 0.6)) drop-shadow(0 0 3px rgba(90, 200, 250, 0.45));';
+    var tierStyle  = 'color: ' + c1 + '; text-shadow: 0 0 9px rgba(10, 132, 255, 0.5);';
+    var taskStyle  = 'color: ' + c1 + '; text-shadow: 0 0 10px rgba(10, 132, 255, 0.55);';
+    var dotStyle =
+      'background: radial-gradient(60% 60% at 35% 30%, ' + c1 + 'ff 0%, ' + c2 + '88 55%, ' + c1 + '22 100%);' +
+      'box-shadow: 0 0 0 1px ' + c1 + '99 inset, 0 0 8px rgba(10, 132, 255, 0.6);';
     var html = '';
     STAT_CATEGORIES.forEach(function (cat) {
       var sc100 = cats[cat.key];
       var r10 = to10(sc100);
       var tier = chadTier(r10);
       var isTrue = r10 === 10;
-      var c1 = cat.color;
-      var c2 = cat.color2 || cat.color;
       var pct = (r10 / 10) * 100;
       var numClass  = isTrue ? 'lk-chad-num tier-trueadam' : 'lk-chad-num';
       var tierClass = isTrue ? 'lk-chad-tier tier-trueadam' : 'lk-chad-tier';
-      var numStyle = isTrue
-        ? ''
-        : 'background: linear-gradient(135deg, ' + c1 + ' 0%, ' + c2 + ' 100%);' +
-          '-webkit-background-clip: text; background-clip: text;' +
-          'filter: drop-shadow(0 0 8px ' + c1 + '90) drop-shadow(0 0 3px ' + c2 + '55);';
+      var cardNumStyle  = isTrue ? '' : numStyle;
+      var cardTierStyle = isTrue ? '' : tierStyle;
       var barStyle = isTrue
         ? 'width:' + pct + '%; background: linear-gradient(90deg, #ff2d55 0%, #ffcf6b 50%, #af52de 100%); box-shadow: 0 0 8px rgba(255, 45, 85, 0.45);'
-        : 'width:' + pct + '%; background: linear-gradient(90deg, ' + c1 + ' 0%, ' + c2 + ' 100%); box-shadow: 0 0 6px ' + c1 + '66;';
-      var tierStyle = isTrue
-        ? ''
-        : 'color: ' + c1 + '; text-shadow: 0 0 8px ' + c1 + '55;';
-      var taskStyle =
-        'color: ' + c1 + '; text-shadow: 0 0 10px ' + c1 + '66;';
-      var dotStyle =
-        'background: radial-gradient(60% 60% at 35% 30%, ' + c1 + 'ff 0%, ' + c2 + '88 55%, ' + c1 + '22 100%);' +
-        'box-shadow: 0 0 0 1px ' + c1 + '88 inset, 0 0 8px ' + c1 + '88;';
+        : 'width:' + pct + '%; background: linear-gradient(90deg, ' + c1 + ' 0%, ' + c2 + ' 100%); box-shadow: 0 0 6px rgba(10, 132, 255, 0.5);';
       html +=
         '<div class="lk-chad-card">' +
           '<span class="lk-chad-label">' + cat.name + '</span>' +
           '<span class="lk-chad-score-row">' +
-            '<span class="' + numClass + '" style="' + numStyle + '">' + r10 + '</span>' +
+            '<span class="' + numClass + '" style="' + cardNumStyle + '">' + r10 + '</span>' +
             '<span class="lk-chad-denom">/10</span>' +
           '</span>' +
-          '<span class="' + tierClass + '" style="' + tierStyle + '">' + tier + '</span>' +
+          '<span class="' + tierClass + '" style="' + cardTierStyle + '">' + tier + '</span>' +
           '<div class="lk-chad-bar-wrap">' +
             '<div class="lk-chad-bar" style="' + barStyle + '"></div>' +
           '</div>' +
