@@ -2786,6 +2786,95 @@
       color: rgba(235, 235, 245, 0.42);
     }
 
+    /* ========== Export-Row: PNG / Video / Replay ========== */
+    .edit-export-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .edit-btn-export {
+      flex: 1;
+      height: 38px;
+      padding: 0 10px;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #ffffff;
+      background: linear-gradient(135deg, #0a84ff 0%, #5ac8fa 100%);
+      box-shadow:
+        0 4px 12px rgba(10, 132, 255, 0.32),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    }
+    .edit-btn-export:hover {
+      box-shadow:
+        0 6px 16px rgba(10, 132, 255, 0.42),
+        0 0 0 1px rgba(255, 255, 255, 0.14) inset;
+    }
+    .edit-btn-video {
+      background: linear-gradient(135deg, #ff2d55 0%, #ff9500 100%);
+      box-shadow:
+        0 4px 12px rgba(255, 45, 85, 0.32),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    }
+    .edit-btn-video:hover {
+      box-shadow:
+        0 6px 16px rgba(255, 45, 85, 0.42),
+        0 0 0 1px rgba(255, 255, 255, 0.14) inset;
+    }
+    .edit-btn-ghost {
+      flex: 0 1 auto;
+      height: 38px;
+      padding: 0 14px;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgba(235, 235, 245, 0.8);
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.18) !important;
+      box-shadow: none;
+    }
+    .edit-btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.32) !important;
+      color: #ffffff;
+    }
+    .edit-btn[disabled] {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .edit-export-progress {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .edit-export-progress[hidden] { display: none; }
+    .edit-export-progress-bar {
+      width: 100%;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+    .edit-export-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0a84ff, #5ac8fa);
+      border-radius: 999px;
+      transition: width 0.18s ease;
+    }
+    .edit-export-progress-text {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(235, 235, 245, 0.6);
+    }
+
   </style>
 </head>
 <body>
@@ -2986,6 +3075,36 @@
       <!-- Wird per JS gerendert, damit Reihenfolge mit STAT_CATEGORIES synchron bleibt -->
     </div>
     <p class="edit-hint">Tipp: Leer lassen = KI-Werte nutzen. Zahlen 1–10.</p>
+
+    <!-- Export-Sektion: als PNG oder Video mit Reveal-Animation herunterladen -->
+    <div class="edit-export-row">
+      <button type="button" class="edit-btn edit-btn-export" id="btn-export-png" aria-label="Als PNG herunterladen">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>PNG</span>
+      </button>
+      <button type="button" class="edit-btn edit-btn-export edit-btn-video" id="btn-export-video" aria-label="Als Video mit Animation herunterladen">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="23 7 16 12 23 17 23 7"/>
+          <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+        </svg>
+        <span>Video</span>
+      </button>
+      <button type="button" class="edit-btn edit-btn-ghost" id="btn-replay" aria-label="Scan-Animation neu abspielen">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10"/>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+        </svg>
+        <span>Replay</span>
+      </button>
+    </div>
+    <div class="edit-export-progress" id="export-progress" hidden aria-live="polite">
+      <div class="edit-export-progress-bar"><div class="edit-export-progress-fill" id="export-progress-fill"></div></div>
+      <span class="edit-export-progress-text" id="export-progress-text">Exportiere…</span>
+    </div>
   </aside>
 
   <!-- 1:1 Analyse-Overlay wie in der App (Face Scan Loader) -->
@@ -4003,6 +4122,18 @@
   /* Für Clipper-Override-IIFE: gleiche Re-Render-Pipeline (Trajectory, Stats, Def-Chip) */
   window.applyShieldScores = applyScoresToUi;
 
+  /* Für Export/Replay-IIFE sichtbar machen: Animation-Replay benötigt Zugriff
+     auf das Scan-Overlay und die Score-Submission. */
+  window.__shieldReplay = {
+    showOverlay: showAnalyzeOverlay,
+    finishOverlay: finishAnalyzeOverlay,
+    submit: submitAnalyzeResult,
+    reset: resetScoresPlaceholder,
+    getLastScan: function () {
+      try { return localStorage.getItem('limitlessShieldScanImage'); } catch (e) { return null; }
+    }
+  };
+
   selectTask(0);
 
   /* Auto-Pickup: Bild wurde auf der "Choose from Gallery" Seite gewählt
@@ -4184,6 +4315,256 @@
     }
   })();
 })();
+  </script>
+
+  <!-- Export & Replay: PNG + Video mit Scan-Reveal-Animation für Clipper -->
+  <script type="module">
+    import { toPng, toCanvas } from 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/+esm';
+
+    const phoneEl = document.getElementById('phone-mockup');
+    const pngBtn = document.getElementById('btn-export-png');
+    const videoBtn = document.getElementById('btn-export-video');
+    const replayBtn = document.getElementById('btn-replay');
+    const progressBox = document.getElementById('export-progress');
+    const progressFill = document.getElementById('export-progress-fill');
+    const progressText = document.getElementById('export-progress-text');
+
+    const VIDEO_DURATION_MS = 4600;
+    const VIDEO_FPS = 30;
+
+    function setProgress(pct, text) {
+      if (!progressBox) return;
+      progressBox.hidden = false;
+      if (progressFill) progressFill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+      if (progressText && text) progressText.textContent = text;
+    }
+
+    function hideProgress(delayMs) {
+      setTimeout(function () { if (progressBox) progressBox.hidden = true; }, delayMs || 400);
+    }
+
+    function setBusy(isBusy) {
+      [pngBtn, videoBtn, replayBtn].forEach(function (b) { if (b) b.disabled = !!isBusy; });
+    }
+
+    function triggerDownload(blobOrUrl, filename) {
+      const url = typeof blobOrUrl === 'string' ? blobOrUrl : URL.createObjectURL(blobOrUrl);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      if (typeof blobOrUrl !== 'string') setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+    }
+
+    function currentScores() {
+      return window.__lastApplied || null;
+    }
+
+    function replayReveal() {
+      return new Promise(function (resolve) {
+        const bridge = window.__shieldReplay;
+        const base = currentScores();
+        const img = document.getElementById('scan-preview-img');
+        const dataUrl = img && img.src && img.src.indexOf('data:') === 0 ? img.src : (bridge ? bridge.getLastScan() : null);
+
+        if (!bridge || !base || !dataUrl) {
+          resolve(false);
+          return;
+        }
+
+        bridge.reset();
+        bridge.showOverlay(dataUrl);
+
+        setTimeout(function () {
+          bridge.submit(
+            { overall: base.overall, potential: base.potential, jawline: 0, symmetry: 0, classicalIdeal: 0, eyeArea: 0, cheekbones: 0, definition: 0, bloat: 0, skin: 0 },
+            base.source || 'demo',
+            base.aiRec || null
+          );
+          setTimeout(resolve, 1400, true);
+        }, 2600);
+      });
+    }
+
+    async function exportPng() {
+      if (!phoneEl) return;
+      setBusy(true);
+      setProgress(15, 'Rendere PNG…');
+      phoneEl.classList.add('is-capturing');
+      try {
+        const url = await toPng(phoneEl, {
+          pixelRatio: 3,
+          cacheBust: true,
+          backgroundColor: '#000000',
+          skipFonts: false,
+        });
+        setProgress(90, 'Speichere…');
+        triggerDownload(url, 'limitless-shield-' + Date.now() + '.png');
+        setProgress(100, 'Fertig.');
+      } catch (e) {
+        setProgress(0, 'Fehler beim Export.');
+      } finally {
+        phoneEl.classList.remove('is-capturing');
+        setBusy(false);
+        hideProgress(700);
+      }
+    }
+
+    function pickBestVideoMime() {
+      const candidates = [
+        'video/mp4;codecs=avc1.42E01E',
+        'video/mp4',
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm'
+      ];
+      for (const c of candidates) {
+        if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c)) return c;
+      }
+      return 'video/webm';
+    }
+
+    /* Hängt das Scan-Overlay temporär in die Handy-Screen, damit die Scan-Animation
+       mit ins Video gerendert wird. Gibt eine "restore" Funktion zurück. */
+    function reparentOverlayIntoPhone() {
+      const overlayEl = document.getElementById('analyze-overlay');
+      const phoneScreen = phoneEl ? phoneEl.querySelector('.phone-screen') : null;
+      if (!overlayEl || !phoneScreen) return function () {};
+
+      const origParent = overlayEl.parentElement;
+      const origNextSibling = overlayEl.nextSibling;
+      const origStyle = overlayEl.getAttribute('style') || '';
+
+      overlayEl.style.position = 'absolute';
+      overlayEl.style.inset = '0';
+      overlayEl.style.zIndex = '99';
+      overlayEl.style.borderRadius = 'inherit';
+      phoneScreen.appendChild(overlayEl);
+      phoneScreen.classList.add('is-video-capturing');
+
+      return function restore() {
+        phoneScreen.classList.remove('is-video-capturing');
+        if (origStyle) overlayEl.setAttribute('style', origStyle);
+        else overlayEl.removeAttribute('style');
+        if (origParent) {
+          if (origNextSibling) origParent.insertBefore(overlayEl, origNextSibling);
+          else origParent.appendChild(overlayEl);
+        }
+      };
+    }
+
+    async function exportVideo() {
+      if (!phoneEl) return;
+      if (typeof MediaRecorder === 'undefined') {
+        alert('Dein Browser unterstützt kein MediaRecorder. Bitte Chrome/Safari-Aktuell nutzen.');
+        return;
+      }
+
+      setBusy(true);
+      setProgress(4, 'Bereite Aufnahme vor…');
+
+      const restoreOverlay = reparentOverlayIntoPhone();
+
+      const rect = phoneEl.getBoundingClientRect();
+      const dpr = Math.max(2, Math.min(3, (window.devicePixelRatio || 1) * 1.5));
+      const W = Math.round(rect.width * dpr);
+      const H = Math.round(rect.height * dpr);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, W, H);
+
+      const stream = canvas.captureStream(VIDEO_FPS);
+      const mime = pickBestVideoMime();
+      let recorder;
+      try {
+        recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
+      } catch (e) {
+        restoreOverlay();
+        setBusy(false);
+        hideProgress(200);
+        alert('Video-Aufnahme nicht unterstützt: ' + (e && e.message ? e.message : 'unbekannter Fehler'));
+        return;
+      }
+      const chunks = [];
+      recorder.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      const stopped = new Promise(function (res) { recorder.onstop = res; });
+
+      phoneEl.classList.add('is-capturing');
+      recorder.start(100);
+
+      const t0 = performance.now();
+      let running = true;
+      let didTriggerReplay = false;
+
+      async function frameLoop() {
+        while (running) {
+          const elapsed = performance.now() - t0;
+          if (!didTriggerReplay && elapsed > 120) {
+            didTriggerReplay = true;
+            replayReveal().catch(function () {});
+          }
+
+          try {
+            const rendered = await toCanvas(phoneEl, {
+              pixelRatio: dpr,
+              cacheBust: true,
+              backgroundColor: '#000000',
+              skipFonts: false,
+            });
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, W, H);
+            ctx.drawImage(rendered, 0, 0, W, H);
+          } catch (err) {
+            /* skip frame */
+          }
+
+          const pct = Math.min(96, Math.floor((elapsed / VIDEO_DURATION_MS) * 92) + 4);
+          setProgress(pct, 'Nehme auf… ' + Math.min(100, Math.round((elapsed / VIDEO_DURATION_MS) * 100)) + '%');
+
+          if (elapsed >= VIDEO_DURATION_MS) {
+            running = false;
+            break;
+          }
+
+          await new Promise(function (r) { requestAnimationFrame(function () { r(); }); });
+        }
+      }
+
+      try {
+        await frameLoop();
+      } catch (e) {
+        /* continue to stop recorder */
+      }
+
+      setProgress(97, 'Finalisiere…');
+      try { recorder.requestData(); } catch (e) {}
+      try { recorder.stop(); } catch (e) {}
+      await stopped;
+
+      phoneEl.classList.remove('is-capturing');
+      restoreOverlay();
+
+      const ext = mime.indexOf('mp4') >= 0 ? 'mp4' : 'webm';
+      const blob = new Blob(chunks, { type: mime });
+      triggerDownload(blob, 'limitless-shield-' + Date.now() + '.' + ext);
+
+      setProgress(100, 'Fertig.');
+      setBusy(false);
+      hideProgress(800);
+    }
+
+    if (pngBtn) pngBtn.addEventListener('click', function () { exportPng(); });
+    if (videoBtn) videoBtn.addEventListener('click', function () { exportVideo(); });
+    if (replayBtn) replayBtn.addEventListener('click', function () {
+      setBusy(true);
+      replayReveal().finally(function () { setBusy(false); });
+    });
   </script>
 </body>
 </html>
