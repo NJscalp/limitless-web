@@ -2579,15 +2579,12 @@
        ============================================================ */
     .edit-panel {
       width: min(420px, calc(100% - 32px));
-      margin: 24px auto 48px;
-      padding: 16px 18px 14px;
-      border-radius: 18px;
-      background: linear-gradient(180deg, rgba(28, 29, 34, 0.92) 0%, rgba(20, 21, 26, 0.94) 100%);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow:
-        0 20px 40px rgba(0, 0, 0, 0.4),
-        0 8px 18px rgba(0, 0, 0, 0.3),
-        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      margin: 20px auto 48px;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
       color: rgba(235, 235, 245, 0.88);
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
     }
@@ -2626,18 +2623,19 @@
 
     .edit-top-row {
       display: flex;
-      gap: 12px;
+      gap: 14px;
       align-items: center;
-      margin-bottom: 10px;
+      justify-content: space-between;
+      margin-bottom: 12px;
     }
     .edit-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      flex: 1;
+      flex: 0 1 auto;
       height: 40px;
-      padding: 0 14px;
+      padding: 0 18px;
       font-size: 13px;
       font-weight: 700;
       letter-spacing: 0.01em;
@@ -2669,7 +2667,8 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 0 4px;
+      padding: 0;
+      margin-left: auto;
       flex-shrink: 0;
     }
     .edit-overall-inline .edit-label {
@@ -2738,21 +2737,21 @@
     }
 
     .edit-input {
-      width: 56px;
-      height: 32px;
-      padding: 0 8px;
+      width: 44px;
+      height: 28px;
+      padding: 0 4px;
       font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 800;
       text-align: center;
       color: #ffffff;
-      background: rgba(10, 132, 255, 0.08);
-      border: 1px solid rgba(10, 132, 255, 0.28);
-      border-radius: 8px;
+      background: transparent;
+      border: none;
+      border-radius: 0;
       outline: none;
       appearance: textfield;
       -moz-appearance: textfield;
-      transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+      transition: color 0.12s ease, text-shadow 0.12s ease;
     }
     .edit-input::-webkit-outer-spin-button,
     .edit-input::-webkit-inner-spin-button {
@@ -2761,16 +2760,15 @@
     }
     .edit-input::placeholder { color: rgba(235, 235, 245, 0.3); font-weight: 600; }
     .edit-input:focus {
-      background: rgba(10, 132, 255, 0.14);
-      border-color: rgba(10, 132, 255, 0.6);
-      box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.18);
+      color: #5ac8fa;
+      text-shadow: 0 0 10px rgba(90, 200, 250, 0.55);
     }
     .edit-input.edit-input-overridden {
-      background: rgba(90, 200, 250, 0.12);
-      border-color: rgba(90, 200, 250, 0.5);
+      color: #5ac8fa;
+      text-shadow: 0 0 8px rgba(90, 200, 250, 0.4);
     }
 
-    .edit-stat .edit-input { width: 46px; height: 28px; font-size: 14px; }
+    .edit-stat .edit-input { width: 40px; height: 26px; font-size: 14px; }
 
     .edit-hint {
       margin: 4px 2px 0;
