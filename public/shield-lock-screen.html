@@ -903,22 +903,7 @@
       align-items: center;
       gap: 4px;
     }
-    /* Kompakter Ivory-Gold-Halo direkt hinter dem Gauge-Arc */
-    .lk-psl::before {
-      content: "";
-      position: absolute;
-      left: 50%;
-      top: 48%;
-      width: 140px;
-      height: 80px;
-      transform: translate(-50%, -50%);
-      background:
-        radial-gradient(45% 55% at 50% 60%, rgba(255, 220, 140, 0.55) 0%, rgba(255, 220, 140, 0) 72%),
-        radial-gradient(55% 55% at 50% 60%, rgba(240, 193, 87, 0.28) 0%, rgba(240, 193, 87, 0) 80%);
-      filter: blur(6px);
-      pointer-events: none;
-      z-index: 0;
-    }
+    /* Halo hinter dem Gauge entfernt — nur noch der Arc & die Zahl leuchten aus sich heraus */
     .lk-psl > * { position: relative; z-index: 1; }
     .lk-psl::before {
       content: '';
@@ -998,22 +983,7 @@
       pointer-events: none;
       isolation: isolate;
     }
-    /* Kompakter Ivory-Gold-Backlight direkt hinter der PSL-Zahl */
-    .lk-psl-center::before {
-      content: "";
-      position: absolute;
-      left: 50%;
-      top: 58%;
-      transform: translate(-50%, -50%);
-      width: 58px;
-      height: 58px;
-      border-radius: 50%;
-      background:
-        radial-gradient(closest-side, rgba(255, 220, 140, 0.9) 0%, rgba(240, 193, 87, 0.5) 48%, rgba(240, 193, 87, 0) 100%);
-      filter: blur(2px);
-      z-index: -1;
-      pointer-events: none;
-    }
+    /* Backlight hinter der PSL-Zahl entfernt — nur Text-Glow */
     .lk-psl-num {
       font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
       font-size: 44px;
@@ -1062,9 +1032,7 @@
       color: #ffffff;
       background: rgba(36, 30, 22, 0.7);
       border: 1px solid rgba(240, 193, 87, 0.55);
-      box-shadow:
-        0 0 0 1.5px rgba(240, 193, 87, 0.25),
-        0 0 8px rgba(240, 193, 87, 0.45);
+      box-shadow: none;
       white-space: nowrap;
       text-transform: uppercase;
       text-shadow:
@@ -1125,22 +1093,7 @@
       margin-top: 1px;
       isolation: isolate;
     }
-    /* Kompakter Gold-Backlight direkt hinter der Stat-Zahl */
-    .lk-chad-score-row::before {
-      content: "";
-      position: absolute;
-      left: 7px;
-      top: 58%;
-      transform: translate(-50%, -50%);
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background:
-        radial-gradient(closest-side, rgba(255, 220, 140, 0.85) 0%, rgba(240, 193, 87, 0.45) 50%, rgba(240, 193, 87, 0) 100%);
-      filter: blur(1.5px);
-      z-index: -1;
-      pointer-events: none;
-    }
+    /* Backlight hinter den Stat-Zahlen entfernt — nur Text-Glow */
     .lk-chad-num {
       font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
       font-size: 22px;
