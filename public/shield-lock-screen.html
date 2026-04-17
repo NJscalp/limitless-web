@@ -504,25 +504,341 @@
     }
 
     /* ============================================================
-       LOOKSMAX CARD — Hero aus der Limitless-App (ResultsView)
-       6 Category-Rings + Score→Potential Progression, catchy & uniqe
+       ASCENDMAX-STYLE LAYOUT (mit Limitless-Brand)
+       Avatar links + Task-Info rechts | Limitless-App-CTA
+       | PSL 1–10 Rating | 6 Chad-Tier-Cards (Jawline...)
        ============================================================ */
-    .lk-card {
+
+    /* Hero-Row: großes Foto links + Unlock-Task-Info rechts */
+    .lk-hero-row {
+      display: flex;
+      align-items: stretch;
+      gap: 16px;
       width: 100%;
-      border-radius: 22px;
-      background:
-        linear-gradient(175deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.012) 100%);
+      margin: 0 0 14px;
+    }
+
+    .lk-avatar {
+      flex-shrink: 0;
+      width: 136px;
+      height: 136px;
+      position: relative;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      display: block;
+    }
+
+    .lk-avatar-hint {
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8.5px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(209, 173, 77, 0.95);
+      background: rgba(11, 13, 18, 0.92);
+      padding: 3px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+      line-height: 1;
+      border: 1px solid rgba(209, 173, 77, 0.45);
+      z-index: 3;
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 0.2s ease;
+    }
+    .lk-avatar.has-photo .lk-avatar-hint { opacity: 0; }
+
+    .lk-avatar-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.05);
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.07) inset,
-        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
-        0 16px 40px rgba(0, 0, 0, 0.55);
-      padding: 12px 12px 12px;
-      margin: 0 0 10px;
+        0 0 0 1.5px rgba(255, 255, 255, 0.18) inset,
+        0 0 24px rgba(255, 255, 255, 0.12),
+        0 14px 32px rgba(0, 0, 0, 0.5);
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       position: relative;
     }
 
-    .lk-card::before {
+    .lk-avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      position: absolute;
+      inset: 0;
+    }
+    .lk-avatar.has-photo .lk-avatar-placeholder { display: none; }
+
+    .lk-avatar-placeholder {
+      position: relative;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      font-size: 60px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.92);
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+
+    .lk-task-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 2px;
+    }
+
+    .lk-task-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #ffffff;
+      margin: 0 0 7px;
+      line-height: 1;
+    }
+
+    .lk-task-details {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(235, 235, 245, 0.58);
+      line-height: 1.55;
+      letter-spacing: -0.005em;
+    }
+    .lk-task-details li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lk-task-details b {
+      color: rgba(255, 255, 255, 0.92);
+      font-weight: 700;
+    }
+    .lk-task-details .gain-plus {
+      color: #ffcf6b;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    /* App-CTA-Pills: Limitless-App + App-Store-Search */
+    .lk-pills-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+      margin: 0 0 14px;
+    }
+
+    .lk-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 12px;
+      border: 1.2px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.04);
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      text-decoration: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease;
+    }
+    .lk-pill:hover, .lk-pill:active {
+      background: rgba(255, 255, 255, 0.07);
+      transform: translateY(-1px);
+    }
+
+    .lk-pill-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: #ffffff;
+      overflow: hidden;
+    }
+    .lk-pill-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .lk-pill-icon svg { width: 16px; height: 16px; color: #000; }
+    .lk-pill-icon--appstore {
+      background: linear-gradient(135deg, #2997ff 0%, #0a84ff 100%);
+    }
+    .lk-pill-icon--appstore svg { color: #ffffff; }
+    .lk-pill-search-text {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .lk-pill-search-text svg { width: 12px; height: 12px; color: rgba(235, 235, 245, 0.55); flex-shrink: 0; }
+
+    /* PSL Rating 1–10 Strip */
+    .lk-psl-label {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0 0 6px;
+      align-self: flex-start;
+      letter-spacing: -0.01em;
+      line-height: 1;
+    }
+
+    .lk-psl {
+      display: grid;
+      grid-template-columns: 74px 1fr;
+      gap: 6px;
+      width: 100%;
+      margin: 0 0 12px;
+    }
+
+    .lk-psl-score {
+      position: relative;
+      border-radius: 13px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 6px;
+      color: #ffffff;
+      text-align: center;
+      background: rgba(10, 132, 255, 0.12);
+      border: 1.3px solid rgba(10, 132, 255, 0.55);
+      box-shadow:
+        0 0 18px rgba(10, 132, 255, 0.3) inset,
+        0 0 14px rgba(10, 132, 255, 0.22);
+      transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .lk-psl-num {
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+      font-size: 28px;
+      font-weight: 900;
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
+      color: #ffffff;
+    }
+    .lk-psl-denom {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 9px;
+      font-weight: 600;
+      color: rgba(235, 235, 245, 0.7);
+      margin-top: 3px;
+      line-height: 1;
+      letter-spacing: 0.01em;
+    }
+
+    .lk-psl-boxes {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 4px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 13px;
+      padding: 7px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      align-items: stretch;
+    }
+
+    .lk-psl-box {
+      aspect-ratio: 1;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+    }
+    .lk-psl-box.is-filled {
+      background: linear-gradient(135deg, #0a84ff 0%, #5ac8fa 100%);
+      border-color: rgba(10, 132, 255, 0.7);
+      box-shadow: 0 0 10px rgba(10, 132, 255, 0.45);
+    }
+
+    /* Chad-Tier Stat-Grid: 6 Karten (Jawline, Symmetry, …) mit 1–10 Tier */
+    .lk-chad-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 16px;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      margin: 0 0 12px;
+      row-gap: 10px;
+    }
+
+    .lk-chad-card {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 6px 8px 4px;
+      min-width: 0;
+    }
+    .lk-chad-label {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(235, 235, 245, 0.62);
+      letter-spacing: -0.005em;
+      line-height: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lk-chad-tier {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      font-size: 17px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.025em;
+      line-height: 1.05;
+      text-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
+    }
+    .lk-chad-tier.tier-trueadam {
+      background: linear-gradient(90deg, #ff2d55 0%, #ffcf6b 50%, #af52de 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: none;
+      filter: drop-shadow(0 0 8px rgba(255, 45, 85, 0.45));
+    }
+    .lk-chad-bar-wrap {
+      height: 4.5px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .lk-chad-bar {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.45s ease, background 0.3s ease;
+    }
+
+    /* ============================================================
+       Legacy .lk-* Klassen (.lk-card, .lk-head*, .lk-hero*, .lk-traj*,
+       .lk-stats*, .lk-stat*, .lk-ring*, .lk-mission*) sind jetzt unused
+       und werden vom Browser ignoriert — siehe unten für alte Regeln.
+       ============================================================ */
+    .lk-card_LEGACY_UNUSED::before {
       content: '';
       position: absolute;
       inset: 0;
@@ -1763,95 +2079,92 @@
           <div class="shield-blur" aria-hidden="true"></div>
 
           <div class="shield-stack">
-            <!-- Top-Status: subtiler Chip „🔒 TikTok Blocked" -->
-            <span class="shield-status-chip" aria-label="TikTok is Blocked">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="5" y="11" width="14" height="9" rx="2" />
-                <path d="M8 11V7.5a4 4 0 1 1 8 0V11" />
-              </svg>
-              <span>TikTok · <strong>Blocked</strong></span>
-            </span>
-
-            <!-- HERO: Looksmax-Karte aus der App (eigene Identität, nicht AscendMax-Kopie) -->
+            <!-- HERO ROW: Foto-Avatar links + Unlock-Task-Info rechts -->
             <input type="file" id="scan-file" class="shield-scan-file" accept="image/*" />
-            <label for="scan-file" class="lk-card" id="scan-mock" aria-label="Tap to run AI scan">
-              <div class="lk-head">
-                <svg class="lk-head-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M3 4h5v5H3zm0 7h5v5H3zm0 7h5v3H3zm7-14h5v9h-5zm0 11h5v6h-5zm7-11h5v16h-5z" opacity="0.95"/>
-                </svg>
-                <span class="lk-head-title">Looksmax</span>
-                <span class="lk-head-badge">0–100</span>
-                <span class="lk-head-spacer"></span>
-                <span class="lk-head-chip" id="lk-def-chip">Lean</span>
+            <div class="lk-hero-row">
+              <label for="scan-file" class="lk-avatar" id="lk-avatar" aria-label="Tap to scan face">
+                <div class="lk-avatar-inner">
+                  <img id="scan-preview-img" class="lk-avatar-img" alt="" />
+                  <span class="lk-avatar-placeholder" id="lk-avatar-initials">L</span>
+                </div>
+                <span class="lk-avatar-hint" id="lk-avatar-hint">Tap · Scan</span>
+              </label>
+              <div class="lk-task-info">
+                <h1 class="lk-task-title" id="task-name">Mewing</h1>
+                <ul class="lk-task-details">
+                  <li>App blocked: <b id="blocked-app">TikTok</b></li>
+                  <li>Unlock Task: <b id="task-meta-seconds">30 sec</b> · <b>Face Workout</b></li>
+                  <li>Goal: <b>Glow Up</b></li>
+                  <li id="task-chips-row">Gains: <b id="task-chips" class="lk-task-gains-inline"></b></li>
+                </ul>
               </div>
+            </div>
 
-              <!-- Ausgeblendete Reste der alten Scan-UI für Rückwärtskompatibilität -->
-              <div class="shield-scan-empty" id="scan-empty" hidden></div>
-              <div class="shield-scan-filled" id="scan-filled" hidden></div>
-              <img id="scan-preview-img" alt="" hidden />
-
-              <div class="lk-hero">
-                <div class="lk-hero-top">
-                  <div class="lk-hero-col">
-                    <span class="lk-hero-label">Score</span>
-                    <span class="lk-hero-num" id="score-val">72</span>
-                  </div>
-                  <svg class="lk-hero-chev" width="10" height="16" viewBox="0 0 10 16" fill="none" aria-hidden="true">
-                    <path d="M3.2 2 L7 8 L3.2 14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- APP CTA: Limitless-App-Pill + App-Store-Search-Pill -->
+            <div class="lk-pills-row">
+              <a class="lk-pill" id="lk-pill-brand"
+                 href="https://apps.apple.com/app/limitless-app-blocker/id0000000000"
+                 target="_blank" rel="noopener">
+                <span class="lk-pill-icon" id="lk-pill-brand-icon" aria-hidden="true"
+                      style="background: linear-gradient(135deg, #0a1630 0%, #1a2a5c 100%);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#d1ad4d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">
+                    <path d="M12 2 4 5v6c0 5.2 3.4 9.8 8 11 4.6-1.2 8-5.8 8-11V5l-8-3Z"/>
+                    <path d="M9 12l2 2 4-4"/>
                   </svg>
-                  <div class="lk-hero-col lk-hero-col--right">
-                    <span class="lk-hero-label is-potential">Potential</span>
-                    <span class="lk-hero-num" id="potential-val">86</span>
-                  </div>
-                </div>
-
-                <div class="lk-traj" id="scan-traj">
-                  <div class="lk-traj-track">
-                    <div class="lk-traj-fill" id="traj-fill"></div>
-                    <div class="lk-traj-dot" id="traj-dot"></div>
-                  </div>
-                  <div class="lk-traj-labels">
-                    <span>Now</span>
-                    <span class="lk-traj-gap" id="score-delta">+14</span>
-                    <span>Goal</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 6 Kategorien aus unserer App als Ring-Charts -->
-              <div class="lk-stats" id="lk-stats" aria-label="Looksmax categories"></div>
-
-              <p class="shield-scan-status" id="scan-status" hidden></p>
-            </label>
-
-            <!-- UNLOCK MISSION: kompakte Task-Aktion unter dem Rating -->
-            <div class="lk-mission" id="lk-mission" aria-label="Unlock mission">
-              <div class="lk-mission-icon" id="hero-icon" aria-hidden="true"></div>
-              <div class="lk-mission-body">
-                <p class="lk-mission-eyebrow">
-                  <span>Unlock Mission</span>
-                  <span class="lk-mission-eyebrow-dot" aria-hidden="true"></span>
-                  <span class="lk-mission-sec" id="task-seconds">30s</span>
-                </p>
-                <h2 class="lk-mission-title" id="task-name">Mewing</h2>
-                <div class="lk-mission-gains" id="task-chips" aria-label="Looksmax impact"></div>
-              </div>
-              <div class="lk-mission-play" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7L8 5z"/>
-                </svg>
-              </div>
+                </span>
+                <span>Limitless App</span>
+              </a>
+              <a class="lk-pill"
+                 href="https://apps.apple.com/search?term=Limitless"
+                 target="_blank" rel="noopener">
+                <span class="lk-pill-icon lk-pill-icon--appstore" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8.8 17.8h-2.4l-.6 1.1a1.2 1.2 0 1 1-2.1-1.2L8.4 9.2a3.4 3.4 0 0 1-.3-3c.3-1 1-1.7 1.9-2a1.2 1.2 0 0 1 1 2.2c-.4.2-.6.4-.7.8-.1.4 0 .8.2 1.1l4.3 7.5c.3.6.1 1.3-.5 1.6a1.2 1.2 0 0 1-1.6-.5l-.3-.6H9.2l-.4.7zM11 15l-.8-1.4-.8 1.4h1.6zm7 3h.4a1.2 1.2 0 1 1 0 2.4H18a2.4 2.4 0 0 1-2-1.1l-3-5.2a1.2 1.2 0 1 1 2.1-1.2l1.4 2.5 1-1.7a1.2 1.2 0 0 1 2 1.2L18.4 18l-.4 0z"/>
+                  </svg>
+                </span>
+                <span class="lk-pill-search-text">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                    <circle cx="11" cy="11" r="6"/>
+                    <path d="m20 20-3.5-3.5"/>
+                  </svg>
+                  <span>Search: ‘Limitless’</span>
+                </span>
+              </a>
             </div>
 
-            <!-- Hidden Kompat-Elemente für bestehendes JS -->
-            <div class="shield-title-block" hidden>
-              <span id="task-meta-seconds"></span>
+            <!-- PSL RATING STRIP 1–10 -->
+            <p class="lk-psl-label">Limitless Rating</p>
+            <div class="lk-psl" id="psl-strip">
+              <div class="lk-psl-score" id="psl-score">
+                <span class="lk-psl-num" id="psl-num">7</span>
+                <span class="lk-psl-denom">out of 10</span>
+              </div>
+              <div class="lk-psl-boxes" id="psl-boxes"></div>
             </div>
-            <p class="shield-sub" id="task-sub" hidden></p>
+
+            <!-- CHAD-TIER GRID: 6 Kategorien mit 1–10 + Chad-Label -->
+            <div class="lk-chad-grid" id="chad-grid" aria-label="Looksmax categories"></div>
+
+            <!-- Hidden Kompat-Elemente für bestehende JS-Pipeline (Score/Potential als Spans) -->
+            <span id="score-val" hidden>72</span>
+            <span id="potential-val" hidden>86</span>
+            <span id="score-delta" hidden>+14</span>
+            <div id="scan-traj" hidden>
+              <div id="traj-fill"></div>
+              <div id="traj-dot"></div>
+            </div>
+            <div class="shield-scan-empty" id="scan-empty" hidden></div>
+            <div class="shield-scan-filled" id="scan-filled" hidden></div>
+            <div id="scan-mock" hidden></div>
             <div id="scan-ring" hidden></div>
             <div id="shield-scan-wrap" hidden></div>
             <span id="shield-scan-hit" hidden></span>
+            <span id="lk-def-chip" hidden></span>
+            <span id="lk-stats" hidden></span>
+            <span id="task-seconds" hidden></span>
+            <div id="hero-icon" hidden></div>
+            <p class="shield-sub" id="task-sub" hidden></p>
+            <p class="shield-scan-status" id="scan-status" hidden></p>
 
             <!-- Footer + Close -->
             <p class="shield-appstore-footer" aria-label="Limitless on the App Store">
@@ -2073,14 +2386,14 @@
 
   function renderChips(impact) {
     if (!taskChipsEl) return;
-    taskChipsEl.innerHTML = '';
-    if (!impact || !impact.length) return;
-    impact.slice(0, 3).forEach(function (pair) {
-      var g = document.createElement('span');
-      g.className = 'lk-mission-gain';
-      g.innerHTML = '<span>' + pair[0] + '</span><span class="gain-plus">+' + pair[1] + '</span>';
-      taskChipsEl.appendChild(g);
-    });
+    if (!impact || !impact.length) {
+      taskChipsEl.textContent = '—';
+      return;
+    }
+    var html = impact.slice(0, 3).map(function (pair) {
+      return pair[0] + ' <span class="gain-plus">+' + pair[1] + '</span>';
+    }).join(' · ');
+    taskChipsEl.innerHTML = html;
   }
 
   function selectTask(index) {
@@ -2385,14 +2698,65 @@
     scoreDeltaEl.textContent = '+' + Math.max(0, d);
   }
 
-  /* PSL-Strip wurde entfernt — No-Op stubs (Clipper-Override ruft das evtl. noch auf) */
-  function updatePSL() {}
-  function resetPSL() {}
-
   /* ============================================================
-     CATEGORY RINGS — die 6 wichtigsten Looksmax-Kategorien aus
-     der Limitless-App (ResultsView). Unique feature, nicht kopiert.
+     1–10 CHAD-TIER — unser Rating-System für den Shield-Screen
+     1–3  → SUB 3
+     4–5  → SUB 5
+     6    → LTN
+     7    → MTN
+     8    → HTN
+     9    → CHAD
+     10   → TRUE ADAM
      ============================================================ */
+  function to10(score100) {
+    var v = Math.round((score100 || 0) / 10);
+    if (v < 1) v = 1;
+    if (v > 10) v = 10;
+    return v;
+  }
+  function chadTier(r10) {
+    var r = Math.round(r10);
+    if (r <= 3) return 'SUB 3';
+    if (r <= 5) return 'SUB 5';
+    if (r === 6) return 'LTN';
+    if (r === 7) return 'MTN';
+    if (r === 8) return 'HTN';
+    if (r === 9) return 'CHAD';
+    return 'TRUE ADAM';
+  }
+  function tierColor(r10) {
+    var r = Math.round(r10);
+    if (r <= 3) return '#ff3b30';
+    if (r <= 5) return '#ff9500';
+    if (r === 6) return '#ffcc00';
+    if (r === 7) return '#30d158';
+    if (r === 8) return '#64d2ff';
+    if (r === 9) return '#0a84ff';
+    return '#ff2d55'; /* TRUE ADAM accent (gradient handled separately) */
+  }
+  function tierBarBg(r10) {
+    var r = Math.round(r10);
+    if (r === 10) return 'linear-gradient(90deg, #ff2d55 0%, #ffcf6b 50%, #af52de 100%)';
+    var c = tierColor(r);
+    return 'linear-gradient(90deg, ' + c + ' 0%, ' + c + 'cc 100%)';
+  }
+  function tierScoreBoxStyle(r10) {
+    var c = tierColor(r10);
+    if (r10 === 10) {
+      return {
+        bg: 'rgba(255, 45, 85, 0.14)',
+        border: 'rgba(255, 45, 85, 0.6)',
+        glow: 'rgba(255, 45, 85, 0.35)'
+      };
+    }
+    return {
+      bg: c + '22',
+      border: c + '99',
+      glow: c + '55'
+    };
+  }
+
+  /* 6 Kategorien — Jawline first (gewünscht) + Symmetry, Eye Area, Cheekbones, Skin, Definition */
   var STAT_CATEGORIES = [
     { name: 'Jawline',    key: 'jawline',    offset: 2 },
     { name: 'Symmetry',   key: 'symmetry',   offset: -4 },
@@ -2401,96 +2765,105 @@
     { name: 'Skin',       key: 'skin',       offset: 8 },
     { name: 'Definition', key: 'definition', offset: -3 }
   ];
-  var lkStatsEl = document.getElementById('lk-stats');
-  var lkDefChipEl = document.getElementById('lk-def-chip');
-
-  function scoreLabelLm(s) {
-    if (s >= 80) return 'Elite';
-    if (s >= 65) return 'Great';
-    if (s >= 50) return 'Good';
-    if (s >= 35) return 'Low';
-    return 'Improve';
-  }
 
   function deriveCategoryScores(overall, potential, aiRec) {
     var out = {};
     STAT_CATEGORIES.forEach(function (c) {
       var fromAi = aiRec && typeof aiRec[c.key] === 'number' ? aiRec[c.key] : null;
       if (fromAi != null) {
-        out[c.key] = Math.max(25, Math.min(95, Math.round(fromAi)));
+        out[c.key] = Math.max(10, Math.min(99, Math.round(fromAi)));
       } else {
         var seed = (overall * 31 + potential * 17 + c.name.charCodeAt(0) * 7) >>> 0;
         var jitter = ((seed % 11) - 5);
-        out[c.key] = Math.max(25, Math.min(95, overall + c.offset + jitter));
+        out[c.key] = Math.max(10, Math.min(99, overall + c.offset + jitter));
       }
     });
     return out;
   }
 
-  function renderStats(overall, potential, aiRec) {
-    if (!lkStatsEl) return;
+  /* PSL Rating Strip 1–10 */
+  var pslNumEl   = document.getElementById('psl-num');
+  var pslBoxesEl = document.getElementById('psl-boxes');
+  var pslScoreEl = document.getElementById('psl-score');
+  var chadGridEl = document.getElementById('chad-grid');
+
+  function renderPSL(overall100) {
+    var r = to10(overall100);
+    if (pslNumEl) pslNumEl.textContent = String(r);
+    if (pslBoxesEl) {
+      var html = '';
+      var c = tierColor(r);
+      var isTrue = r === 10;
+      var fillBg = isTrue
+        ? 'background: linear-gradient(135deg, #ff2d55 0%, #ffcf6b 50%, #af52de 100%); border-color: rgba(255, 45, 85, 0.7); box-shadow: 0 0 10px rgba(255, 45, 85, 0.55);'
+        : 'background: linear-gradient(135deg, ' + c + ' 0%, ' + c + 'bb 100%); border-color: ' + c + '; box-shadow: 0 0 10px ' + c + '70;';
+      for (var i = 1; i <= 10; i++) {
+        if (i <= r) {
+          html += '<div class="lk-psl-box is-filled" style="' + fillBg + '"></div>';
+        } else {
+          html += '<div class="lk-psl-box"></div>';
+        }
+      }
+      pslBoxesEl.innerHTML = html;
+    }
+    if (pslScoreEl) {
+      var s = tierScoreBoxStyle(r);
+      pslScoreEl.style.background = s.bg;
+      pslScoreEl.style.borderColor = s.border;
+      pslScoreEl.style.boxShadow = '0 0 18px ' + s.glow + ' inset, 0 0 14px ' + s.glow;
+    }
+  }
+
+  /* Chad-Tier-Grid: 6 Kategorien mit 1–10 Rating + Tier-Label */
+  function renderChadStats(overall, potential, aiRec) {
+    if (!chadGridEl) return;
     var cats = deriveCategoryScores(overall, potential, aiRec);
     var html = '';
     STAT_CATEGORIES.forEach(function (c) {
-      var sc = cats[c.key];
-      var tier = limitlessScoreTierRgb(sc);
-      var color = 'rgb(' + tier.r + ',' + tier.g + ',' + tier.b + ')';
-      var frac = Math.max(0, Math.min(1, sc / 100));
-      var circ = 2 * Math.PI * 13;
-      var dash = (frac * circ).toFixed(2) + ' ' + circ.toFixed(2);
-      var tierLbl = scoreLabelLm(sc);
+      var sc100 = cats[c.key];
+      var r10 = to10(sc100);
+      var tier = chadTier(r10);
+      var barBg = tierBarBg(r10);
+      var pct = (r10 / 10) * 100;
+      var tierClass = r10 === 10 ? 'lk-chad-tier tier-trueadam' : 'lk-chad-tier';
       html +=
-        '<div class="lk-stat">' +
-          '<div class="lk-ring">' +
-            '<svg viewBox="0 0 32 32" aria-hidden="true">' +
-              '<circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="3"/>' +
-              '<circle cx="16" cy="16" r="13" fill="none" stroke="' + color + '" stroke-width="3" stroke-linecap="round" stroke-dasharray="' + dash + '" transform="rotate(-90 16 16)" style="filter: drop-shadow(0 0 3px ' + color + '80);"/>' +
-            '</svg>' +
-            '<span class="lk-ring-num">' + sc + '</span>' +
-          '</div>' +
-          '<div class="lk-stat-text">' +
-            '<span class="lk-stat-name">' + c.name + '</span>' +
-            '<span class="lk-stat-tier" style="color:' + color + ';background:' + color + '1f;">' + tierLbl + '</span>' +
+        '<div class="lk-chad-card">' +
+          '<span class="lk-chad-label">' + c.name + '</span>' +
+          '<span class="' + tierClass + '">' + tier + '</span>' +
+          '<div class="lk-chad-bar-wrap">' +
+            '<div class="lk-chad-bar" style="width:' + pct + '%; background:' + barBg + ';"></div>' +
           '</div>' +
         '</div>';
     });
-    lkStatsEl.innerHTML = html;
+    chadGridEl.innerHTML = html;
   }
 
-  function updateDefChip(overall) {
-    if (!lkDefChipEl) return;
-    if (overall >= 70) {
-      lkDefChipEl.textContent = 'Lean';
-      lkDefChipEl.style.color = '#34c759';
-      lkDefChipEl.style.background = 'rgba(52, 199, 89, 0.16)';
-    } else if (overall >= 50) {
-      lkDefChipEl.textContent = 'Average';
-      lkDefChipEl.style.color = '#ff9500';
-      lkDefChipEl.style.background = 'rgba(255, 149, 0, 0.16)';
-    } else {
-      lkDefChipEl.textContent = 'Bloated';
-      lkDefChipEl.style.color = '#ff3b30';
-      lkDefChipEl.style.background = 'rgba(255, 59, 48, 0.16)';
+  /* Legacy stubs für alte Aufrufe (Trajectory-Code unten) */
+  function updatePSL() {}
+  function resetPSL() {
+    if (pslNumEl) pslNumEl.textContent = '—';
+    if (pslBoxesEl) {
+      var html = '';
+      for (var i = 0; i < 10; i++) html += '<div class="lk-psl-box"></div>';
+      pslBoxesEl.innerHTML = html;
     }
   }
+  function updateDefChip() {}
 
   function applyScoresToUi(overall, potential, source, aiRec) {
     scoreEl.textContent = String(overall);
     potentialEl.textContent = String(potential);
-    scoreEl.classList.add('is-gradient');
-    potentialEl.classList.add('is-gradient');
-    scoreEl.style.backgroundImage = scoreGradientCssDiagonal(overall);
-    potentialEl.style.backgroundImage = POTENTIAL_GRAD;
     setRingForScore(overall);
     var oFrac = Math.min(100, Math.max(0, overall)) / 100;
-    trajFill.style.width = Math.max(oFrac * 100, oFrac > 0 ? 2 : 0) + '%';
-    trajFill.style.background = scoreGradientCssDiagonal(overall);
-    trajDot.style.left = trajectoryDotLeftPercent(potential) + '%';
+    if (trajFill) {
+      trajFill.style.width = Math.max(oFrac * 100, oFrac > 0 ? 2 : 0) + '%';
+      trajFill.style.background = scoreGradientCssDiagonal(overall);
+    }
+    if (trajDot) trajDot.style.left = trajectoryDotLeftPercent(potential) + '%';
     if (scanTraj) scanTraj.hidden = false;
     updateDelta(overall, potential);
-    updateDefChip(overall);
-    renderStats(overall, potential, aiRec || null);
-    updatePSL(overall);
+    renderPSL(overall);
+    renderChadStats(overall, potential, aiRec || null);
     if (scanStatus) {
       scanStatus.innerHTML = '';
       if (source === 'ai') {
@@ -2502,15 +2875,10 @@
   function resetScoresPlaceholder() {
     scoreEl.textContent = '…';
     potentialEl.textContent = '…';
-    scoreEl.classList.remove('is-gradient');
-    potentialEl.classList.remove('is-gradient');
-    scoreEl.style.backgroundImage = '';
-    potentialEl.style.backgroundImage = '';
     if (scoreDeltaEl) scoreDeltaEl.textContent = '+—';
     resetPSL();
   }
 
-  /* Placeholder scores, damit die Karte immer "gefüllt" aussieht — selbst vor dem ersten Scan */
   function ensureTeaserScores() {
     var s = parseInt(scoreEl.textContent, 10);
     var p = parseInt(potentialEl.textContent, 10);
@@ -2519,17 +2887,15 @@
     applyScoresToUi(s, p, 'demo', null);
   }
 
+  /* Avatar-Photo: wenn Foto hochgeladen, Placeholder verstecken */
+  var lkAvatarEl = document.getElementById('lk-avatar');
   function showScanEmpty() {
-    /* Karte bleibt sichtbar — keine Empty-UI mehr in neuem Layout */
-    if (scanEmpty) scanEmpty.hidden = true;
-    if (scanFilled) scanFilled.hidden = true;
     if (scanImg) scanImg.removeAttribute('src');
+    if (lkAvatarEl) lkAvatarEl.classList.remove('has-photo');
   }
-
   function showScanFilled(dataUrl) {
-    if (scanEmpty) scanEmpty.hidden = true;
-    if (scanFilled) scanFilled.hidden = true;
     if (scanImg && dataUrl) scanImg.src = dataUrl;
+    if (lkAvatarEl && dataUrl) lkAvatarEl.classList.add('has-photo');
   }
 
   function persistScan(dataUrl, overall, potential, source) {
