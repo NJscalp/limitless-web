@@ -648,6 +648,18 @@
     .lk-blocked-icon svg { width: 22px; height: 22px; display: block; }
     .lk-blocked-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
+    /* Echtes TikTok-App-Icon — iOS-Style: schwarzer Hintergrund + RGB-Split-Note */
+    .lk-tiktok-icon {
+      background: #000000;
+      box-shadow:
+        0 8px 20px rgba(254, 44, 85, 0.22),
+        0 4px 10px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+    }
+    .lk-tiktok-icon .lk-tt-cyan  { fill: #25F4EE; transform: translate(-0.9px, 0.6px); }
+    .lk-tiktok-icon .lk-tt-red   { fill: #FE2C55; transform: translate(0.9px, -0.6px); }
+    .lk-tiktok-icon .lk-tt-white { fill: #ffffff; }
+
     .lk-blocked-text {
       min-width: 0;
       display: flex;
@@ -2362,6 +2374,392 @@
       opacity: 0.55;
     }
 
+    /* ============================================================
+       ANALYZE-OVERLAY — 1:1 Face-Scan Loader aus der App
+       (spiegelt AnalyzingOverlay.css)
+       ============================================================ */
+    .analyze-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: #ffffff;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 48px;
+      transition: opacity 0.38s ease;
+    }
+    .analyze-overlay[hidden] { display: none; }
+    .analyze-overlay.is-fadeout { opacity: 0; pointer-events: none; }
+
+    .analyze-inner {
+      width: 100%;
+      max-width: 400px;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .analyze-limitless {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: rgba(112, 112, 120, 0.45);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .analyze-title {
+      margin: 2px 0 0;
+      font-size: 28px;
+      font-weight: 900;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', ui-rounded, system-ui, sans-serif;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+
+    .analyze-frame-wrap {
+      margin-top: 28px;
+      filter: drop-shadow(0 12px 28px rgba(15, 23, 42, 0.12));
+    }
+
+    .analyze-scan-card {
+      position: relative;
+      width: 260px;
+      height: 340px;
+      border-radius: 28px;
+      isolation: isolate;
+    }
+
+    .analyze-scan-card-border {
+      position: absolute;
+      inset: -3px;
+      border-radius: 31px;
+      background: linear-gradient(
+        125deg,
+        rgba(99, 102, 241, 0.85),
+        rgba(168, 85, 247, 0.75),
+        rgba(236, 72, 153, 0.7),
+        rgba(99, 102, 241, 0.85)
+      );
+      background-size: 240% 240%;
+      animation: analyze-border-flow 4s ease infinite;
+      z-index: 0;
+    }
+
+    @keyframes analyze-border-flow {
+      0%, 100% { background-position: 0% 50%; }
+      50%      { background-position: 100% 50%; }
+    }
+
+    .analyze-image-stack {
+      position: absolute;
+      inset: 3px;
+      border-radius: 26px;
+      overflow: hidden;
+      z-index: 1;
+      background: #1a1a1e;
+    }
+
+    .analyze-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .analyze-scan-fx {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      border-radius: inherit;
+      overflow: hidden;
+    }
+
+    .analyze-scan-vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        ellipse 85% 75% at 50% 45%,
+        transparent 0%,
+        transparent 55%,
+        rgba(0, 0, 0, 0.18) 100%
+      );
+    }
+
+    .analyze-scan-sweep {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 42%;
+      top: -42%;
+      background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(255, 255, 255, 0.06) 35%,
+        rgba(255, 255, 255, 0.22) 50%,
+        rgba(255, 255, 255, 0.06) 65%,
+        transparent 100%
+      );
+      animation: analyze-sweep-y 2.6s ease-in-out infinite;
+    }
+
+    @keyframes analyze-sweep-y {
+      0%   { transform: translateY(0);    opacity: 0.35; }
+      12%  { opacity: 1; }
+      88%  { opacity: 1; }
+      100% { transform: translateY(340%); opacity: 0.35; }
+    }
+
+    .analyze-scan-shine {
+      position: absolute;
+      inset: -50%;
+      background: linear-gradient(
+        105deg,
+        transparent 40%,
+        rgba(255, 255, 255, 0.04) 48%,
+        rgba(255, 255, 255, 0.09) 50%,
+        rgba(255, 255, 255, 0.04) 52%,
+        transparent 60%
+      );
+      animation: analyze-shine-move 5.5s ease-in-out infinite;
+    }
+
+    @keyframes analyze-shine-move {
+      0%   { transform: translate(-12%, -12%) rotate(0deg); }
+      100% { transform: translate(12%, 12%) rotate(0deg); }
+    }
+
+    .analyze-pct {
+      margin-top: 28px;
+      font-size: 48px;
+      font-weight: 900;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', ui-rounded, system-ui, sans-serif;
+      background: linear-gradient(180deg, #0f172a 0%, rgba(0, 0, 0, 0.6) 100%);
+      -webkit-background-clip: text;
+              background-clip: text;
+      color: transparent;
+      line-height: 1;
+    }
+
+    .analyze-step {
+      margin: 4px 0 0;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', ui-rounded, system-ui, sans-serif;
+      color: rgba(112, 112, 120, 0.8);
+      text-align: center;
+      max-width: 280px;
+      min-height: 2.5em;
+      line-height: 1.35;
+    }
+
+    .analyze-bar-track {
+      margin-top: 24px;
+      width: calc(100% - 100px);
+      max-width: 300px;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .analyze-bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #6366f1 0%, rgba(168, 85, 247, 0.85) 50%, rgba(236, 72, 153, 0.75) 100%);
+      transition: width 0.08s linear;
+    }
+
+    /* ============================================================
+       EDIT-PANEL — Ratings + Foto bearbeiten (unter dem Handy)
+       ============================================================ */
+    .edit-panel {
+      width: min(420px, calc(100% - 32px));
+      margin: 24px auto 48px;
+      padding: 16px 18px 14px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(28, 29, 34, 0.92) 0%, rgba(20, 21, 26, 0.94) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.4),
+        0 8px 18px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      color: rgba(235, 235, 245, 0.88);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    }
+
+    .edit-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .edit-title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(235, 235, 245, 0.6);
+    }
+    .edit-reset {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: rgba(235, 235, 245, 0.78);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 5px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    .edit-reset:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+    }
+
+    .edit-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .edit-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex: 1;
+      height: 40px;
+      padding: 0 14px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.1s ease, background 0.15s ease, box-shadow 0.15s ease;
+      user-select: none;
+    }
+    .edit-btn:active { transform: scale(0.98); }
+    .edit-btn-primary {
+      color: #ffffff;
+      background: linear-gradient(135deg, #0a84ff 0%, #5ac8fa 100%);
+      box-shadow:
+        0 6px 16px rgba(10, 132, 255, 0.4),
+        0 2px 6px rgba(10, 132, 255, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    }
+    .edit-btn-primary:hover {
+      box-shadow:
+        0 8px 20px rgba(10, 132, 255, 0.48),
+        0 3px 8px rgba(10, 132, 255, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.14) inset;
+    }
+    .edit-btn-primary svg { display: block; }
+
+    .edit-overall-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .edit-overall-row .edit-label {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(235, 235, 245, 0.55);
+      flex: 1;
+    }
+    .edit-overall-row .edit-denom {
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(235, 235, 245, 0.4);
+    }
+
+    .edit-stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .edit-stat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .edit-stat-label {
+      flex: 1;
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(235, 235, 245, 0.8);
+      letter-spacing: -0.005em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .edit-stat .edit-denom {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(235, 235, 245, 0.4);
+    }
+
+    .edit-input {
+      width: 56px;
+      height: 32px;
+      padding: 0 8px;
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      text-align: center;
+      color: #ffffff;
+      background: rgba(10, 132, 255, 0.08);
+      border: 1px solid rgba(10, 132, 255, 0.28);
+      border-radius: 8px;
+      outline: none;
+      appearance: textfield;
+      -moz-appearance: textfield;
+      transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+    }
+    .edit-input::-webkit-outer-spin-button,
+    .edit-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .edit-input::placeholder { color: rgba(235, 235, 245, 0.3); font-weight: 600; }
+    .edit-input:focus {
+      background: rgba(10, 132, 255, 0.14);
+      border-color: rgba(10, 132, 255, 0.6);
+      box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.18);
+    }
+    .edit-input.edit-input-overridden {
+      background: rgba(90, 200, 250, 0.12);
+      border-color: rgba(90, 200, 250, 0.5);
+    }
+
+    .edit-stat .edit-input { width: 46px; height: 28px; font-size: 14px; }
+
+    .edit-hint {
+      margin: 4px 2px 0;
+      font-size: 11px;
+      line-height: 1.4;
+      color: rgba(235, 235, 245, 0.42);
+    }
+
   </style>
 </head>
 <body>
@@ -2409,7 +2807,16 @@
               <div class="lk-task-info">
                 <!-- Blocked-App: großes Headline mit App-Icon -->
                 <div class="lk-blocked">
-                  <span class="lk-blocked-icon" id="blocked-app-icon" aria-hidden="true"></span>
+                  <span class="lk-blocked-icon lk-tiktok-icon" id="blocked-app-icon" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" aria-hidden="true">
+                      <!-- Cyan RGB-Offset -->
+                      <path class="lk-tt-cyan" d="M21.5 5.5c.4 2.3 1.7 4.2 3.6 5.4 1 .6 2.1 1 3.3 1.1v3.8c-2.1 0-4-.5-5.7-1.5-1.1-.6-2-1.5-2.7-2.5v9.8c0 4.8-3.9 8.7-8.7 8.7S2.6 26.4 2.6 21.6s3.9-8.7 8.7-8.7c.5 0 1 0 1.4.1v4c-.5-.1-.9-.2-1.4-.2-2.6 0-4.8 2.1-4.8 4.8s2.1 4.8 4.8 4.8 4.8-2.1 4.8-4.8V5.5h5.4z"/>
+                      <!-- Red/Magenta RGB-Offset -->
+                      <path class="lk-tt-red" d="M21.5 5.5c.4 2.3 1.7 4.2 3.6 5.4 1 .6 2.1 1 3.3 1.1v3.8c-2.1 0-4-.5-5.7-1.5-1.1-.6-2-1.5-2.7-2.5v9.8c0 4.8-3.9 8.7-8.7 8.7S2.6 26.4 2.6 21.6s3.9-8.7 8.7-8.7c.5 0 1 0 1.4.1v4c-.5-.1-.9-.2-1.4-.2-2.6 0-4.8 2.1-4.8 4.8s2.1 4.8 4.8 4.8 4.8-2.1 4.8-4.8V5.5h5.4z"/>
+                      <!-- Weißer Hauptpfad -->
+                      <path class="lk-tt-white" d="M21.5 5.5c.4 2.3 1.7 4.2 3.6 5.4 1 .6 2.1 1 3.3 1.1v3.8c-2.1 0-4-.5-5.7-1.5-1.1-.6-2-1.5-2.7-2.5v9.8c0 4.8-3.9 8.7-8.7 8.7S2.6 26.4 2.6 21.6s3.9-8.7 8.7-8.7c.5 0 1 0 1.4.1v4c-.5-.1-.9-.2-1.4-.2-2.6 0-4.8 2.1-4.8 4.8s2.1 4.8 4.8 4.8 4.8-2.1 4.8-4.8V5.5h5.4z"/>
+                    </svg>
+                  </span>
                   <div class="lk-blocked-text">
                     <span class="lk-blocked-name" id="blocked-app">TikTok</span>
                     <span class="lk-blocked-tag">Blocked</span>
@@ -2505,81 +2912,69 @@
             <p class="shield-sub" id="task-sub" hidden></p>
             <p class="shield-scan-status" id="scan-status" hidden></p>
 
-            <!-- Footer + Close -->
+            <!-- Footer -->
             <p class="shield-appstore-footer" aria-label="Limitless on the App Store">
               <span class="shield-appstore-footer-brand">Limitless</span>
               <span class="shield-appstore-footer-sep" aria-hidden="true">·</span>
               <span class="shield-appstore-footer-text">Available on the App&nbsp;Store</span>
             </p>
-            <button type="button" class="shield-secondary" id="btn-close">Close</button>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Clipper Studio: nicht Teil des Screenshots -->
-    <aside class="clipper-controls" aria-label="Clipper Studio">
-      <div class="ct-header">
-        <span class="ct-title">Clipper Studio</span>
-        <span class="ct-sub">Anpassen &amp; als PNG herunterladen</span>
-      </div>
-
-      <div class="ct-row">
-        <span class="ct-label">Geblockte App</span>
-        <div class="ct-task-strip" id="blocked-strip" role="tablist" aria-label="Geblockte App wählen">
-          <div id="blocked-picker" style="display:contents"></div>
-        </div>
-      </div>
-
-      <div class="ct-row">
-        <span class="ct-label">Unlock Task</span>
-        <div class="ct-task-strip" id="task-strip" role="tablist" aria-label="Aufgabe wählen">
-          <div id="task-picker" style="display:contents"></div>
-        </div>
-      </div>
-
-      <div class="ct-row">
-        <label class="ct-label" for="subtitle-input">Untertitel</label>
-        <textarea
-          id="subtitle-input"
-          maxlength="300"
-          spellcheck="true"
-          rows="2"
-          placeholder="Looksmax unlock · Do 1 task to open Instagram"
-        >Looksmax unlock · Do 1 task to open Instagram</textarea>
-      </div>
-
-      <div class="ct-row ct-row-split">
-        <div>
-          <label class="ct-label" for="score-input">Score (0-99)</label>
-          <input type="number" id="score-input" min="0" max="99" step="1" placeholder="z. B. 72" />
-        </div>
-        <div>
-          <label class="ct-label" for="potential-input">Potential (0-100)</label>
-          <input type="number" id="potential-input" min="0" max="100" step="1" placeholder="z. B. 86" />
-        </div>
-      </div>
-      <p class="ct-hint">Scores leer lassen → KI-Analyse vom Foto. Manuell setzen → überschreibt Anzeige.</p>
-
-      <div class="ct-row ct-row-split">
-        <div>
-          <label class="ct-label" for="phone-time-input">Uhrzeit</label>
-          <input type="text" id="phone-time-input" placeholder="9:41" value="9:41"
-                 style="width:100%;min-height:40px;padding:10px 12px;font-family:inherit;font-size:13px;font-weight:500;border-radius:10px;" />
-        </div>
-        <div>
-          <label class="ct-label">&nbsp;</label>
-          <label for="scan-file" class="ct-btn ct-btn-ghost" style="height:40px;">Foto hochladen</label>
-        </div>
-      </div>
-
-      <div class="ct-row ct-row-actions">
-        <button type="button" class="ct-btn ct-btn-primary" id="btn-download-png">PNG herunterladen</button>
-      </div>
-    </aside>
   </div>
 
-  <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js" crossorigin="anonymous"></script>
+  <!-- Kompaktes Edit-Panel unter dem Handy: Foto wechseln + Ratings bearbeiten -->
+  <aside class="edit-panel" aria-label="Ratings bearbeiten">
+    <div class="edit-head">
+      <span class="edit-title">Anpassen</span>
+      <button type="button" class="edit-reset" id="edit-reset" aria-label="Zurücksetzen">Reset</button>
+    </div>
+    <div class="edit-actions">
+      <label for="scan-file" class="edit-btn edit-btn-primary">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        <span>Neues Foto</span>
+      </label>
+    </div>
+    <div class="edit-overall-row">
+      <span class="edit-label">Overall</span>
+      <input type="number" min="1" max="10" step="1" class="edit-input" id="edit-overall" placeholder="—" inputmode="numeric" />
+      <span class="edit-denom">/ 10</span>
+    </div>
+    <div class="edit-stats-grid" id="edit-stats-grid">
+      <!-- Wird per JS gerendert, damit Reihenfolge mit STAT_CATEGORIES synchron bleibt -->
+    </div>
+    <p class="edit-hint">Tipp: Leer lassen = KI-Werte nutzen. Zahlen 1–10.</p>
+  </aside>
+
+  <!-- 1:1 Analyse-Overlay wie in der App (Face Scan Loader) -->
+  <div class="analyze-overlay" id="analyze-overlay" hidden aria-hidden="true">
+    <div class="analyze-inner">
+      <p class="analyze-limitless">LIMITLESS</p>
+      <h1 class="analyze-title">Face Scan</h1>
+      <div class="analyze-frame-wrap">
+        <div class="analyze-scan-card">
+          <div class="analyze-scan-card-border" aria-hidden="true"></div>
+          <div class="analyze-image-stack">
+            <img id="analyze-img" class="analyze-img" alt="" decoding="async" />
+            <div class="analyze-scan-fx" aria-hidden="true">
+              <div class="analyze-scan-vignette"></div>
+              <div class="analyze-scan-sweep"></div>
+              <div class="analyze-scan-shine"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="analyze-pct" id="analyze-pct">0%</div>
+      <p class="analyze-step" id="analyze-step">Detecting face...</p>
+      <div class="analyze-bar-track">
+        <div class="analyze-bar-fill" id="analyze-bar-fill"></div>
+      </div>
+    </div>
+  </div>
 
   <script>
 (function () {
@@ -2693,6 +3088,7 @@
   var heroEl = document.getElementById('hero-icon');
 
   function syncSubtitleFromInput() {
+    if (!subtitleInput || !subEl) return;
     var t = subtitleInput.value.trim() || DEFAULT_SUB;
     subEl.textContent = t;
     try {
@@ -2700,32 +3096,38 @@
     } catch (e) {}
   }
 
-  try {
-    var saved = localStorage.getItem(STORAGE_KEY);
-    if (saved != null && saved !== '') {
-      subtitleInput.value = saved;
-    }
-  } catch (e) {}
-  syncSubtitleFromInput();
-  subtitleInput.addEventListener('input', syncSubtitleFromInput);
-  subtitleInput.addEventListener('change', syncSubtitleFromInput);
+  if (subtitleInput) {
+    try {
+      var saved = localStorage.getItem(STORAGE_KEY);
+      if (saved != null && saved !== '') {
+        subtitleInput.value = saved;
+      }
+    } catch (e) {}
+    syncSubtitleFromInput();
+    subtitleInput.addEventListener('input', syncSubtitleFromInput);
+    subtitleInput.addEventListener('change', syncSubtitleFromInput);
+  } else if (subEl) {
+    subEl.textContent = DEFAULT_SUB;
+  }
 
-  TASKS.forEach(function (task, i) {
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'task-thumb';
-    btn.style.color = task.accent;
-    btn.setAttribute('role', 'tab');
-    btn.setAttribute('aria-label', task.name);
-    btn.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
-    btn.innerHTML = imgTag(task.file, 'task-thumb-img', '');
-    var timg = btn.querySelector('img');
-    applyShieldCreamToImage(timg, 128);
-    btn.addEventListener('click', function () {
-      selectTask(i);
+  if (picker) {
+    TASKS.forEach(function (task, i) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'task-thumb';
+      btn.style.color = task.accent;
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-label', task.name);
+      btn.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+      btn.innerHTML = imgTag(task.file, 'task-thumb-img', '');
+      var timg = btn.querySelector('img');
+      applyShieldCreamToImage(timg, 128);
+      btn.addEventListener('click', function () {
+        selectTask(i);
+      });
+      picker.appendChild(btn);
     });
-    picker.appendChild(btn);
-  });
+  }
 
   var taskSecondsEl = document.getElementById('task-seconds');
   var taskChipsEl   = document.getElementById('task-chips');
@@ -2763,8 +3165,9 @@
   }
 
   /* ============================================================
-     BLOCKED APPS — auswählbar via Clipper-Studio
-     Inline-SVG Logos (markensicher, scharf auf jedem Display)
+     BLOCKED APPS — Nur TikTok (echtes Icon hardcoded in HTML)
+     Legacy-Array beibehalten, damit Code nichts bricht, aber UI
+     setzt nur noch den Namen "TikTok" und rührt das Icon NICHT an.
      ============================================================ */
   var BLOCKED_APPS = [
     {
@@ -2831,42 +3234,9 @@
   var blockedNameEl = document.getElementById('blocked-app');
   var blockedIconEl = document.getElementById('blocked-app-icon');
 
-  function selectBlockedApp(index) {
-    var app = BLOCKED_APPS[index];
-    if (!app) return;
-    document.querySelectorAll('#blocked-picker .task-thumb').forEach(function (b, j) {
-      b.setAttribute('aria-pressed', j === index ? 'true' : 'false');
-    });
-    if (blockedNameEl) blockedNameEl.textContent = app.name;
-    if (blockedIconEl) {
-      blockedIconEl.style.background = app.bg;
-      blockedIconEl.innerHTML = app.svg;
-    }
-  }
-
-  if (blockedPicker) {
-    BLOCKED_APPS.forEach(function (app, i) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'task-thumb';
-      btn.setAttribute('role', 'tab');
-      btn.setAttribute('aria-label', app.name);
-      btn.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
-      btn.style.cssText = 'display:flex;align-items:center;justify-content:center;';
-      btn.innerHTML =
-        '<span style="width:36px;height:36px;border-radius:10px;background:' + app.bg +
-        ';display:flex;align-items:center;justify-content:center;overflow:hidden;">' +
-        app.svg.replace('<svg ', '<svg style="width:22px;height:22px;" ') +
-        '</span>';
-      btn.addEventListener('click', function () { selectBlockedApp(i); });
-      blockedPicker.appendChild(btn);
-    });
-    selectBlockedApp(0);
-  }
-
-  document.getElementById('btn-close').addEventListener('click', function (e) {
-    e.preventDefault();
-  });
+  /* TikTok ist die einzige geblockte App — Name im Screen ist bereits hardcoded.
+     Icon wird inline als SVG im HTML gerendert, damit nichts es überschreibt. */
+  if (blockedNameEl) blockedNameEl.textContent = 'TikTok';
 
   var scanFile = document.getElementById('scan-file');
   var scanWrap = document.getElementById('shield-scan-wrap');
@@ -3221,7 +3591,13 @@
 
   function deriveCategoryScores(overall, potential, aiRec) {
     var out = {};
+    var manual = (typeof window !== 'undefined' && window.__manualStatOverrides) || null;
     STAT_CATEGORIES.forEach(function (c) {
+      if (manual && typeof manual[c.key] === 'number') {
+        var r10 = Math.max(1, Math.min(10, Math.round(manual[c.key])));
+        out[c.key] = Math.max(10, Math.min(99, r10 * 10 - 5));
+        return;
+      }
       var fromAi = aiRec && typeof aiRec[c.key] === 'number' ? aiRec[c.key] : null;
       if (fromAi != null) {
         out[c.key] = Math.max(10, Math.min(99, Math.round(fromAi)));
@@ -3342,6 +3718,25 @@
   function updateDefChip() {}
 
   function applyScoresToUi(overall, potential, source, aiRec) {
+    /* Fresh Scan (AI oder Demo) → alle manuellen Overrides zurücksetzen */
+    if (source !== 'manual') {
+      try {
+        window.__manualStatOverrides = {};
+        window.__manualOverallOverride = null;
+      } catch (e) {}
+    }
+    /* Cache letzten "echten" State, damit Edits später darauf aufsetzen können */
+    if (source !== 'manual') {
+      try {
+        window.__lastApplied = {
+          overall: overall,
+          potential: potential,
+          source: source,
+          aiRec: aiRec || null
+        };
+      } catch (e) {}
+    }
+
     scoreEl.textContent = String(overall);
     potentialEl.textContent = String(potential);
     setRingForScore(overall);
@@ -3361,6 +3756,20 @@
         scanStatus.innerHTML = '<span class="shield-scan-source-badge">KI</span>';
       }
     }
+
+    /* Edit-Panel benachrichtigen, damit Inputs synchronisieren */
+    try {
+      var cats = deriveCategoryScores(overall, potential, aiRec || null);
+      window.dispatchEvent(new CustomEvent('shield-scores-applied', {
+        detail: {
+          overall: overall,
+          potential: potential,
+          source: source,
+          aiRec: aiRec || null,
+          stats: cats
+        }
+      }));
+    } catch (e) {}
   }
 
   function resetScoresPlaceholder() {
@@ -3421,6 +3830,106 @@
     } catch (e) {}
   }
 
+  /* ============================================================
+     ANALYZE-OVERLAY — 1:1 wie App (Face Scan Loader)
+     ============================================================ */
+  var GALLERY_ANALYSIS_STEPS = [
+    'Detecting face...',
+    'Mapping 76+ landmarks...',
+    'Analyzing jawline...',
+    'Measuring symmetry...',
+    'Evaluating eye area...',
+    'Checking bloat level...',
+    'Scoring cheekbones...',
+    'Computing AI score...'
+  ];
+  var ANALYZE_CAP = 0.92;
+  var ANALYZE_MIN_MS = 3200;
+
+  function analyzeProgress(elapsedSec) {
+    return Math.min(ANALYZE_CAP * (1 - Math.exp(-elapsedSec / 6.5)), ANALYZE_CAP);
+  }
+  function analyzeStepIdx(elapsedSec, total) {
+    if (total <= 0) return 0;
+    return Math.min(total - 1, Math.max(0, Math.floor(elapsedSec / 1.35)));
+  }
+
+  var overlayEl   = document.getElementById('analyze-overlay');
+  var overlayImg  = document.getElementById('analyze-img');
+  var overlayPct  = document.getElementById('analyze-pct');
+  var overlayStep = document.getElementById('analyze-step');
+  var overlayBar  = document.getElementById('analyze-bar-fill');
+  var overlayRaf = 0;
+  var overlayStart = 0;
+  var overlayDone = false;
+  var overlayPending = null;
+
+  function showAnalyzeOverlay(dataUrl) {
+    if (!overlayEl) return;
+    if (overlayImg) overlayImg.src = dataUrl;
+    overlayEl.hidden = false;
+    overlayEl.removeAttribute('aria-hidden');
+    overlayEl.classList.remove('is-fadeout');
+    document.documentElement.style.overflow = 'hidden';
+    overlayDone = false;
+    overlayPending = null;
+    overlayStart = Date.now();
+    if (overlayPct) overlayPct.textContent = '0%';
+    if (overlayBar) overlayBar.style.width = '0%';
+    if (overlayStep) overlayStep.textContent = GALLERY_ANALYSIS_STEPS[0];
+    cancelAnimationFrame(overlayRaf);
+
+    function loop() {
+      var elapsed = (Date.now() - overlayStart) / 1000;
+      var p = analyzeProgress(elapsed);
+      var idx = analyzeStepIdx(elapsed, GALLERY_ANALYSIS_STEPS.length);
+      if (overlayPct) overlayPct.textContent = Math.min(100, Math.floor(p * 100)) + '%';
+      if (overlayStep) overlayStep.textContent = GALLERY_ANALYSIS_STEPS[Math.min(idx, GALLERY_ANALYSIS_STEPS.length - 1)];
+      if (overlayBar) overlayBar.style.width = (p * 100) + '%';
+      if (overlayPending && Date.now() - overlayStart >= ANALYZE_MIN_MS) {
+        finishAnalyzeOverlay();
+        return;
+      }
+      overlayRaf = requestAnimationFrame(loop);
+    }
+    overlayRaf = requestAnimationFrame(loop);
+  }
+
+  function finishAnalyzeOverlay() {
+    if (overlayDone || !overlayEl) return;
+    overlayDone = true;
+    cancelAnimationFrame(overlayRaf);
+    if (overlayPct) overlayPct.textContent = '100%';
+    if (overlayStep) overlayStep.textContent = GALLERY_ANALYSIS_STEPS[GALLERY_ANALYSIS_STEPS.length - 1];
+    if (overlayBar) overlayBar.style.width = '100%';
+    setTimeout(function () {
+      overlayEl.classList.add('is-fadeout');
+      setTimeout(function () {
+        overlayEl.hidden = true;
+        overlayEl.setAttribute('aria-hidden', 'true');
+        overlayEl.classList.remove('is-fadeout');
+        document.documentElement.style.overflow = '';
+        if (overlayPending) {
+          var s = overlayPending;
+          applyScoresToUi(s.overall, s.potential, s.source, s.rec || null);
+          overlayPending = null;
+        }
+      }, 380);
+    }, 420);
+  }
+
+  function submitAnalyzeResult(scores, source, rec) {
+    overlayPending = {
+      overall: scores.overall,
+      potential: scores.potential,
+      source: source,
+      rec: rec
+    };
+    if (Date.now() - overlayStart >= ANALYZE_MIN_MS) {
+      finishAnalyzeOverlay();
+    }
+  }
+
   scanFile.addEventListener('change', function () {
     var f = scanFile.files && scanFile.files[0];
     if (!f || !f.type || f.type.indexOf('image/') !== 0) return;
@@ -3431,16 +3940,19 @@
       var dataUrl = typeof reader.result === 'string' ? reader.result : '';
       showScanFilled(dataUrl);
       resetScoresPlaceholder();
-      scanStatus.textContent = 'KI analysiert…';
-      scanWrap.classList.add('is-analyzing');
-      scanMock.classList.add('is-analyzing-ui');
+      if (scanStatus) scanStatus.textContent = 'KI analysiert…';
+      if (scanWrap) scanWrap.classList.add('is-analyzing');
+      if (scanMock) scanMock.classList.add('is-analyzing-ui');
+
+      showAnalyzeOverlay(dataUrl);
+
       analyzeImageFile(f).then(function (out) {
         if (myGen !== analyzeGen) return;
-        scanWrap.classList.remove('is-analyzing');
-        scanMock.classList.remove('is-analyzing-ui');
+        if (scanWrap) scanWrap.classList.remove('is-analyzing');
+        if (scanMock) scanMock.classList.remove('is-analyzing-ui');
         var s = out.scores;
-        applyScoresToUi(s.overall, s.potential, out.source, out.rec || null);
         persistScan(dataUrl, s.overall, s.potential, out.source);
+        submitAnalyzeResult(s, out.source, out.rec || null);
       });
     };
     reader.readAsDataURL(f);
@@ -3457,114 +3969,136 @@
 })();
   </script>
 
-  <!-- Clipper-Studio-Logik: Override-Inputs, Uhrzeit, PNG-Download -->
+  <!-- Edit-Panel: Ratings manuell bearbeiten + Foto wechseln -->
   <script>
 (function () {
-  var scoreInput     = document.getElementById('score-input');
-  var potentialInput = document.getElementById('potential-input');
-  var scoreValEl     = document.getElementById('score-val');
-  var potValEl       = document.getElementById('potential-val');
-  var scanFilled     = document.getElementById('scan-filled');
-  var scanEmpty      = document.getElementById('scan-empty');
-  var phoneTimeInput = document.getElementById('phone-time-input');
-  var phoneTimeEl    = document.getElementById('phone-time');
-  var btnDownload    = document.getElementById('btn-download-png');
-  var phoneMockup    = document.getElementById('phone-mockup');
-  var scanImg        = document.getElementById('scan-preview-img');
+  var STATS = [
+    { name: 'Jawline',    key: 'jawline' },
+    { name: 'Symmetry',   key: 'symmetry' },
+    { name: 'Eye Area',   key: 'eyeArea' },
+    { name: 'Cheekbones', key: 'cheekbones' },
+    { name: 'Skin',       key: 'skin' },
+    { name: 'Definition', key: 'definition' }
+  ];
 
-  /* --- Uhrzeit im Status-Bar --- */
-  function applyTime() {
-    var v = (phoneTimeInput.value || '').trim();
-    phoneTimeEl.textContent = v || '9:41';
-  }
-  phoneTimeInput.addEventListener('input', applyTime);
-  applyTime();
+  var gridEl       = document.getElementById('edit-stats-grid');
+  var overallInput = document.getElementById('edit-overall');
+  var resetBtn     = document.getElementById('edit-reset');
 
-  /* --- Score/Potential manueller Override (sofort sichtbar, ohne KI) --- */
+  if (!gridEl || !overallInput || !resetBtn) return;
+
+  var statInputs = {};
+  STATS.forEach(function (s) {
+    var wrap = document.createElement('div');
+    wrap.className = 'edit-stat';
+    wrap.innerHTML =
+      '<span class="edit-stat-label">' + s.name + '</span>' +
+      '<input type="number" min="1" max="10" step="1" class="edit-input" ' +
+      'data-cat="' + s.key + '" placeholder="—" inputmode="numeric" />' +
+      '<span class="edit-denom">/10</span>';
+    gridEl.appendChild(wrap);
+    statInputs[s.key] = wrap.querySelector('input');
+  });
+
   function clampInt(v, lo, hi) {
     var n = parseInt(v, 10);
     if (!isFinite(n)) return null;
     return Math.max(lo, Math.min(hi, n));
   }
 
-  function showFilledIfNeeded() {
-    // Wenn Clipper manuelle Werte eingibt, ohne Foto zu uploaden,
-    // zeigen wir trotzdem die Score-Karte an (leerer Ring)
-    if (scanEmpty && !scanEmpty.hidden) {
-      scanEmpty.hidden = true;
-    }
-    if (scanFilled && scanFilled.hidden) {
-      scanFilled.hidden = false;
-    }
+  function to10FromScore(score100) {
+    if (typeof score100 !== 'number' || !isFinite(score100)) return null;
+    var r = Math.round(score100 / 10);
+    if (r < 1) r = 1;
+    if (r > 10) r = 10;
+    return r;
   }
 
-  function applyOverrides() {
-    var s = clampInt(scoreInput.value, 0, 99);
-    var p = clampInt(potentialInput.value, 0, 100);
-    if (s == null && p == null) return;
-    showFilledIfNeeded();
-    // aktuelle Werte mergen (wenn nur ein Feld gesetzt ist)
-    var curS = parseInt((scoreValEl && scoreValEl.textContent) || '72', 10);
-    var curP = parseInt((potValEl && potValEl.textContent) || '86', 10);
-    var nextS = s != null ? s : (isFinite(curS) ? curS : 72);
-    var nextP = p != null ? p : (isFinite(curP) ? curP : 86);
-    if (nextP < nextS) nextP = nextS;
-    // Alles über die Haupt-Pipeline rendern: Score, Potential, Trajectory, Rings, Def-Chip
+  function syncInputsFromScores(detail) {
+    if (!detail) return;
+    var r10 = to10FromScore(detail.overall);
+    overallInput.value = r10 != null ? String(r10) : '';
+    overallInput.classList.remove('edit-input-overridden');
+    STATS.forEach(function (s) {
+      var inp = statInputs[s.key];
+      if (!inp) return;
+      var v10 = to10FromScore(detail.stats && detail.stats[s.key]);
+      inp.value = v10 != null ? String(v10) : '';
+      inp.classList.remove('edit-input-overridden');
+    });
+  }
+
+  /* Sync, wenn Analyse / Initial-Render fertig ist */
+  window.addEventListener('shield-scores-applied', function (e) {
+    var d = e && e.detail;
+    if (!d) return;
+    if (d.source === 'manual') return; /* bei manuellen Edits nicht überschreiben */
+    syncInputsFromScores(d);
+  });
+
+  function currentBase() {
+    return (window.__lastApplied) || { overall: 72, potential: 86, source: 'demo', aiRec: null };
+  }
+
+  function rerenderWithOverrides(newOverall100) {
+    var base = currentBase();
+    var overall = newOverall100 != null ? newOverall100 : base.overall;
+    overall = Math.max(10, Math.min(99, overall));
+    var potential = Math.max(overall, base.potential || 0);
     if (typeof window.applyShieldScores === 'function') {
-      window.applyShieldScores(nextS, nextP, 'demo', null);
-    } else {
-      if (scoreValEl) scoreValEl.textContent = String(nextS);
-      if (potValEl)   potValEl.textContent   = String(nextP);
+      window.applyShieldScores(overall, potential, 'manual', base.aiRec);
     }
   }
-  scoreInput.addEventListener('input', applyOverrides);
-  potentialInput.addEventListener('input', applyOverrides);
 
-  /* --- PNG-Download via html-to-image --- */
-  function triggerDownload(dataUrl) {
-    var a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = 'limitless-shield-' + Date.now() + '.png';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }
-
-  async function downloadPhonePng() {
-    if (!window.htmlToImage) {
-      alert('Screenshot-Bibliothek konnte nicht geladen werden. Bitte Internet prüfen.');
+  overallInput.addEventListener('input', function () {
+    var r = clampInt(overallInput.value, 1, 10);
+    if (r == null) {
+      window.__manualOverallOverride = null;
+      overallInput.classList.remove('edit-input-overridden');
+      rerenderWithOverrides(null);
       return;
     }
-    btnDownload.disabled = true;
-    var prev = btnDownload.textContent;
-    btnDownload.textContent = 'Rendere …';
-    document.body.classList.add('is-capturing');
-    try {
-      // Bei Cross-Origin-Foto: erst zu DataURL konvertieren, damit html-to-image rendern kann
-      if (scanImg && scanImg.src && !scanImg.src.startsWith('data:')) {
-        // intern hochgeladene Bilder sind bereits Data-URLs — überspringen
-      }
-      var dataUrl = await window.htmlToImage.toPng(phoneMockup, {
-        pixelRatio: 3,
-        cacheBust: true,
-        backgroundColor: '#0a0a0a',
-        filter: function (node) {
-          // html-to-image fremde <script> / <style> aus dem Head-Import ausschließen
-          return !(node.tagName === 'SCRIPT');
-        }
-      });
-      triggerDownload(dataUrl);
-    } catch (err) {
-      console.error('PNG-Render fehlgeschlagen', err);
-      alert('Screenshot konnte nicht erstellt werden. Details in der Konsole.');
-    } finally {
-      document.body.classList.remove('is-capturing');
-      btnDownload.disabled = false;
-      btnDownload.textContent = prev;
-    }
-  }
+    window.__manualOverallOverride = r;
+    overallInput.classList.add('edit-input-overridden');
+    rerenderWithOverrides(r * 10 - 5);
+  });
 
-  btnDownload.addEventListener('click', downloadPhonePng);
+  STATS.forEach(function (s) {
+    var inp = statInputs[s.key];
+    if (!inp) return;
+    inp.addEventListener('input', function () {
+      var r = clampInt(inp.value, 1, 10);
+      if (!window.__manualStatOverrides) window.__manualStatOverrides = {};
+      if (r == null) {
+        delete window.__manualStatOverrides[s.key];
+        inp.classList.remove('edit-input-overridden');
+      } else {
+        window.__manualStatOverrides[s.key] = r;
+        inp.classList.add('edit-input-overridden');
+      }
+      rerenderWithOverrides(window.__manualOverallOverride != null
+        ? window.__manualOverallOverride * 10 - 5
+        : null);
+    });
+  });
+
+  resetBtn.addEventListener('click', function () {
+    window.__manualStatOverrides = {};
+    window.__manualOverallOverride = null;
+    var base = currentBase();
+    if (typeof window.applyShieldScores === 'function') {
+      window.applyShieldScores(base.overall, base.potential, base.source || 'demo', base.aiRec);
+    }
+  });
+
+  /* Initial-Sync: Das erste applyScoresToUi aus dem Main-Script lief vor diesem
+     Listener — wir triggern einen Re-Render, damit die Inputs befüllt werden. */
+  (function initialSync() {
+    var base = window.__lastApplied;
+    if (base && typeof window.applyShieldScores === 'function') {
+      window.applyShieldScores(base.overall, base.potential, base.source || 'demo', base.aiRec);
+    }
+  })();
 })();
   </script>
 </body>
