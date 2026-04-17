@@ -855,53 +855,55 @@
     /* ============================================================
        Limitless-Rating Card (1–10) — im Stil von results-score-hero
        ============================================================ */
+    /* CTA + Rating in einer Zeile: App-Store-Card links, Halbkreis-Gauge rechts */
+    .lk-cta-rating-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 10px;
+      width: 100%;
+    }
+    .lk-cta-rating-row .lk-appstore-card {
+      margin: 0;
+      flex: 0 0 auto;
+      width: 50%;
+      max-width: 200px;
+      align-self: center;
+    }
+
     .lk-psl {
       position: relative;
-      width: 100%;
-      margin: 0 0 10px;
-      padding: 4px 0 6px;
+      flex: 1 1 auto;
+      min-width: 0;
+      margin: 0;
+      padding: 0;
       background: transparent;
+      border: none;
       box-shadow: none;
       overflow: visible;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
-    }
-    /* Halo hinter dem Gauge entfernt — nur noch der Arc & die Zahl leuchten aus sich heraus */
-    .lk-psl > * { position: relative; z-index: 1; }
-    .lk-psl::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 14px;
-      padding: 1px;
-      background: linear-gradient(135deg,
-        rgba(175, 82, 222, 0.28),
-        rgba(90, 200, 250, 0.22),
-        rgba(99, 230, 190, 0.26));
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-              mask-composite: exclude;
-      pointer-events: none;
+      gap: 2px;
     }
     .lk-psl > * { position: relative; z-index: 1; }
 
     .lk-psl-head-label {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 800;
-      letter-spacing: 0.18em;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      color: rgba(60, 60, 67, 0.55);
+      color: rgba(255, 255, 255, 0.55);
       line-height: 1;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
-    /* Halbkreis-Gauge (180° Arc) */
+    /* Halbkreis-Gauge (180° Arc) — kompakt neben der CTA */
     .lk-psl-gauge-wrap {
       position: relative;
-      width: 180px;
+      width: 140px;
       max-width: 100%;
       aspect-ratio: 200 / 116;
       display: flex;
@@ -951,7 +953,7 @@
     /* Backlight hinter der PSL-Zahl entfernt — nur Text-Glow */
     .lk-psl-num {
       font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
-      font-size: 44px;
+      font-size: 34px;
       font-weight: 900;
       letter-spacing: -0.04em;
       line-height: 0.95;
@@ -975,7 +977,7 @@
     }
     .lk-psl-denom {
       font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-      font-size: 14px;
+      font-size: 11px;
       font-weight: 700;
       color: rgba(255, 255, 255, 0.75);
       letter-spacing: -0.02em;
@@ -984,33 +986,37 @@
         0 0 5px rgba(240, 193, 87, 0.4);
     }
 
-    /* Tier-Label fett unter dem Gauge — Weiß mit warmem Gold-Halo auf Dark-BG */
+    /* Tier-Label fett unter dem Gauge — rahmenlos, nur Glow */
     .lk-psl-tier-pill {
       position: relative;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 900;
-      letter-spacing: 0.18em;
-      padding: 5px 16px;
-      border-radius: 999px;
+      letter-spacing: 0.16em;
+      padding: 0;
+      border-radius: 0;
       line-height: 1;
       color: #ffffff;
-      background: rgba(36, 30, 22, 0.7);
-      border: 1px solid rgba(240, 193, 87, 0.55);
+      background: transparent;
+      border: none;
       box-shadow: none;
       white-space: nowrap;
       text-transform: uppercase;
       text-shadow:
-        0 0 2px rgba(255, 253, 245, 0.6),
-        0 0 5px rgba(255, 220, 140, 0.85),
+        0 0 2px rgba(255, 253, 245, 0.7),
+        0 0 5px rgba(255, 220, 140, 0.9),
         0 0 9px rgba(240, 193, 87, 0.55);
-      transition: all 0.3s ease;
+      transition: color 0.3s ease, text-shadow 0.3s ease;
+      margin-top: 2px;
     }
     .lk-psl-tier-pill.tier-trueadam {
-      background: linear-gradient(90deg, rgba(255, 45, 85, 0.14) 0%, rgba(175, 82, 222, 0.14) 100%);
-      border-color: rgba(255, 45, 85, 0.4);
+      background: transparent;
+      border: none;
       color: #ff2d55;
-      text-shadow: 0 0 10px rgba(255, 45, 85, 0.4);
+      text-shadow:
+        0 0 3px rgba(255, 45, 85, 0.7),
+        0 0 10px rgba(255, 45, 85, 0.55),
+        0 0 16px rgba(175, 82, 222, 0.4);
     }
 
     /* Chad-Tier Stat-Grid: 6 offene Karten, kein Kasten */
@@ -2862,45 +2868,45 @@
               </div>
             </div>
 
-            <!-- APP CTA: unser Limitless App-Store-Card -->
-            <a class="lk-appstore-card" id="lk-appstore-card"
-               href="https://apps.apple.com/app/limitless-app-blocker/id0000000000"
-               target="_blank" rel="noopener" aria-label="Limitless on the App Store">
-              <img src="./assets/app-store-card.png" alt="Limitless on the App Store"
-                   width="1024" height="406" decoding="async" loading="eager" />
-            </a>
+            <!-- CTA + RATING nebeneinander: App-Store-Card links, Halbkreis-Gauge rechts -->
+            <div class="lk-cta-rating-row">
+              <a class="lk-appstore-card" id="lk-appstore-card"
+                 href="https://apps.apple.com/app/limitless-app-blocker/id0000000000"
+                 target="_blank" rel="noopener" aria-label="Limitless on the App Store">
+                <img src="./assets/app-store-card.png" alt="Limitless on the App Store"
+                     width="1024" height="406" decoding="async" loading="eager" />
+              </a>
 
-            <!-- LIMITLESS RATING: Halbkreis-Gauge mit Zahl im Zentrum + Tier-Label fett darunter -->
-            <div class="lk-psl" id="psl-strip">
-              <span class="lk-psl-head-label">Limitless Rating</span>
-              <div class="lk-psl-gauge-wrap">
-                <svg class="lk-psl-gauge" viewBox="0 0 200 116" aria-hidden="true">
-                  <defs>
-                    <linearGradient id="psl-gauge-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop id="psl-grad-0"   offset="0%"   stop-color="#7fd0ff" />
-                      <stop id="psl-grad-100" offset="100%" stop-color="#b3e0ff" />
-                    </linearGradient>
-                    <filter id="psl-gauge-glow" x="-30%" y="-30%" width="160%" height="160%">
-                      <feGaussianBlur stdDeviation="3.2" result="coloredBlur" />
-                      <feMerge>
-                        <feMergeNode in="coloredBlur" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
-                  </defs>
-                  <!-- Track (Hintergrund-Linie) -->
-                  <path class="lk-psl-gauge-track"
-                        d="M 18 100 A 82 82 0 0 1 182 100" />
-                  <!-- Fill (Tier-Gradient, Glow) -->
-                  <path class="lk-psl-gauge-fill" id="psl-gauge-fill"
-                        d="M 18 100 A 82 82 0 0 1 182 100" />
-                </svg>
-                <div class="lk-psl-center">
-                  <span class="lk-psl-num" id="psl-num">7</span>
-                  <span class="lk-psl-denom">/10</span>
+              <!-- LIMITLESS RATING: Halbkreis-Gauge, Zahl im Zentrum, Tier-Label fett darunter -->
+              <div class="lk-psl" id="psl-strip">
+                <span class="lk-psl-head-label">Limitless Rating</span>
+                <div class="lk-psl-gauge-wrap">
+                  <svg class="lk-psl-gauge" viewBox="0 0 200 116" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="psl-gauge-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop id="psl-grad-0"   offset="0%"   stop-color="#7fd0ff" />
+                        <stop id="psl-grad-100" offset="100%" stop-color="#b3e0ff" />
+                      </linearGradient>
+                      <filter id="psl-gauge-glow" x="-30%" y="-30%" width="160%" height="160%">
+                        <feGaussianBlur stdDeviation="3.2" result="coloredBlur" />
+                        <feMerge>
+                          <feMergeNode in="coloredBlur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                    </defs>
+                    <path class="lk-psl-gauge-track"
+                          d="M 18 100 A 82 82 0 0 1 182 100" />
+                    <path class="lk-psl-gauge-fill" id="psl-gauge-fill"
+                          d="M 18 100 A 82 82 0 0 1 182 100" />
+                  </svg>
+                  <div class="lk-psl-center">
+                    <span class="lk-psl-num" id="psl-num">7</span>
+                    <span class="lk-psl-denom">/10</span>
+                  </div>
                 </div>
+                <span class="lk-psl-tier-pill" id="psl-tier-pill">MTN</span>
               </div>
-              <span class="lk-psl-tier-pill" id="psl-tier-pill">MTN</span>
             </div>
             <span id="psl-boxes" hidden></span>
             <span id="psl-bar" hidden></span>
