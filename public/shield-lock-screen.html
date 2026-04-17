@@ -793,84 +793,130 @@
       object-fit: cover;
     }
 
-    /* PSL Rating 1–10 Strip */
-    .lk-psl-label {
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
-      font-size: 13px;
-      font-weight: 800;
-      color: #ffffff;
-      margin: 0 0 6px;
-      align-self: flex-start;
-      letter-spacing: -0.01em;
-      line-height: 1;
-    }
-
+    /* ============================================================
+       Limitless-Rating Card (1–10) — im Stil von results-score-hero
+       ============================================================ */
     .lk-psl {
-      display: grid;
-      grid-template-columns: 74px 1fr;
-      gap: 6px;
+      position: relative;
       width: 100%;
       margin: 0 0 12px;
+      padding: 9px 12px 10px;
+      border-radius: 14px;
+      background: linear-gradient(175deg,
+        rgba(255, 255, 255, 0.055) 0%,
+        rgba(255, 255, 255, 0.012) 100%);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.07) inset,
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 10px 24px rgba(0, 0, 0, 0.38);
+      overflow: hidden;
+    }
+    .lk-psl::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 14px;
+      padding: 1px;
+      background: linear-gradient(135deg,
+        rgba(175, 82, 222, 0.28),
+        rgba(90, 200, 250, 0.22),
+        rgba(99, 230, 190, 0.26));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      pointer-events: none;
+    }
+    .lk-psl > * { position: relative; z-index: 1; }
+
+    .lk-psl-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .lk-psl-head-label {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(235, 235, 245, 0.55);
+      line-height: 1;
+    }
+    .lk-psl-tier-pill {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      padding: 4px 9px;
+      border-radius: 999px;
+      line-height: 1;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      white-space: nowrap;
+      transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    }
+    .lk-psl-tier-pill.tier-trueadam {
+      background: linear-gradient(90deg, rgba(255, 45, 85, 0.22) 0%, rgba(175, 82, 222, 0.22) 100%);
+      border-color: rgba(255, 45, 85, 0.45);
+      color: #fff;
+      text-shadow: 0 0 8px rgba(255, 45, 85, 0.45);
     }
 
-    .lk-psl-score {
-      position: relative;
-      border-radius: 13px;
+    .lk-psl-body {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 8px 6px;
-      color: #ffffff;
-      text-align: center;
-      background: rgba(10, 132, 255, 0.12);
-      border: 1.3px solid rgba(10, 132, 255, 0.55);
-      box-shadow:
-        0 0 18px rgba(10, 132, 255, 0.3) inset,
-        0 0 14px rgba(10, 132, 255, 0.22);
-      transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+      gap: 10px;
+    }
+    .lk-psl-score {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 3px;
+      line-height: 1;
+      flex-shrink: 0;
     }
     .lk-psl-num {
-      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-      font-size: 28px;
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, sans-serif;
+      font-size: 34px;
       font-weight: 900;
-      line-height: 0.95;
       letter-spacing: -0.04em;
+      line-height: 0.95;
       font-variant-numeric: tabular-nums;
-      color: #ffffff;
+      background: linear-gradient(135deg, #5ac8fa 0%, #0a84ff 100%);
+      -webkit-background-clip: text;
+              background-clip: text;
+      color: transparent;
+      transition: background 0.3s ease;
+    }
+    .lk-psl-num.tier-trueadam {
+      background: linear-gradient(90deg, #ff2d55 0%, #ffcf6b 50%, #af52de 100%);
+      -webkit-background-clip: text;
+              background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 6px rgba(255, 45, 85, 0.35));
     }
     .lk-psl-denom {
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
-      font-size: 9px;
-      font-weight: 600;
-      color: rgba(235, 235, 245, 0.7);
-      margin-top: 3px;
-      line-height: 1;
-      letter-spacing: 0.01em;
+      font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(235, 235, 245, 0.5);
+      letter-spacing: -0.02em;
     }
 
-    .lk-psl-boxes {
-      display: grid;
-      grid-template-columns: repeat(10, 1fr);
-      gap: 4px;
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 13px;
-      padding: 7px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      align-items: stretch;
+    .lk-psl-bar-wrap {
+      flex: 1;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      position: relative;
     }
-
-    .lk-psl-box {
-      aspect-ratio: 1;
-      border-radius: 5px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
-    }
-    .lk-psl-box.is-filled {
-      background: linear-gradient(135deg, #0a84ff 0%, #5ac8fa 100%);
-      border-color: rgba(10, 132, 255, 0.7);
-      box-shadow: 0 0 10px rgba(10, 132, 255, 0.45);
+    .lk-psl-bar {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.5s ease, background 0.3s ease;
     }
 
     /* Chad-Tier Stat-Grid: 6 Karten (Jawline, Symmetry, …) mit 1–10 Tier */
@@ -2231,15 +2277,23 @@
                    width="1024" height="406" decoding="async" loading="eager" />
             </a>
 
-            <!-- PSL RATING STRIP 1–10 -->
-            <p class="lk-psl-label">Limitless Rating</p>
+            <!-- LIMITLESS RATING 1–10 (Limitless-App-Style Score-Card, kompakt) -->
             <div class="lk-psl" id="psl-strip">
-              <div class="lk-psl-score" id="psl-score">
-                <span class="lk-psl-num" id="psl-num">7</span>
-                <span class="lk-psl-denom">out of 10</span>
+              <div class="lk-psl-head">
+                <span class="lk-psl-head-label">Limitless Rating</span>
+                <span class="lk-psl-tier-pill" id="psl-tier-pill">MTN</span>
               </div>
-              <div class="lk-psl-boxes" id="psl-boxes"></div>
+              <div class="lk-psl-body">
+                <span class="lk-psl-score" id="psl-score">
+                  <span class="lk-psl-num" id="psl-num">7</span>
+                  <span class="lk-psl-denom">/10</span>
+                </span>
+                <div class="lk-psl-bar-wrap">
+                  <div class="lk-psl-bar" id="psl-bar"></div>
+                </div>
+              </div>
             </div>
+            <span id="psl-boxes" hidden></span>
 
             <!-- CHAD-TIER GRID: 6 Kategorien mit 1–10 + Chad-Label -->
             <div class="lk-chad-grid" id="chad-grid" aria-label="Looksmax categories"></div>
@@ -2994,36 +3048,52 @@
     return out;
   }
 
-  /* PSL Rating Strip 1–10 */
-  var pslNumEl   = document.getElementById('psl-num');
-  var pslBoxesEl = document.getElementById('psl-boxes');
-  var pslScoreEl = document.getElementById('psl-score');
-  var chadGridEl = document.getElementById('chad-grid');
+  /* Limitless Rating Card — kompakter Limitless-App-Score-Hero-Style */
+  var pslNumEl      = document.getElementById('psl-num');
+  var pslTierPillEl = document.getElementById('psl-tier-pill');
+  var pslBarEl      = document.getElementById('psl-bar');
+  var chadGridEl    = document.getElementById('chad-grid');
 
   function renderPSL(overall100) {
     var r = to10(overall100);
-    if (pslNumEl) pslNumEl.textContent = String(r);
-    if (pslBoxesEl) {
-      var html = '';
-      var c = tierColor(r);
-      var isTrue = r === 10;
-      var fillBg = isTrue
-        ? 'background: linear-gradient(135deg, #ff2d55 0%, #ffcf6b 50%, #af52de 100%); border-color: rgba(255, 45, 85, 0.7); box-shadow: 0 0 10px rgba(255, 45, 85, 0.55);'
-        : 'background: linear-gradient(135deg, ' + c + ' 0%, ' + c + 'bb 100%); border-color: ' + c + '; box-shadow: 0 0 10px ' + c + '70;';
-      for (var i = 1; i <= 10; i++) {
-        if (i <= r) {
-          html += '<div class="lk-psl-box is-filled" style="' + fillBg + '"></div>';
-        } else {
-          html += '<div class="lk-psl-box"></div>';
-        }
+    var tier = chadTier(r);
+    var isTrue = r === 10;
+    var c = tierColor(r);
+
+    if (pslNumEl) {
+      pslNumEl.textContent = String(r);
+      if (isTrue) {
+        pslNumEl.classList.add('tier-trueadam');
+        pslNumEl.style.background = '';
+      } else {
+        pslNumEl.classList.remove('tier-trueadam');
+        pslNumEl.style.background =
+          'linear-gradient(135deg, ' + c + ' 0%, ' + c + 'aa 100%)';
+        pslNumEl.style.webkitBackgroundClip = 'text';
+        pslNumEl.style.backgroundClip = 'text';
       }
-      pslBoxesEl.innerHTML = html;
     }
-    if (pslScoreEl) {
-      var s = tierScoreBoxStyle(r);
-      pslScoreEl.style.background = s.bg;
-      pslScoreEl.style.borderColor = s.border;
-      pslScoreEl.style.boxShadow = '0 0 18px ' + s.glow + ' inset, 0 0 14px ' + s.glow;
+
+    if (pslTierPillEl) {
+      pslTierPillEl.textContent = tier;
+      if (isTrue) {
+        pslTierPillEl.classList.add('tier-trueadam');
+        pslTierPillEl.style.background = '';
+        pslTierPillEl.style.borderColor = '';
+        pslTierPillEl.style.color = '';
+      } else {
+        pslTierPillEl.classList.remove('tier-trueadam');
+        pslTierPillEl.style.background = c + '1f';
+        pslTierPillEl.style.borderColor = c + '66';
+        pslTierPillEl.style.color = c;
+      }
+    }
+
+    if (pslBarEl) {
+      pslBarEl.style.width = (r / 10) * 100 + '%';
+      pslBarEl.style.background = isTrue
+        ? 'linear-gradient(90deg, #ff2d55 0%, #ffcf6b 50%, #af52de 100%)'
+        : 'linear-gradient(90deg, ' + c + ' 0%, ' + c + 'cc 100%)';
     }
   }
 
@@ -3055,11 +3125,8 @@
   function updatePSL() {}
   function resetPSL() {
     if (pslNumEl) pslNumEl.textContent = '—';
-    if (pslBoxesEl) {
-      var html = '';
-      for (var i = 0; i < 10; i++) html += '<div class="lk-psl-box"></div>';
-      pslBoxesEl.innerHTML = html;
-    }
+    if (pslTierPillEl) pslTierPillEl.textContent = '—';
+    if (pslBarEl) pslBarEl.style.width = '0%';
   }
   function updateDefChip() {}
 
