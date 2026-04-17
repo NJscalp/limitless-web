@@ -896,23 +896,34 @@
     .lk-psl {
       position: relative;
       width: 100%;
-      margin: 0 0 12px;
-      padding: 10px 12px 14px;
-      border-radius: 16px;
-      background: linear-gradient(
-        145deg,
-        #ffffff 0%,
-        rgb(250, 247, 255) 40%,
-        rgb(242, 252, 247) 100%);
-      box-shadow:
-        0 10px 28px rgba(88, 86, 214, 0.1),
-        0 4px 10px rgba(0, 0, 0, 0.05);
-      overflow: hidden;
+      margin: 0 0 10px;
+      padding: 4px 0 6px;
+      background: transparent;
+      box-shadow: none;
+      overflow: visible;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 4px;
     }
+    /* Weicher Radial-Glow hinter dem Gauge (kein Kasten, nur Licht) */
+    .lk-psl::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 40%;
+      width: 200px;
+      height: 110px;
+      transform: translate(-50%, -50%);
+      background:
+        radial-gradient(50% 55% at 50% 60%, rgba(175, 82, 222, 0.22) 0%, transparent 70%),
+        radial-gradient(50% 50% at 30% 40%, rgba(90, 200, 250, 0.18) 0%, transparent 70%),
+        radial-gradient(50% 50% at 70% 40%, rgba(99, 230, 190, 0.18) 0%, transparent 70%);
+      filter: blur(12px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .lk-psl > * { position: relative; z-index: 1; }
     .lk-psl::before {
       content: '';
       position: absolute;
@@ -960,19 +971,21 @@
     }
     .lk-psl-gauge-track {
       fill: none;
-      stroke: rgba(0, 0, 0, 0.08);
-      stroke-width: 11;
+      stroke: rgba(0, 0, 0, 0.07);
+      stroke-width: 10;
       stroke-linecap: round;
     }
     .lk-psl-gauge-fill {
       fill: none;
       stroke: url(#psl-gauge-grad);
-      stroke-width: 11;
+      stroke-width: 10;
       stroke-linecap: round;
       stroke-dasharray: 258 258;
       stroke-dashoffset: 258;
-      filter: drop-shadow(0 0 6px rgba(10, 132, 255, 0.55));
-      transition: stroke-dashoffset 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.3s ease;
+      filter:
+        drop-shadow(0 0 8px rgba(175, 82, 222, 0.55))
+        drop-shadow(0 0 4px rgba(90, 200, 250, 0.45));
+      transition: stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1), filter 0.3s ease;
     }
 
     /* Zahl zentriert im Gauge */
@@ -994,14 +1007,14 @@
       letter-spacing: -0.04em;
       line-height: 0.95;
       font-variant-numeric: tabular-nums;
-      background: linear-gradient(135deg, #5ac8fa 0%, #0a84ff 100%);
+      background: linear-gradient(135deg, #af52de 0%, #5ac8fa 55%, #63e6be 100%);
       -webkit-background-clip: text;
               background-clip: text;
       color: transparent;
       transition: background 0.3s ease, filter 0.3s ease;
       filter:
-        drop-shadow(0 0 12px rgba(10, 132, 255, 0.5))
-        drop-shadow(0 0 2px rgba(10, 132, 255, 0.3));
+        drop-shadow(0 0 14px rgba(175, 82, 222, 0.55))
+        drop-shadow(0 0 4px rgba(90, 200, 250, 0.45));
     }
     .lk-psl-num.tier-trueadam {
       background: linear-gradient(90deg, #ff2d55 0%, #ffcf6b 50%, #af52de 100%);
@@ -1040,18 +1053,18 @@
       text-shadow: 0 0 10px rgba(255, 45, 85, 0.4);
     }
 
-    /* Chad-Tier Stat-Grid: 6 Karten (Jawline, Symmetry, …) im Light-Theme */
+    /* Chad-Tier Stat-Grid: 6 offene Karten, kein Kasten */
     .lk-chad-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 6px;
+      gap: 4px 2px;
       width: 100%;
-      background: #ffffff;
-      border-radius: 16px;
-      padding: 10px;
-      border: 1px solid rgb(232, 232, 236);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-      margin: 0 0 12px;
+      background: transparent;
+      border-radius: 0;
+      padding: 2px 0 0;
+      border: none;
+      box-shadow: none;
+      margin: 0 0 8px;
       row-gap: 10px;
     }
 
@@ -1151,30 +1164,21 @@
       margin-top: 4px;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
       font-size: 8.5px;
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: 0.04em;
-      color: rgba(60, 60, 67, 0.75);
       line-height: 1.1;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .lk-chad-task::before {
-      content: "";
+    .lk-chad-task-dot {
       flex-shrink: 0;
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
-      background:
-        radial-gradient(60% 60% at 35% 30%, rgba(255, 236, 170, 0.9) 0%, rgba(240, 193, 87, 0.38) 55%, rgba(209, 173, 77, 0.14) 100%);
-      box-shadow:
-        0 0 0 1px rgba(240, 193, 87, 0.55) inset,
-        0 0 6px rgba(240, 193, 87, 0.45);
     }
     .lk-chad-task-name {
-      color: #b8933b;
       font-weight: 800;
-      text-shadow: 0 0 8px rgba(240, 193, 87, 0.45);
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -2481,8 +2485,9 @@
                 <svg class="lk-psl-gauge" viewBox="0 0 200 116" aria-hidden="true">
                   <defs>
                     <linearGradient id="psl-gauge-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop id="psl-grad-0"   offset="0%"   stop-color="#ff3b30" />
-                      <stop id="psl-grad-100" offset="100%" stop-color="#0a84ff" />
+                      <stop id="psl-grad-0"   offset="0%"   stop-color="#af52de" />
+                      <stop id="psl-grad-50"  offset="50%"  stop-color="#5ac8fa" />
+                      <stop id="psl-grad-100" offset="100%" stop-color="#63e6be" />
                     </linearGradient>
                     <filter id="psl-gauge-glow" x="-30%" y="-30%" width="160%" height="160%">
                       <feGaussianBlur stdDeviation="3.2" result="coloredBlur" />
@@ -3239,12 +3244,12 @@
 
   /* 6 Kategorien — Jawline first (gewünscht) + Symmetry, Eye Area, Cheekbones, Skin, Definition */
   var STAT_CATEGORIES = [
-    { name: 'Jawline',    key: 'jawline',    offset: 2,  task: 'Jaw Exercise' },
-    { name: 'Symmetry',   key: 'symmetry',   offset: -4, task: 'Eyebrow Raises' },
-    { name: 'Eye Area',   key: 'eyeArea',    offset: 5,  task: 'Eyebrow Raises' },
-    { name: 'Cheekbones', key: 'cheekbones', offset: -2, task: 'Fish Face' },
-    { name: 'Skin',       key: 'skin',       offset: 8,  task: 'Drink Water' },
-    { name: 'Definition', key: 'definition', offset: -3, task: 'Neck Stretches' }
+    { name: 'Jawline',    key: 'jawline',    offset: 2,  task: 'Jaw Exercise',    color: '#af52de', color2: '#ff2d55' },
+    { name: 'Symmetry',   key: 'symmetry',   offset: -4, task: 'Eyebrow Raises',  color: '#5ac8fa', color2: '#0a84ff' },
+    { name: 'Eye Area',   key: 'eyeArea',    offset: 5,  task: 'Eyebrow Raises',  color: '#63e6be', color2: '#5ac8fa' },
+    { name: 'Cheekbones', key: 'cheekbones', offset: -2, task: 'Fish Face',       color: '#ff2d55', color2: '#ff9500' },
+    { name: 'Skin',       key: 'skin',       offset: 8,  task: 'Drink Water',     color: '#ffcc00', color2: '#ff9500' },
+    { name: 'Definition', key: 'definition', offset: -3, task: 'Neck Stretches',  color: '#0a84ff', color2: '#af52de' }
   ];
 
   function deriveCategoryScores(overall, potential, aiRec) {
@@ -3331,7 +3336,7 @@
     }
   }
 
-  /* Chad-Tier-Grid: 6 Kategorien mit 1–10 Zahl-Rating + Glow + Task-Zuweisung */
+  /* Chad-Tier-Grid: 6 Kategorien mit kategorie-eigener App-Farbe + Zahl-Rating + Glow + Task */
   function renderChadStats(overall, potential, aiRec) {
     if (!chadGridEl) return;
     var cats = deriveCategoryScores(overall, potential, aiRec);
@@ -3341,16 +3346,27 @@
       var r10 = to10(sc100);
       var tier = chadTier(r10);
       var isTrue = r10 === 10;
-      var col = tierColor(r10);
-      var barBg = tierBarBg(r10);
+      var c1 = cat.color;
+      var c2 = cat.color2 || cat.color;
       var pct = (r10 / 10) * 100;
       var numClass  = isTrue ? 'lk-chad-num tier-trueadam' : 'lk-chad-num';
       var tierClass = isTrue ? 'lk-chad-tier tier-trueadam' : 'lk-chad-tier';
       var numStyle = isTrue
         ? ''
-        : 'background: linear-gradient(135deg, ' + col + ' 0%, ' + col + 'aa 100%);' +
+        : 'background: linear-gradient(135deg, ' + c1 + ' 0%, ' + c2 + ' 100%);' +
           '-webkit-background-clip: text; background-clip: text;' +
-          'filter: drop-shadow(0 0 7px ' + col + '80) drop-shadow(0 0 2px ' + col + '40);';
+          'filter: drop-shadow(0 0 8px ' + c1 + '90) drop-shadow(0 0 3px ' + c2 + '55);';
+      var barStyle = isTrue
+        ? 'width:' + pct + '%; background: linear-gradient(90deg, #ff2d55 0%, #ffcf6b 50%, #af52de 100%); box-shadow: 0 0 8px rgba(255, 45, 85, 0.45);'
+        : 'width:' + pct + '%; background: linear-gradient(90deg, ' + c1 + ' 0%, ' + c2 + ' 100%); box-shadow: 0 0 6px ' + c1 + '66;';
+      var tierStyle = isTrue
+        ? ''
+        : 'color: ' + c1 + '; text-shadow: 0 0 8px ' + c1 + '55;';
+      var taskStyle =
+        'color: ' + c1 + '; text-shadow: 0 0 10px ' + c1 + '66;';
+      var dotStyle =
+        'background: radial-gradient(60% 60% at 35% 30%, ' + c1 + 'ff 0%, ' + c2 + '88 55%, ' + c1 + '22 100%);' +
+        'box-shadow: 0 0 0 1px ' + c1 + '88 inset, 0 0 8px ' + c1 + '88;';
       html +=
         '<div class="lk-chad-card">' +
           '<span class="lk-chad-label">' + cat.name + '</span>' +
@@ -3358,12 +3374,13 @@
             '<span class="' + numClass + '" style="' + numStyle + '">' + r10 + '</span>' +
             '<span class="lk-chad-denom">/10</span>' +
           '</span>' +
-          '<span class="' + tierClass + '">' + tier + '</span>' +
+          '<span class="' + tierClass + '" style="' + tierStyle + '">' + tier + '</span>' +
           '<div class="lk-chad-bar-wrap">' +
-            '<div class="lk-chad-bar" style="width:' + pct + '%; background:' + barBg + ';"></div>' +
+            '<div class="lk-chad-bar" style="' + barStyle + '"></div>' +
           '</div>' +
           '<div class="lk-chad-task" title="Unlock Task für ' + cat.name + '">' +
-            '<span class="lk-chad-task-name">' + cat.task + '</span>' +
+            '<span class="lk-chad-task-dot" style="' + dotStyle + '"></span>' +
+            '<span class="lk-chad-task-name" style="' + taskStyle + '">' + cat.task + '</span>' +
           '</div>' +
         '</div>';
     });
