@@ -13,6 +13,9 @@
     },
     "api/render-psl-video.mjs": {
       "maxDuration": 30
+    },
+    "api/arkit-mesh.mjs": {
+      "maxDuration": 15
     }
   }
 }

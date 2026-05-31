@@ -230,7 +230,17 @@
       .mesh-stage {
         position: relative; width: 100%; height: 470px; margin-top: 4px;
       }
-      .mesh-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+      .mesh-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+      #meshBgSvg { z-index: 1; }
+      #meshCanvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; display: block; }
+      #overlaySvg { z-index: 3; }
+      .region-label { z-index: 4; }
+      .mesh-status {
+        position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        z-index: 5; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
+        color: var(--text-tertiary); text-align: center; max-width: 220px; line-height: 1.5;
+        pointer-events: none;
+      }
 
       .region-label {
         position: absolute; width: 120px;
@@ -380,7 +390,8 @@
           </div>
 
           <div class="mesh-stage" id="meshStage">
-            <svg viewBox="0 0 390 470" id="meshSvg" preserveAspectRatio="xMidYMid meet">
+            <!-- background glow + scanner lines -->
+            <svg viewBox="0 0 390 470" id="meshBgSvg" preserveAspectRatio="xMidYMid meet">
               <defs>
                 <linearGradient id="splitGrad" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stop-color="var(--score-accent)" />
@@ -389,48 +400,18 @@
                   <stop offset="100%" stop-color="var(--pot-accent)" />
                 </linearGradient>
               </defs>
-              <!-- Background glow halves -->
               <ellipse cx="120" cy="235" rx="105" ry="200" id="glowMeshL" />
               <ellipse cx="270" cy="235" rx="105" ry="200" id="glowMeshR" />
-              <!-- vertical scanner axis -->
               <line x1="195" y1="35" x2="195" y2="435" stroke="rgba(255,255,255,0.22)" stroke-width="1.2" />
-              <!-- horizontal scanline -->
               <line x1="60" y1="210" x2="330" y2="210" stroke="url(#splitGrad)" stroke-width="1.5" opacity="0.45" />
-              <!-- ARKit face mesh wireframe (connectors + leaders rendered via JS) -->
-              <g id="meshGroup" stroke="url(#splitGrad)" fill="none"
-                 stroke-linecap="round" stroke-linejoin="round">
-                <!-- jaw / face outline -->
-                <path d="M195,70
-                         C150,72 120,95 112,140
-                         C108,170 110,210 120,255
-                         C130,305 160,355 195,370
-                         C230,355 260,305 270,255
-                         C280,210 282,170 278,140
-                         C270,95 240,72 195,70 Z"
-                      stroke-width="1.6" opacity="0.95"/>
-                <!-- horizontal contour bands (mesh feel) -->
-                <path d="M118,130 Q195,118 272,130" stroke-width="0.8" opacity="0.6"/>
-                <path d="M116,165 Q195,152 274,165" stroke-width="0.8" opacity="0.6"/>
-                <path d="M120,205 Q195,196 270,205" stroke-width="0.8" opacity="0.6"/>
-                <path d="M126,250 Q195,244 264,250" stroke-width="0.8" opacity="0.6"/>
-                <path d="M140,300 Q195,298 250,300" stroke-width="0.8" opacity="0.55"/>
-                <!-- brows -->
-                <path d="M134,150 Q160,138 184,148" stroke-width="1.1"/>
-                <path d="M206,148 Q230,138 256,150" stroke-width="1.1"/>
-                <!-- eyes -->
-                <path d="M138,168 Q160,158 182,168 Q160,180 138,168 Z" stroke-width="1.1"/>
-                <path d="M208,168 Q230,158 252,168 Q230,180 208,168 Z" stroke-width="1.1"/>
-                <!-- nose -->
-                <path d="M195,172 L188,232 M195,172 L202,232" stroke-width="0.9"/>
-                <path d="M182,236 Q195,248 208,236" stroke-width="1.0"/>
-                <!-- lips -->
-                <path d="M168,288 Q195,278 222,288 Q195,302 168,288 Z" stroke-width="1.1"/>
-                <path d="M168,288 Q195,292 222,288" stroke-width="0.7" opacity="0.7"/>
-                <!-- cheek/midface contours -->
-                <path d="M128,200 Q150,250 175,300" stroke-width="0.7" opacity="0.5"/>
-                <path d="M262,200 Q240,250 215,300" stroke-width="0.7" opacity="0.5"/>
-              </g>
-              <!-- leader lines + markers injected by JS -->
+            </svg>
+
+            <!-- Real ARKit mesh (3D wireframe) rendered by three.js into this canvas -->
+            <canvas id="meshCanvas"></canvas>
+            <div id="meshStatus" class="mesh-status">Loading ARKit mesh…</div>
+
+            <!-- leader lines + markers overlay (on top of the 3D mesh) -->
+            <svg viewBox="0 0 390 470" id="overlaySvg" preserveAspectRatio="xMidYMid meet">
               <g id="leaderGroup"></g>
             </svg>
 
@@ -525,6 +506,7 @@
       </aside>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js"></script>
     <script>
       // ─────────── FaceScoreTier (1:1 aus FaceScoreHeroViews.swift) ───────────
@@ -575,6 +557,181 @@
       };
 
       const $ = (id) => document.getElementById(id);
+
+      // ─────────── Real ARKit mesh (three.js) ───────────
+      // The exact neutral ARSCNFaceGeometry mesh uploaded by the iOS app. We try a
+      // local static snapshot first, then the serverless proxy (which fetches it from
+      // the droplet server-side, avoiding mixed-content blocking on HTTPS).
+      const MESH_SOURCES = ["arkit-mesh.json", "/api/arkit-mesh"];
+      const MESH_LINE_COLOR = 0xf5f0e8; // lookscrollMeshLineBright (245,240,232)
+
+      const three = {
+        ready: false,
+        renderer: null,
+        scene: null,
+        camera: null,
+        root: null,
+        wire: null,
+        tintLeft: null,
+        tintRight: null,
+        rafRunning: false,
+      };
+
+      function hexToThree(hex) {
+        // accepts "#rrggbb" string → THREE.Color
+        return new THREE.Color(hex);
+      }
+
+      async function fetchMesh() {
+        for (const url of MESH_SOURCES) {
+          try {
+            const res = await fetch(url, { cache: "no-store" });
+            if (!res.ok) continue;
+            const data = await res.json();
+            if (data && Array.isArray(data.vertices) && Array.isArray(data.triangles)) {
+              return data;
+            }
+          } catch (e) {
+            /* try next source */
+          }
+        }
+        return null;
+      }
+
+      async function initMesh() {
+        const canvas = $("meshCanvas");
+        const status = $("meshStatus");
+        const data = await fetchMesh();
+        if (!data) {
+          status.style.display = "";
+          status.innerHTML =
+            "ARKit-Mesh noch nicht hochgeladen.<br/>Öffne die App einmal im Face-Tab auf dem iPhone — die Maske erscheint dann hier automatisch.";
+          return;
+        }
+        status.style.display = "none";
+        buildThree(canvas, data);
+      }
+
+      function buildThree(canvas, data) {
+        const stage = $("meshStage");
+        const w = stage.clientWidth;
+        const h = stage.clientHeight;
+
+        const renderer = new THREE.WebGLRenderer({
+          canvas,
+          alpha: true,
+          antialias: true,
+          preserveDrawingBuffer: true, // needed so html-to-image can capture the canvas
+        });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(w, h, false);
+        renderer.setClearColor(0x000000, 0);
+
+        const scene = new THREE.Scene();
+
+        // Camera 1:1 with the app: FOV 32, near 0.01, far 10, pos (0, 0.02, 0.42).
+        const camera = new THREE.PerspectiveCamera(32, w / h, 0.01, 10);
+        camera.position.set(0, 0.02, 0.42);
+        camera.lookAt(0, 0, 0);
+
+        // Build BufferGeometry from the exact ARKit vertices + triangles.
+        const verts = new Float32Array(data.vertices);
+        const idx = data.triangles;
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute("position", new THREE.BufferAttribute(verts, 3));
+        geo.setIndex(idx);
+        geo.computeVertexNormals();
+
+        // Bounding box (for normalized split + centering), matches app's min/max approach.
+        geo.computeBoundingBox();
+        const bb = geo.boundingBox;
+        const minX = bb.min.x, maxX = bb.max.x;
+        const spanX = Math.max(maxX - minX, 1e-5);
+
+        // root node: scale 0.85 like the app's mesh node.
+        const root = new THREE.Group();
+        root.scale.set(0.85, 0.85, 0.85);
+        scene.add(root);
+
+        // Wireframe (bright bone lines, opacity 0.95).
+        const wireGeo = new THREE.WireframeGeometry(geo);
+        const wireMat = new THREE.LineBasicMaterial({
+          color: MESH_LINE_COLOR,
+          transparent: true,
+          opacity: 0.95,
+        });
+        const wire = new THREE.LineSegments(wireGeo, wireMat);
+        wire.renderOrder = 2;
+        root.add(wire);
+
+        // Split-tint half meshes (additive glow), left = score, right = potential.
+        // Partition triangles by centroid normalized x < 0.5.
+        const leftIdx = [];
+        const rightIdx = [];
+        for (let t = 0; t < idx.length; t += 3) {
+          const a = idx[t], b = idx[t + 1], c = idx[t + 2];
+          const cx = (verts[a * 3] + verts[b * 3] + verts[c * 3]) / 3;
+          const nx = (cx - minX) / spanX;
+          if (nx < 0.5) { leftIdx.push(a, b, c); }
+          else { rightIdx.push(a, b, c); }
+        }
+
+        function makeTint(indices, colorHex) {
+          const g = new THREE.BufferGeometry();
+          g.setAttribute("position", new THREE.BufferAttribute(verts, 3));
+          g.setIndex(indices);
+          const m = new THREE.MeshBasicMaterial({
+            color: hexToThree(colorHex),
+            transparent: true,
+            opacity: 0.42,
+            blending: THREE.AdditiveBlending,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            depthTest: false,
+          });
+          const mesh = new THREE.Mesh(g, m);
+          mesh.renderOrder = 1;
+          return mesh;
+        }
+
+        const tintLeft = makeTint(leftIdx, tierAccent(state.score));
+        const tintRight = makeTint(rightIdx, tierAccent(state.potential));
+        root.add(tintLeft);
+        root.add(tintRight);
+
+        three.renderer = renderer;
+        three.scene = scene;
+        three.camera = camera;
+        three.root = root;
+        three.wire = wire;
+        three.tintLeft = tintLeft;
+        three.tintRight = tintRight;
+        three.ready = true;
+
+        // gentle idle rotation like a hero render (very subtle yaw sway).
+        let startT = performance.now();
+        function frame() {
+          const dt = (performance.now() - startT) / 1000;
+          root.rotation.y = Math.sin(dt * 0.5) * 0.18; // subtle ±10° sway
+          renderer.render(scene, camera);
+          requestAnimationFrame(frame);
+        }
+        three.rafRunning = true;
+        frame();
+
+        window.addEventListener("resize", () => {
+          const nw = stage.clientWidth, nh = stage.clientHeight;
+          renderer.setSize(nw, nh, false);
+          camera.aspect = nw / nh;
+          camera.updateProjectionMatrix();
+        });
+      }
+
+      function updateMeshTints() {
+        if (!three.ready) return;
+        three.tintLeft.material.color = hexToThree(tierAccent(state.score));
+        three.tintRight.material.color = hexToThree(tierAccent(state.potential));
+      }
 
       // ─────────── Hero-Card-Styling (Corner brackets + glow + colors) ───────────
       function styleHeroCard(cardEl, score100) {
@@ -705,6 +862,7 @@
         $("identUser").textContent = $("userInput").value || "Your Face";
         $("identDate").textContent = $("dateInput").value || "Today";
 
+        updateMeshTints();
         renderRegionLabels();
       }
 
@@ -766,6 +924,7 @@
 
       // Init
       render();
+      initMesh();
     </script>
   </body>
 </html>
