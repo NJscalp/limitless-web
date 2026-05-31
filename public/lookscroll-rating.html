@@ -307,40 +307,41 @@
         display: grid; grid-template-columns: 1fr 1fr; gap: 22px;
       }
       .card {
-        position: relative; padding: 42px 36px;
-        border-radius: 48px;
-        background: #1c1c1e;
-        border: 3px solid var(--accent-soft);
-        box-shadow: 0 8px 26px var(--accent-faint, rgba(255, 179, 10, 0.08));
+        position: relative; padding: 24px 22px;
+        border-radius: 28px;
+        background: #212124;
+        border: 1px solid var(--accent-soft);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 15px var(--accent-faint, rgba(255, 179, 10, 0.08));
         overflow: hidden;
         display: flex; flex-direction: column; justify-content: space-between;
         transition: border-color 0.25s ease, box-shadow 0.25s ease;
       }
       .card .label {
-        font-size: 28px; font-weight: 800;
-        color: #8e8e93; letter-spacing: 0.09em;
-        margin-bottom: 10px;
+        font-size: 17px; font-weight: 900;
+        color: #808086; letter-spacing: 0.14em;
+        margin-bottom: 12px;
         line-height: 1;
       }
       .card .row {
-        display: flex; align-items: center; gap: 14px; margin-bottom: 12px;
+        display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
       }
       .card .score {
-        font-size: 105px; font-weight: 900; line-height: 1; color: var(--accent);
+        font-size: 62px; font-weight: 900; line-height: 1; color: var(--accent);
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
       }
       .card .dot {
-        width: 16px; height: 16px; border-radius: 50%;
+        width: 9px; height: 9px; border-radius: 50%;
         background: var(--accent);
-        box-shadow: 0 0 8px var(--accent);
+        box-shadow: 0 0 6px var(--accent);
         flex-shrink: 0;
       }
       .card .tag {
-        font-size: 26px; font-weight: 800; line-height: 1.12; color: var(--accent);
-        letter-spacing: 0.05em;
+        font-size: 16px; font-weight: 900; line-height: 1.12; color: var(--accent);
+        letter-spacing: 0.08em;
       }
       .card .progress {
-        position: relative; height: 13px; border-radius: 8px;
-        background: var(--accent-faint, rgba(255, 255, 255, 0.12)); overflow: hidden;
+        position: relative; height: 8px; border-radius: 4px;
+        background: rgba(255, 255, 255, 0.08); overflow: hidden;
       }
       .card .progress > .fill {
         height: 100%; border-radius: inherit;
