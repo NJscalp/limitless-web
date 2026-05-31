@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LookScroll — Tasks videos</title>
+  <meta name="description" content="LookScroll task videos — stream and download (Vercel / Clipper web).">
+  <style>
+    :root {
+      --accent: #ffb30a;
+      --accent-bright: #ffd24a;
+      --accent-soft: rgba(255, 179, 10, 0.55);
+      --bg: #000;
+      --panel: rgba(20, 20, 20, 0.75);
+      --text: #fff;
+      --muted: rgba(255, 255, 255, 0.62);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+    }
+    .wrap { width: 100%; max-width: 1100px; }
+    .tab-nav {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .tab-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(20, 20, 20, 0.7);
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      transition: all 0.15s ease;
+    }
+    .tab-link:hover { border-color: var(--accent-soft); color: #fff; }
+    .tab-link.active {
+      background: linear-gradient(180deg, rgba(255, 179, 10, 0.18), rgba(255, 179, 10, 0.05));
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 18px rgba(255, 179, 10, 0.25);
+    }
+    h1 {
+      font-size: clamp(22px, 4vw, 28px);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .guidelines-block {
+      margin-bottom: 28px;
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 179, 10, 0.45);
+      background: linear-gradient(165deg, rgba(255, 179, 10, 0.1) 0%, rgba(20, 20, 20, 0.9) 42%);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    }
+    .guidelines-block h2 {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .guidelines-block ol {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      counter-reset: guideline;
+    }
+    .guidelines-block li {
+      counter-increment: guideline;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.9);
+      padding-left: 28px;
+      position: relative;
+    }
+    .guidelines-block li::before {
+      content: counter(guideline);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      background: rgba(255, 179, 10, 0.2);
+      border: 1px solid rgba(255, 179, 10, 0.45);
+      color: var(--accent-bright);
+      font-size: 11px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .guidelines-block .tag,
+    .guidelines-block .example { color: var(--accent-bright); font-weight: 800; }
+    .guidelines-block .warning {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 179, 10, 0.22);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.4;
+      color: rgba(255, 200, 120, 0.95);
+      text-align: center;
+    }
+    .payouts-block {
+      margin-bottom: 28px;
+      padding: 18px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 179, 10, 0.35);
+      background: rgba(20, 20, 20, 0.88);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    }
+    .payouts-block > h2 {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .payouts-min {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .payouts-min span { color: var(--accent-bright); }
+    .payout-submit {
+      list-style: none;
+      max-width: 420px;
+      margin: 0 auto 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .payout-submit li {
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.75);
+      text-align: center;
+    }
+    .payout-submit strong { color: var(--accent-bright); font-weight: 800; }
+    .payout-tiers {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 720px) { .payout-tiers { grid-template-columns: 1fr; } }
+    .payout-tier {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 179, 10, 0.22);
+      border-radius: 12px;
+      padding: 12px 10px;
+    }
+    .payout-tier h3 {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      margin-bottom: 4px;
+    }
+    .payout-tier .tier-rate {
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.55);
+      margin-bottom: 8px;
+    }
+    .payout-tier ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .payout-tier li {
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    .payout-tier li span:last-child { color: var(--accent-bright); white-space: nowrap; }
+    .payout-bonus {
+      border-top: 1px solid rgba(255, 179, 10, 0.22);
+      padding-top: 14px;
+    }
+    .payout-bonus h3 {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .payout-bonus ul {
+      list-style: none;
+      max-width: 360px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .payout-bonus li {
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: rgba(255, 255, 255, 0.88);
+    }
+    .payout-bonus li span:last-child { color: var(--accent-bright); font-weight: 800; }
+    .payout-cap {
+      margin-top: 12px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: rgba(255, 200, 120, 0.95);
+    }
+    .sample-videos-block {
+      margin-bottom: 28px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(255, 179, 10, 0.22);
+    }
+    .sample-videos-block > h2 {
+      font-size: 14px;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+    .sample-intro {
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 14px;
+      line-height: 1.4;
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .sample-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    @media (max-width: 720px) {
+      .sample-row { grid-template-columns: 1fr; max-width: 320px; }
+    }
+    .sample-item {
+      background: rgba(20, 20, 20, 0.6);
+      border: 1px solid rgba(255, 179, 10, 0.22);
+      border-radius: 16px;
+      padding: 10px;
+    }
+    .sample-item h3 {
+      font-size: 11px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 8px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+    .sample-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0a0a0a;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .sample-frame video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .sample-note {
+      margin-top: 8px;
+      font-size: 9px;
+      font-weight: 700;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.38);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .sample-disclaimer {
+      margin: 16px auto 0;
+      max-width: 560px;
+      padding: 12px 16px;
+      background: rgba(255, 179, 10, 0.08);
+      border: 1px solid rgba(255, 179, 10, 0.35);
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.45;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.78);
+    }
+    .sample-disclaimer strong {
+      color: var(--accent-bright);
+      font-weight: 800;
+    }
+    .video-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    @media (min-width: 900px) { .video-list { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 600px) and (max-width: 899px) { .video-list { grid-template-columns: repeat(2, 1fr); } }
+    .video-card {
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 12px;
+      border: 1px solid rgba(255, 179, 10, 0.28);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .video-card h2 { font-size: 13px; font-weight: 800; margin-bottom: 4px; }
+    .video-card .meta { font-size: 10px; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
+    .video-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #0a0a0a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .video-frame video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .actions { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, var(--accent-bright), var(--accent));
+      color: #1a1100;
+      font-weight: 800;
+      font-size: 11px;
+      text-decoration: none;
+      text-align: center;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2), 0 4px 12px rgba(255, 179, 10, 0.3);
+    }
+    .btn-download:hover { filter: brightness(1.06); }
+    .hint {
+      font-size: 9px;
+      color: rgba(255, 255, 255, 0.4);
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.3;
+    }
+    .footer {
+      margin-top: 8px;
+      text-align: center;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.38);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="tab-nav" aria-label="Clipper tools">
+      <a class="tab-link active" href="tasks-videos.html" aria-current="page">Tasks videos</a>
+      <a class="tab-link" href="lookscroll-video.html">Lookscroll video</a>
+      <a class="tab-link" href="lookscroll-rating.html">Lookscroll rating</a>
+    </nav>
+    <h1>Tasks videos</h1>
+
+    <section class="guidelines-block" aria-labelledby="content-guidelines-title">
+      <h2 id="content-guidelines-title">Content Guideline Rules</h2>
+      <ol>
+        <li>Put in the <strong>Task Video Template</strong> for <strong>1.5 sec</strong> within the first <strong>10 sec</strong>.</li>
+        <li>Tag us in the first line of the description <span class="tag">@lookscroll_app</span></li>
+        <li>Use a description like <span class="example">Block Apps and Ascend with @lookscroll_app</span> (like that).</li>
+      </ol>
+      <p class="warning">Videos that don’t follow these rules may not be counted for payouts.</p>
+    </section>
+
+    <section class="payouts-block" aria-labelledby="payouts-title">
+      <h2 id="payouts-title">CPM Payouts</h2>
+      <p class="payouts-min">Minimum payout: <span>$10</span></p>
+      <ul class="payout-submit">
+        <li>Submit payout within <strong>72h</strong> of hitting the minimum — after 72h, no payout.</li>
+        <li>Send <strong>video analytics</strong> (total views) so we can verify the post date.</li>
+      </ul>
+      <div class="payout-tiers">
+        <article class="payout-tier">
+          <h3>Tier 1 · 15% requirements</h3>
+          <ul>
+            <li><span>10k views</span><span>$2.50</span></li>
+            <li><span>20k views</span><span>$7.50</span></li>
+            <li><span>40k views</span><span>$15</span></li>
+          </ul>
+        </article>
+        <article class="payout-tier">
+          <h3>Tier 1 · 25% requirements</h3>
+          <ul>
+            <li><span>10k views</span><span>$5</span></li>
+            <li><span>20k views</span><span>$10</span></li>
+            <li><span>40k views</span><span>$20</span></li>
+          </ul>
+        </article>
+        <article class="payout-tier">
+          <h3>Tier 1 · 30% requirements</h3>
+          <ul>
+            <li><span>20k views</span><span>$15</span></li>
+            <li><span>40k views</span><span>$25</span></li>
+          </ul>
+        </article>
+      </div>
+      <div class="payout-bonus">
+        <h3>Tier 1 · 40% bonus payouts</h3>
+        <ul>
+          <li><span>200k views</span><span>extra $15</span></li>
+          <li><span>500k views</span><span>extra $30</span></li>
+          <li><span>1M views</span><span>extra $50</span></li>
+        </ul>
+        <p class="payout-cap">Max payout per video: <strong>$135</strong></p>
+      </div>
+    </section>
+
+    <section class="sample-videos-block" aria-labelledby="sample-videos-title">
+      <h2 id="sample-videos-title">Sample Videos</h2>
+      <p class="sample-intro">Examples only — not for download. Watch how to place the Task templates in your edit.</p>
+      <div class="sample-row">
+        <article class="sample-item">
+          <h3>Sample 1</h3>
+          <div class="sample-frame">
+            <video controls playsinline preload="metadata">
+              <source src="videos/template-sample-01-preview.mp4" type="video/mp4">
+            </video>
+          </div>
+          <p class="sample-note">Preview only · with sound · ~20 s</p>
+        </article>
+        <article class="sample-item">
+          <h3>Sample 2</h3>
+          <div class="sample-frame">
+            <video controls playsinline preload="metadata">
+              <source src="videos/template-sample-02-preview.mp4" type="video/mp4">
+            </video>
+          </div>
+          <p class="sample-note">Preview only · with sound · ~19 s</p>
+        </article>
+      </div>
+      <p class="sample-disclaimer">Note: the <strong>Low Cortisol Template</strong> shown in these sample videos is <strong>no longer required</strong>. You don’t need to include it in your videos anymore.</p>
+    </section>
+
+    <div class="video-list">
+      <article class="video-card">
+        <h2>Jaw Exercise</h2>
+        <p class="meta">~1.5s · QuickTime MOV</p>
+        <div class="video-frame">
+          <video controls playsinline preload="metadata" crossorigin="anonymous">
+            <source src="videos/copy_4682CCB2-417E-4AC3-8C7F-ED3E3842A2BE-preview.mp4" type="video/mp4">
+            <source src="videos/copy_4682CCB2-417E-4AC3-8C7F-ED3E3842A2BE.MOV" type="video/quicktime">
+          </video>
+        </div>
+        <div class="actions">
+          <a class="btn-download" href="videos/copy_4682CCB2-417E-4AC3-8C7F-ED3E3842A2BE.MOV" download="copy_4682CCB2-417E-4AC3-8C7F-ED3E3842A2BE.MOV">⬇ Original MOV</a>
+          <span class="hint">Preview = H.264 MP4 · Download = original MOV</span>
+        </div>
+      </article>
+      <article class="video-card">
+        <h2>Eyebrow Raises</h2>
+        <p class="meta">~1.5s · QuickTime MOV</p>
+        <div class="video-frame">
+          <video controls playsinline preload="metadata" crossorigin="anonymous">
+            <source src="videos/eyebrow-raises-preview.mp4" type="video/mp4">
+            <source src="videos/eyebrow-raises.mov" type="video/quicktime">
+          </video>
+        </div>
+        <div class="actions">
+          <a class="btn-download" href="videos/eyebrow-raises.mov" download="eyebrow-raises.mov">⬇ Original MOV</a>
+          <span class="hint">Preview = H.264 MP4 · Download = original MOV</span>
+        </div>
+      </article>
+      <article class="video-card">
+        <h2>Jaw Side to Side</h2>
+        <p class="meta">~1.5s · QuickTime MOV</p>
+        <div class="video-frame">
+          <video controls playsinline preload="metadata" crossorigin="anonymous">
+            <source src="videos/jaw-side-to-side-preview.mp4" type="video/mp4">
+            <source src="videos/jaw-side-to-side.mov" type="video/quicktime">
+          </video>
+        </div>
+        <div class="actions">
+          <a class="btn-download" href="videos/jaw-side-to-side.mov" download="jaw-side-to-side.mov">⬇ Original MOV</a>
+          <span class="hint">Preview = H.264 MP4 · Download = original MOV</span>
+        </div>
+      </article>
+      <article class="video-card">
+        <h2>Cheek Lifts</h2>
+        <p class="meta">~1.5s · QuickTime MOV</p>
+        <div class="video-frame">
+          <video controls playsinline preload="metadata" crossorigin="anonymous">
+            <source src="videos/cheek-lifts-preview.mp4" type="video/mp4">
+            <source src="videos/cheek-lifts.mov" type="video/quicktime">
+          </video>
+        </div>
+        <div class="actions">
+          <a class="btn-download" href="videos/cheek-lifts.mov" download="cheek-lifts.mov">⬇ Original MOV</a>
+          <span class="hint">Preview = H.264 MP4 · Download = original MOV</span>
+        </div>
+      </article>
+      <article class="video-card">
+        <h2>Fish Face</h2>
+        <p class="meta">~1.5s · QuickTime MOV</p>
+        <div class="video-frame">
+          <video controls playsinline preload="metadata" crossorigin="anonymous">
+            <source src="videos/fish-face-preview.mp4" type="video/mp4">
+            <source src="videos/fish-face.mov" type="video/quicktime">
+          </video>
+        </div>
+        <div class="actions">
+          <a class="btn-download" href="videos/fish-face.mov" download="fish-face.mov">⬇ Original MOV</a>
+          <span class="hint">Preview = H.264 MP4 · Download = original MOV</span>
+        </div>
+      </article>
+      <article class="video-card">
+        <h2>Head Rotations</h2>
+        <p class="meta">~1.5s · QuickTime MOV</p>
+        <div class="video-frame">
+          <video controls playsinline preload="metadata" crossorigin="anonymous">
+            <source src="videos/head-rotations-preview.mp4" type="video/mp4">
+            <source src="videos/head-rotations.mov" type="video/quicktime">
+          </video>
+        </div>
+        <div class="actions">
+          <a class="btn-download" href="videos/head-rotations.mov" download="head-rotations.mov">⬇ Original MOV</a>
+          <span class="hint">Preview = H.264 MP4 · Download = original MOV</span>
+        </div>
+      </article>
+      <article class="video-card">
+        <h2>O-Shape Mouth</h2>
+        <p class="meta">~1.5s · QuickTime MOV</p>
+        <div class="video-frame">
+          <video controls playsinline preload="metadata" crossorigin="anonymous">
+            <source src="videos/o-shape-mouth-preview.mp4" type="video/mp4">
+            <source src="videos/o-shape-mouth.mov" type="video/quicktime">
+          </video>
+        </div>
+        <div class="actions">
+          <a class="btn-download" href="videos/o-shape-mouth.mov" download="o-shape-mouth.mov">⬇ Original MOV</a>
+          <span class="hint">Preview = H.264 MP4 · Download = original MOV</span>
+        </div>
+      </article>
+    </div>
+
+    <div class="footer">LookScroll / Clipper web (Vercel)</div>
+  </div>
+</body>
+</html>

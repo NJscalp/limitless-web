@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LookScroll — Lookscroll rating</title>
+    <style>
+      :root {
+        --accent: #ffb30a;
+        --accent-bright: #ffd24a;
+        --accent-soft: rgba(255, 179, 10, 0.55);
+        --accent-glow: rgba(255, 179, 10, 0.42);
+
+        --bg: #000;
+        --panel: rgba(20, 20, 20, 0.55);
+        --panel-stroke: rgba(255, 179, 10, 0.55);
+        --text: #fff;
+        --progress-track: rgba(255, 255, 255, 0.12);
+
+        /* Vorschau-Skalierung (1024 → 380 px sichtbar) — gut lesbares Preview-Tile.
+           --canvas-px ist eine REINE ZAHL (für transform: scale, das KEINE px-Werte akzeptiert).
+           --canvas-size hängt 1px dran für Layout-Maße. */
+        --canvas-px: 380;
+        --canvas-size: calc(var(--canvas-px) * 1px);
+        --scale: calc(var(--canvas-px) / 1024);
+        --editor-width: 260px;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      html, body {
+        min-height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+          "Segoe UI", Roboto, Inter, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        min-height: 100vh;
+        padding: 24px 16px 40px;
+        gap: 20px;
+      }
+
+      /* ───────────── Tabs ───────────── */
+      .tab-nav { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+      .tab-link {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 18px; border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(20, 20, 20, 0.7);
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        font-size: 13px; font-weight: 700; letter-spacing: 0.03em;
+        transition: all 0.15s ease;
+        cursor: pointer;
+      }
+      .tab-link:hover { border-color: var(--accent-soft); color: #fff; }
+      .tab-link.active {
+        background: linear-gradient(180deg, rgba(255, 179, 10, 0.18), rgba(255, 179, 10, 0.05));
+        border-color: var(--accent); color: #fff;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 18px var(--accent-glow);
+      }
+
+      /* ───────────── Workspace ───────────── */
+      .workspace {
+        display: grid;
+        grid-template-columns: var(--canvas-size) var(--editor-width);
+        justify-content: center;
+        gap: 24px;
+        align-items: start;
+        width: 100%;
+        max-width: 720px;
+      }
+      /* Erst auf sehr schmalen Screens stapeln */
+      @media (max-width: 700px) {
+        .workspace { grid-template-columns: 1fr; max-width: 420px; }
+      }
+
+      /* ───────────── Vorschau ───────────── */
+      .preview-frame { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+      .preview-meta {
+        display: flex; align-items: center; justify-content: center;
+        gap: 8px; flex-wrap: wrap;
+        width: 100%; max-width: var(--canvas-size);
+        font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em;
+        color: rgba(255, 255, 255, 0.55); text-transform: uppercase;
+      }
+      .preview-meta .res-pill {
+        padding: 3px 8px; border-radius: 999px;
+        border: 1px solid rgba(255, 179, 10, 0.45);
+        background: rgba(255, 179, 10, 0.10);
+        color: var(--accent-bright);
+      }
+
+      .preview-card {
+        position: relative;
+        width: var(--canvas-size);
+        height: var(--canvas-size);
+        max-width: 100%;
+        border-radius: 22px;
+        overflow: hidden;
+        background: #000;
+        border: 1px solid rgba(255, 179, 10, 0.30);
+        box-shadow:
+          0 18px 60px rgba(0, 0, 0, 0.55),
+          0 0 0 1px rgba(255, 179, 10, 0.10),
+          0 0 32px rgba(255, 179, 10, 0.10);
+      }
+      .preview-card::after {
+        content: ""; position: absolute; inset: 6px;
+        border-radius: 16px; pointer-events: none;
+        border: 1px dashed rgba(255, 179, 10, 0.22);
+      }
+
+      /* Canvas wird IMMER intern auf 1024 × 1024 gerendert
+         und per transform: scale(var(--scale)) in die Karte eingepasst.
+         Alle inneren Maße in absoluten px (1024-er Basis), damit das Layout
+         in der skalierten Vorschau identisch zum 1024×1024 Export aussieht. */
+      .canvas {
+        position: absolute; top: 0; left: 0;
+        width: 1024px; height: 1024px;
+        background: #000;
+        overflow: hidden;
+        transform-origin: top left;
+        transform: scale(var(--scale));
+      }
+
+      /* Capture-Modus (?capture=1): nur das echte 1024×1024 Canvas, keine UI */
+      body.capture-mode {
+        padding: 0; gap: 0; min-height: 100vh;
+        justify-content: center;
+      }
+      body.capture-mode .tab-nav,
+      body.capture-mode .editor,
+      body.capture-mode .preview-meta,
+      body.capture-mode .download-bar { display: none !important; }
+      body.capture-mode .workspace { grid-template-columns: 1fr; max-width: none; }
+      body.capture-mode .preview-frame { width: 1024px; }
+      body.capture-mode .preview-card {
+        width: 1024px; height: 1024px;
+        border: 0; border-radius: 0; box-shadow: none;
+      }
+      body.capture-mode .preview-card::after { display: none; }
+      body.capture-mode .canvas { transform: none; }
+
+      /* ───────────── Header (Logo + Brand + AppStore) ───────────── */
+      .header {
+        position: absolute;
+        top: 46px;
+        left: 46px;
+        right: 46px;
+        height: 113px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .header .brand {
+        font-size: 54px;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        color: #ffffff;
+        margin-left: 20px;
+        margin-right: auto;
+      }
+      .header .app-icon-tile {
+        width: 113px; height: 113px;
+        border-radius: 25px;
+        overflow: hidden;
+        background: #111;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+        display: flex; align-items: center; justify-content: center;
+      }
+      .header .app-icon-tile img {
+        width: 100%; height: 100%; object-fit: cover;
+      }
+      .header .appstore {
+        width: 113px; height: 113px;
+        display: inline-flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        filter: drop-shadow(0 8px 26px rgba(10, 130, 255, 0.45));
+      }
+      .header .appstore svg {
+        width: 100%; height: 100%; display: block;
+      }
+
+      /* ───────────── Image Slot ───────────── */
+      .image-slot {
+        position: absolute; top: 195px; left: 80px;
+        width: 471px; height: 471px;
+        border: 2px solid rgba(255, 255, 255, 0.16);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        color: rgba(255, 255, 255, 0.32);
+        font-size: 20px; font-weight: 500; letter-spacing: 0.02em;
+        background: rgba(255, 255, 255, 0.012);
+        overflow: hidden;
+      }
+      .image-slot img.user-image {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        /* contain → komplettes Bild sichtbar (nicht abgeschnitten); per Zoom kann der User reinzoomen */
+        object-fit: contain;
+        border-radius: 50%;
+        transform-origin: center center;
+        transform: scale(var(--img-zoom, 1)) translate(var(--img-tx, 0px), var(--img-ty, 0px));
+        transition: transform 0.05s linear;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+      .image-slot.has-image { cursor: grab; touch-action: none; }
+      .image-slot.is-dragging { cursor: grabbing; }
+      .image-slot.is-dragging img.user-image { transition: none; }
+
+      /* ───────────── ARKit Mask Overlay 1:1 App ───────────── */
+      .mask-container {
+        position: absolute;
+        top: 195px;
+        left: 80px;
+        width: 471px;
+        height: 471px;
+        border-radius: 50%;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .arkit-mask {
+        position: absolute;
+        width: 320px;
+        height: 420px;
+        transform-origin: center center;
+        transform: translate(var(--mask-tx, 0px), var(--mask-ty, 0px)) scale(var(--mask-scale, 1));
+        overflow: visible;
+        display: block;
+      }
+      .arkit-mask .mesh-jaw {
+        stroke: rgb(255, 224, 166);
+        stroke-width: 1.6;
+        fill: none;
+        filter: drop-shadow(0 0 3px rgba(255, 178, 76, 0.92));
+      }
+      .arkit-mask .mesh-eye {
+        stroke: rgb(205, 235, 255);
+        stroke-width: 1.1;
+        fill: none;
+        filter: drop-shadow(0 0 2px rgba(128, 204, 255, 0.9));
+      }
+      .arkit-mask .mesh-brow {
+        stroke: rgba(229, 230, 255, 0.85);
+        stroke-width: 0.95;
+        fill: none;
+      }
+      .arkit-mask .mesh-nose {
+        stroke: rgba(255, 255, 255, 0.6);
+        stroke-width: 0.8;
+        fill: none;
+      }
+      .arkit-mask .mesh-lips {
+        stroke: rgb(255, 200, 200);
+        stroke-width: 1.1;
+        fill: none;
+        filter: drop-shadow(0 0 2px rgba(255, 128, 128, 0.75));
+      }
+
+      /* ───────────── "Ascend to Unlock" rechts neben dem Bild ───────────── */
+      .ascend-text {
+        position: absolute;
+        top: 195px;
+        left: 580px;
+        right: 60px;
+        height: 471px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 6px;
+        font-weight: 900;
+        font-size: 78px;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        color: #ffffff;
+        text-shadow: 0 0 24px rgba(255, 255, 255, 0.18);
+      }
+      .ascend-text .line { display: block; white-space: nowrap; }
+      .ascend-text .accent-word {
+        background: linear-gradient(180deg, #ffe34a 0%, #ffb30a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 24px rgba(255, 179, 10, 0.45);
+      }
+
+      /* ───────────── Cards ───────────── */
+      /* Cards reichen jetzt fast bis ans Bild (top: 650 → bottom: 46) → ~328px hoch */
+      .cards {
+        position: absolute; left: 46px; right: 46px; top: 650px; bottom: 46px;
+        display: grid; grid-template-columns: 1fr 1fr; gap: 22px;
+      }
+      .card {
+        position: relative; padding: 42px 36px;
+        border-radius: 48px;
+        background: #1c1c1e;
+        border: 3px solid var(--accent-soft);
+        box-shadow: 0 8px 26px var(--accent-faint, rgba(255, 179, 10, 0.08));
+        overflow: hidden;
+        display: flex; flex-direction: column; justify-content: space-between;
+        transition: border-color 0.25s ease, box-shadow 0.25s ease;
+      }
+      .card .label {
+        font-size: 28px; font-weight: 800;
+        color: #8e8e93; letter-spacing: 0.09em;
+        margin-bottom: 10px;
+        line-height: 1;
+      }
+      .card .row {
+        display: flex; align-items: center; gap: 14px; margin-bottom: 12px;
+      }
+      .card .score {
+        font-size: 105px; font-weight: 900; line-height: 1; color: var(--accent);
+      }
+      .card .dot {
+        width: 16px; height: 16px; border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 8px var(--accent);
+        flex-shrink: 0;
+      }
+      .card .tag {
+        font-size: 26px; font-weight: 800; line-height: 1.12; color: var(--accent);
+        letter-spacing: 0.05em;
+      }
+      .card .progress {
+        position: relative; height: 13px; border-radius: 8px;
+        background: var(--accent-faint, rgba(255, 255, 255, 0.12)); overflow: hidden;
+      }
+      .card .progress > .fill {
+        height: 100%; border-radius: inherit;
+        background: linear-gradient(90deg, var(--accent), var(--accent-bright));
+        width: 0%;
+      }
+
+      /* ───────────── Editor-Panel ───────────── */
+      .editor {
+        background: rgba(20, 20, 20, 0.7);
+        border: 1px solid rgba(255, 179, 10, 0.30);
+        border-radius: 18px;
+        padding: 18px 18px 20px;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+        display: flex; flex-direction: column; gap: 14px;
+      }
+      .editor h3 {
+        font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+        color: var(--accent); font-weight: 800;
+      }
+      .editor .group { display: flex; flex-direction: column; gap: 8px; }
+      .editor .group .group-title {
+        font-size: 10.5px; font-weight: 900; letter-spacing: 0.06em;
+        text-transform: uppercase; color: rgba(255, 255, 255, 0.45);
+        margin-bottom: 2px;
+      }
+      .editor label {
+        display: flex; flex-direction: column; gap: 4px;
+        font-size: 11px; font-weight: 700; color: rgba(255, 255, 255, 0.75);
+      }
+      .editor label small { font-size: 9px; font-weight: 500; color: rgba(255, 255, 255, 0.4); }
+      .editor input[type="text"],
+      .editor select {
+        width: 100%; background: rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 6px 10px; border-radius: 8px;
+        color: #fff; font-family: inherit; font-size: 11px; font-weight: 600;
+        outline: none; transition: border-color 0.15s ease;
+      }
+      .editor input[type="text"]:focus,
+      .editor select:focus { border-color: var(--accent-soft); }
+
+      /* Slider-Row (Slider + Nummern-Input daneben) */
+      .slider-row { display: flex; align-items: center; gap: 8px; }
+      .slider-row input[type="range"] {
+        flex: 1; height: 4px; border-radius: 999px;
+        background: rgba(255, 255, 255, 0.16);
+        outline: none; -webkit-appearance: none; appearance: none;
+        cursor: pointer;
+      }
+      .slider-row input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none; appearance: none;
+        width: 12px; height: 12px; border-radius: 50%;
+        background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+      }
+      .slider-row input[type="number"].num-input {
+        width: 44px; background: rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 4px 6px; border-radius: 6px;
+        color: #fff; font-family: inherit; font-size: 11px; font-weight: 700;
+        text-align: center; -moz-appearance: textfield;
+      }
+      .slider-row input[type="number"].num-input::-webkit-outer-spin-button,
+      .slider-row input[type="number"].num-input::-webkit-inner-spin-button {
+        -webkit-appearance: none; margin: 0;
+      }
+
+      /* Segmented Control (Gender-Switch) */
+      .seg {
+        display: grid; grid-template-columns: 1fr 1fr;
+        background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 3px; border-radius: 10px;
+      }
+      .seg button {
+        background: transparent; border: 0; color: rgba(255, 255, 255, 0.55);
+        padding: 6px; font-family: inherit; font-size: 11px; font-weight: 700;
+        border-radius: 7px; cursor: pointer; transition: all 0.15s ease;
+      }
+      .seg button:hover { color: #fff; }
+      .seg button.active {
+        background: linear-gradient(180deg, rgba(255, 179, 10, 0.22), rgba(255, 179, 10, 0.08));
+        border: 1px solid rgba(255, 179, 10, 0.35);
+        color: #fff;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+      }
+
+      /* Bild-Auswahl Button */
+      .image-pick {
+        border: 1px dashed rgba(255, 179, 10, 0.45);
+        background: rgba(255, 179, 10, 0.04);
+        padding: 10px; border-radius: 10px;
+        text-align: center; cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .image-pick:hover { background: rgba(255, 179, 10, 0.08); border-color: var(--accent); }
+      .image-pick input[type="file"] { display: none; }
+
+      .reset-link {
+        background: transparent; border: 0; color: rgba(255, 255, 255, 0.4);
+        font-family: inherit; font-size: 9.5px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.04em;
+        text-decoration: underline; cursor: pointer; align-self: flex-start;
+        margin-top: -2px;
+      }
+      .reset-link:hover { color: var(--accent-bright); }
+
+      /* ───────────── Download-Bar ───────────── */
+      .download-bar {
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        margin-top: 4px; width: 100%; max-width: var(--canvas-size);
+      }
+      .download-bar button,
+      .download-bar a {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 7px 12px; border-radius: 999px;
+        border: 1px solid rgba(255, 179, 10, 0.45);
+        background: rgba(255, 179, 10, 0.10);
+        color: #fff; text-decoration: none;
+        font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+        cursor: pointer; font-family: inherit;
+        white-space: nowrap;
+      }
+      .download-bar button.primary {
+        background: linear-gradient(180deg, var(--accent-bright), var(--accent));
+        border-color: transparent; color: #1a1100;
+        font-size: 11px; padding: 8px 12px;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18), 0 6px 16px rgba(255,179,10,0.35);
+      }
+      .download-bar button:hover,
+      .download-bar a:hover { filter: brightness(1.05); }
+    </style>
+  </head>
+  <body>
+    <nav class="tab-nav" aria-label="Clipper tools">
+      <a class="tab-link" href="tasks-videos.html">Tasks videos</a>
+      <a class="tab-link" href="lookscroll-video.html">Lookscroll video</a>
+      <a class="tab-link active" href="lookscroll-rating.html" aria-current="page">Lookscroll rating</a>
+    </nav>
+
+    <div class="workspace">
+      <!-- ────────── VORSCHAU ────────── -->
+      <div class="preview-frame">
+        <div class="preview-meta">
+          <span>LookScroll · Rating Template</span>
+          <span class="res-pill">1024 × 1024 px</span>
+        </div>
+
+        <div class="preview-card" id="previewCard">
+          <div class="canvas" id="canvas">
+            <div class="header">
+              <div class="app-icon-tile" aria-label="LookScroll App Icon">
+                <img src="assets/lookscroll-app-icon.png" alt="LookScroll" onerror="this.src='app-store-icon.svg'" />
+              </div>
+              <div class="brand">LookScroll</div>
+              <span class="appstore" aria-label="Get it on the App Store">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="appStoreGrad" x1="50%" x2="50%" y1="0%" y2="100%">
+                      <stop offset="0%" stop-color="#17c9fb" />
+                      <stop offset="100%" stop-color="#1a74e8" />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    fill="url(#appStoreGrad)"
+                    d="M56.064 0h143.872C230.9 0 256 25.1 256 56.064v143.872C256 230.9 230.9 256 199.936 256H56.064C25.1 256 0 230.9 0 199.936V56.064C0 25.1 25.1 0 56.064 0"
+                  />
+                  <path
+                    fill="#fff"
+                    d="m82.042 185.81l.024.008l-8.753 15.16c-3.195 5.534-10.271 7.43-15.805 4.235s-7.43-10.271-4.235-15.805l6.448-11.168l.619-1.072c1.105-1.588 3.832-4.33 9.287-3.814c0 0 12.837 1.393 13.766 8.065c0 0 .126 2.195-1.351 4.391m124.143-38.72h-27.294c-1.859-.125-2.67-.789-2.99-1.175l-.02-.035l-29.217-50.606l-.038.025l-1.752-2.512c-2.872-4.392-7.432 6.84-7.432 6.84c-5.445 12.516.773 26.745 2.94 31.046l40.582 70.29c3.194 5.533 10.27 7.43 15.805 4.234c5.533-3.195 7.43-10.271 4.234-15.805l-10.147-17.576c-.197-.426-.539-1.582 1.542-1.587h13.787c6.39 0 11.57-5.18 11.57-11.57s-5.18-11.57-11.57-11.57m-53.014 15.728s1.457 7.411-4.18 7.411H48.092c-6.39 0-11.57-5.18-11.57-11.57s5.18-11.57 11.57-11.57h25.94c4.188-.242 5.18-2.66 5.18-2.66l.024.012l33.86-58.648l-.01-.002c.617-1.133.103-2.204.014-2.373l-11.183-19.369c-3.195-5.533-1.299-12.61 4.235-15.804s12.61-1.3 15.805 4.234l5.186 8.983l5.177-8.967c3.195-5.533 10.271-7.43 15.805-4.234s7.43 10.27 4.235 15.804l-47.118 81.61c-.206.497-.269 1.277 1.264 1.414h28.164l.006.275s16.278.253 18.495 15.454"
+                  />
+                </svg>
+              </span>
+            </div>
+
+            <div class="image-slot" id="imageSlot">Insert Image Here</div>
+
+            <!-- ARKit Mask Overlay clipped to circle -->
+            <div class="mask-container" id="maskContainer">
+              <svg class="arkit-mask" id="arkitMask" viewBox="0 0 260 340" aria-hidden="true">
+                <g class="mesh">
+                  <path class="mesh-jaw" d="M78,221 Q98,275 130,262 Q162,275 182,221"/>
+                  <ellipse class="mesh-eye" cx="96"  cy="116" rx="11" ry="4.5"/>
+                  <ellipse class="mesh-eye" cx="164" cy="116" rx="11" ry="4.5"/>
+                  <path class="mesh-brow" d="M82,101 Q96,94 110,101"/>
+                  <path class="mesh-brow" d="M150,101 Q164,94 178,101"/>
+                  <path class="mesh-nose" d="M128,120 L126,158 M132,120 L134,158"/>
+                  <path class="mesh-nose" d="M124,160 Q130,170 136,160"/>
+                  <path class="mesh-lips" d="M116,196 Q130,190 144,196 Q130,205 116,196 Z"/>
+                </g>
+              </svg>
+            </div>
+
+            <div class="ascend-text" aria-hidden="true">
+              <span class="line">Ascend to</span>
+              <span class="line accent-word">Unlock</span>
+            </div>
+
+            <div class="cards">
+              <article class="card psl">
+                <div class="label" id="lblLeft">LOOKSCROLL</div>
+                <div class="row">
+                  <div class="score" id="scoreLeft">5</div>
+                  <div class="dot"></div>
+                  <div class="tag" id="tagLeft">Chadlite</div>
+                </div>
+                <div class="progress"><div class="fill" id="fillLeft"></div></div>
+              </article>
+
+              <article class="card potential">
+                <div class="label" id="lblRight">POTENTIAL</div>
+                <div class="row">
+                  <div class="score" id="scoreRight">7</div>
+                  <div class="dot"></div>
+                  <div class="tag" id="tagRight">True Adam</div>
+                </div>
+                <div class="progress"><div class="fill" id="fillRight"></div></div>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div class="download-bar">
+          <button id="downloadPngBtn" type="button" class="primary">
+            Download PNG · 1024×1024
+          </button>
+        </div>
+      </div>
+
+      <!-- ────────── EDITOR ────────── -->
+      <aside class="editor" aria-label="Template editor">
+        <h3>Template Editor</h3>
+
+        <div class="group">
+          <span class="group-title">Image</span>
+          <label class="image-pick">
+            Choose or change image
+            <small>PNG or JPG · cropped to circle</small>
+            <input id="imageInput" type="file" accept="image/*" />
+          </label>
+
+          <label>
+            Zoom
+            <div class="slider-row">
+              <input id="imgZoomRange" type="range" min="1" max="3" step="0.05" value="1" />
+              <input id="imgZoomNum" class="num-input" type="number" min="1" max="3" step="0.05" value="1" />
+            </div>
+          </label>
+
+          <label>
+            Horizontal
+            <input id="imgTxRange" type="range" min="-300" max="300" step="2" value="0" />
+          </label>
+
+          <label>
+            Vertical
+            <input id="imgTyRange" type="range" min="-300" max="300" step="2" value="0" />
+          </label>
+
+          <button id="imgResetBtn" type="button" class="reset-link">Reset position</button>
+        </div>
+
+        <!-- ARKit Mask Overlay Controls -->
+        <div class="group">
+          <span class="group-title">ARKit Mask Overlay</span>
+          <label style="display: flex; flex-direction: row; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 6px;">
+            <input id="maskToggle" type="checkbox" checked style="width: auto; margin: 0;" />
+            Show ARKit Mask
+          </label>
+
+          <label>
+            Mask Scale
+            <div class="slider-row">
+              <input id="maskScaleRange" type="range" min="0.5" max="2.0" step="0.02" value="1.0" />
+            </div>
+          </label>
+
+          <label>
+            Mask X Position
+            <div class="slider-row">
+              <input id="maskTxRange" type="range" min="-150" max="150" step="1" value="0" />
+            </div>
+          </label>
+
+          <label>
+            Mask Y Position
+            <div class="slider-row">
+              <input id="maskTyRange" type="range" min="-150" max="150" step="1" value="0" />
+            </div>
+          </label>
+
+          <button id="maskResetBtn" type="button" class="reset-link">Reset Mask</button>
+        </div>
+
+        <div class="group">
+          <span class="group-title">Gender</span>
+          <div class="seg" id="genderSeg" role="tablist">
+            <button type="button" data-value="male" class="active">Male</button>
+            <button type="button" data-value="female">Female</button>
+          </div>
+        </div>
+
+        <div class="group">
+          <span class="group-title">LookScroll score</span>
+          <div class="slider-row">
+            <input id="leftRange" type="range" min="1" max="10" step="0.1" value="5" />
+            <input id="leftNum" class="num-input" type="number" min="1" max="10" step="0.1" value="5" />
+          </div>
+          <label>
+            Tier
+            <select id="leftTier"></select>
+          </label>
+        </div>
+
+        <div class="group">
+          <span class="group-title">Potential score</span>
+          <div class="slider-row">
+            <input id="rightRange" type="range" min="1" max="10" step="0.1" value="7" />
+            <input id="rightNum" class="num-input" type="number" min="1" max="10" step="0.1" value="7" />
+          </div>
+          <label>
+            Tier
+            <select id="rightTier"></select>
+          </label>
+        </div>
+      </aside>
+    </div>
+
+    <!-- html-to-image: robuste DOM → PNG Konvertierung (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js"></script>
+    <script>
+      // ─────────── Tier-Listen ───────────
+      const TIERS = {
+        male: [
+          "SUB 3",
+          "SUB 5",
+          "LTN",
+          "MTN",
+          "HTN",
+          "CHAD",
+          "TRUE ADAM",
+        ],
+        female: [
+          "SUB 3",
+          "SUB 5",
+          "LTN",
+          "MTN",
+          "HTN",
+          "CHAD",
+          "TRUE EVE",
+        ],
+      };
+
+      // Default-Tier passend zum Score (1.0 - 10.0)
+      function tierForScore(gender, score) {
+        const r = Math.round(score);
+        if (r <= 3) return TIERS[gender][0];
+        if (r <= 5) return TIERS[gender][1];
+        if (r === 6) return TIERS[gender][2];
+        if (r === 7) return TIERS[gender][3];
+        if (r === 8) return TIERS[gender][4];
+        if (r === 9) return TIERS[gender][5];
+        return TIERS[gender][6];
+      }
+
+      // ─────────── Farb-Mapping je nach Score (1.0 - 10.0) ───────────
+      function colorForScore(score) {
+        const r = Math.round(score);
+        if (r <= 3) {
+          return {
+            accent: "#eb264f", // Crimson
+            bright: "#ff4d73",
+            soft: "rgba(235, 38, 79, 0.32)",
+            glow: "rgba(235, 38, 79, 0.12)",
+            faint: "rgba(235, 38, 79, 0.12)",
+          };
+        }
+        if (r <= 5) {
+          return {
+            accent: "#ff731a", // Vibrant Orange
+            bright: "#ff9c52",
+            soft: "rgba(255, 115, 26, 0.32)",
+            glow: "rgba(255, 115, 26, 0.12)",
+            faint: "rgba(255, 115, 26, 0.12)",
+          };
+        }
+        if (r === 6) {
+          return {
+            accent: "#fac22e", // Honey Gold
+            bright: "#ffdb66",
+            soft: "rgba(250, 194, 46, 0.32)",
+            glow: "rgba(250, 194, 46, 0.12)",
+            faint: "rgba(250, 194, 46, 0.12)",
+          };
+        }
+        if (r === 7) {
+          return {
+            accent: "#33c7a6", // Mint Teal
+            bright: "#66ebd0",
+            soft: "rgba(51, 199, 166, 0.32)",
+            glow: "rgba(51, 199, 166, 0.12)",
+            faint: "rgba(51, 199, 166, 0.12)",
+          };
+        }
+        if (r === 8) {
+          return {
+            accent: "#0fb873", // Emerald
+            bright: "#3bde9a",
+            soft: "rgba(15, 184, 115, 0.32)",
+            glow: "rgba(15, 184, 115, 0.12)",
+            faint: "rgba(15, 184, 115, 0.12)",
+          };
+        }
+        return {
+          accent: "#ffd140", // Royal Gold
+          bright: "#ffe580",
+          soft: "rgba(255, 209, 64, 0.32)",
+          glow: "rgba(255, 209, 64, 0.12)",
+          faint: "rgba(255, 209, 64, 0.12)",
+        };
+      }
+
+      function applyCardColor(cardEl, score) {
+        const c = colorForScore(score);
+        cardEl.style.setProperty("--accent", c.accent);
+        cardEl.style.setProperty("--accent-bright", c.bright);
+        cardEl.style.setProperty("--accent-soft", c.soft);
+        cardEl.style.setProperty("--accent-glow", c.glow);
+        cardEl.style.setProperty("--accent-faint", c.faint);
+        cardEl.style.setProperty("--panel-stroke", c.soft);
+      }
+
+      const state = {
+        gender: "male",
+        left: { score: 5.0, tier: "SUB 5" },
+        right: { score: 7.0, tier: "MTN" },
+        imageDataUrl: null,
+      };
+
+      // ─────────── DOM-Refs ───────────
+      const els = {
+        leftRange: document.getElementById("leftRange"),
+        leftNum: document.getElementById("leftNum"),
+        leftTier: document.getElementById("leftTier"),
+        rightRange: document.getElementById("rightRange"),
+        rightNum: document.getElementById("rightNum"),
+        rightTier: document.getElementById("rightTier"),
+        scoreLeft: document.getElementById("scoreLeft"),
+        scoreRight: document.getElementById("scoreRight"),
+        tagLeft: document.getElementById("tagLeft"),
+        tagRight: document.getElementById("tagRight"),
+        fillLeft: document.getElementById("fillLeft"),
+        fillRight: document.getElementById("fillRight"),
+        imageInput: document.getElementById("imageInput"),
+        imageSlot: document.getElementById("imageSlot"),
+        genderSeg: document.getElementById("genderSeg"),
+        arkitMask: document.getElementById("arkitMask"),
+        maskToggle: document.getElementById("maskToggle"),
+        maskScaleRange: document.getElementById("maskScaleRange"),
+        maskTxRange: document.getElementById("maskTxRange"),
+        maskTyRange: document.getElementById("maskTyRange"),
+        maskResetBtn: document.getElementById("maskResetBtn"),
+      };
+
+      // ─────────── Tier-Dropdown füllen ───────────
+      function fillTierSelect(select, gender, current) {
+        select.innerHTML = "";
+        for (const t of TIERS[gender]) {
+          const opt = document.createElement("option");
+          opt.value = t; opt.textContent = t;
+          if (t === current) opt.selected = true;
+          select.appendChild(opt);
+        }
+      }
+
+      function rebuildTierDropdowns() {
+        state.left.tier = tierForScore(state.gender, state.left.score);
+        state.right.tier = tierForScore(state.gender, state.right.score);
+        fillTierSelect(els.leftTier, state.gender, state.left.tier);
+        fillTierSelect(els.rightTier, state.gender, state.right.tier);
+      }
+
+      // ─────────── Score-Formatierung ───────────
+      function formatScore(v) {
+        // Deutsche Formatierung mit Komma wie in der App (z.B. "5,0" statt "5.0")
+        const formatted = Number.isInteger(v) ? v.toFixed(1) : v.toFixed(1);
+        return formatted.replace(".", ",");
+      }
+
+      function tagWithBreak(tier) {
+        const parts = tier.split(/\s+/);
+        if (parts.length === 2 && tier.length > 9) {
+          return `${parts[0]}<br />${parts[1]}`;
+        }
+        if (parts.length > 2) {
+          const half = Math.ceil(parts.length / 2);
+          return `${parts.slice(0, half).join(" ")}<br />${parts.slice(half).join(" ")}`;
+        }
+        return tier;
+      }
+
+      // ─────────── Render ───────────
+      const cardLeftEl = document.querySelector(".card.psl");
+      const cardRightEl = document.querySelector(".card.potential");
+
+      function render() {
+        els.scoreLeft.textContent = formatScore(state.left.score);
+        els.scoreRight.textContent = formatScore(state.right.score);
+        els.tagLeft.innerHTML = tagWithBreak(state.left.tier);
+        els.tagRight.innerHTML = tagWithBreak(state.right.tier);
+        // Progress-Balken: 1.0 -> 0%, 10.0 -> 100%
+        const pctL = ((state.left.score - 1) / 9) * 100;
+        const pctR = ((state.right.score - 1) / 9) * 100;
+        els.fillLeft.style.width = `${Math.max(0, Math.min(100, pctL))}%`;
+        els.fillRight.style.width = `${Math.max(0, Math.min(100, pctR))}%`;
+        if (cardLeftEl) applyCardColor(cardLeftEl, state.left.score);
+        if (cardRightEl) applyCardColor(cardRightEl, state.right.score);
+      }
+
+      // ─────────── Listener ───────────
+      function bindScore(side) {
+        const range = els[`${side}Range`];
+        const num = els[`${side}Num`];
+        const tier = els[`${side}Tier`];
+
+        function set(v, { autoTier = false } = {}) {
+          let val = parseFloat(v);
+          if (isNaN(val)) val = 1;
+          val = Math.max(1, Math.min(10, val));
+          val = Math.round(val * 10) / 10;
+          state[side].score = val;
+          range.value = String(val);
+          num.value = String(val);
+          if (autoTier) {
+            state[side].tier = tierForScore(state.gender, val);
+            tier.value = state[side].tier;
+          }
+          render();
+        }
+
+        range.addEventListener("input", () => set(range.value, { autoTier: true }));
+        num.addEventListener("input", () => set(num.value, { autoTier: true }));
+        tier.addEventListener("change", () => {
+          state[side].tier = tier.value;
+          render();
+        });
+      }
+
+      bindScore("left");
+      bindScore("right");
+
+      els.genderSeg.querySelectorAll("button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          els.genderSeg.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          state.gender = btn.dataset.value;
+          rebuildTierDropdowns();
+          render();
+        });
+      });
+
+      // ─────────── Bild-Transform (Zoom + Pan) ───────────
+      const imgState = { zoom: 1, tx: 0, ty: 0 };
+
+      const imgZoomRange = document.getElementById("imgZoomRange");
+      const imgZoomNum = document.getElementById("imgZoomNum");
+      const imgTxRange = document.getElementById("imgTxRange");
+      const imgTyRange = document.getElementById("imgTyRange");
+      const imgResetBtn = document.getElementById("imgResetBtn");
+
+      function applyImageTransform() {
+        const img = els.imageSlot.querySelector("img.user-image");
+        if (!img) return;
+        img.style.setProperty("--img-zoom", String(imgState.zoom));
+        img.style.setProperty("--img-tx", `${imgState.tx}px`);
+        img.style.setProperty("--img-ty", `${imgState.ty}px`);
+      }
+
+      function syncImageInputs() {
+        imgZoomRange.value = String(imgState.zoom);
+        imgZoomNum.value = String(imgState.zoom);
+        imgTxRange.value = String(imgState.tx);
+        imgTyRange.value = String(imgState.ty);
+      }
+
+      function resetImageTransform() {
+        imgState.zoom = 1; imgState.tx = 0; imgState.ty = 0;
+        syncImageInputs();
+        applyImageTransform();
+      }
+
+      imgZoomRange.addEventListener("input", () => {
+        imgState.zoom = Math.max(1, Math.min(3, parseFloat(imgZoomRange.value) || 1));
+        imgZoomNum.value = String(imgState.zoom);
+        applyImageTransform();
+      });
+      imgZoomNum.addEventListener("input", () => {
+        imgState.zoom = Math.max(1, Math.min(3, parseFloat(imgZoomNum.value) || 1));
+        imgZoomRange.value = String(imgState.zoom);
+        applyImageTransform();
+      });
+      imgTxRange.addEventListener("input", () => {
+        imgState.tx = parseFloat(imgTxRange.value) || 0;
+        applyImageTransform();
+      });
+      imgTyRange.addEventListener("input", () => {
+        imgState.ty = parseFloat(imgTyRange.value) || 0;
+        applyImageTransform();
+      });
+      imgResetBtn.addEventListener("click", resetImageTransform);
+
+      // ─────────── ARKit Mask Overlay Logic ───────────
+      const maskState = { scale: 1.0, tx: 0, ty: 0, visible: true };
+
+      function applyMaskTransform() {
+        if (!els.arkitMask) return;
+        els.arkitMask.style.setProperty("--mask-scale", String(maskState.scale));
+        els.arkitMask.style.setProperty("--mask-tx", `${maskState.tx}px`);
+        els.arkitMask.style.setProperty("--mask-ty", `${maskState.ty}px`);
+        els.arkitMask.style.display = maskState.visible ? "block" : "none";
+      }
+
+      function syncMaskInputs() {
+        els.maskScaleRange.value = String(maskState.scale);
+        els.maskTxRange.value = String(maskState.tx);
+        els.maskTyRange.value = String(maskState.ty);
+        els.maskToggle.checked = maskState.visible;
+      }
+
+      function resetMaskTransform() {
+        maskState.scale = 1.0; maskState.tx = 0; maskState.ty = 0; maskState.visible = true;
+        syncMaskInputs();
+        applyMaskTransform();
+      }
+
+      els.maskToggle.addEventListener("change", () => {
+        maskState.visible = els.maskToggle.checked;
+        applyMaskTransform();
+      });
+      els.maskScaleRange.addEventListener("input", () => {
+        maskState.scale = parseFloat(els.maskScaleRange.value) || 1.0;
+        applyMaskTransform();
+      });
+      els.maskTxRange.addEventListener("input", () => {
+        maskState.tx = parseFloat(els.maskTxRange.value) || 0;
+        applyMaskTransform();
+      });
+      els.maskTyRange.addEventListener("input", () => {
+        maskState.ty = parseFloat(els.maskTyRange.value) || 0;
+        applyMaskTransform();
+      });
+      els.maskResetBtn.addEventListener("click", resetMaskTransform);
+
+      // ─────────── Drag-to-Pan im Vorschau-Bild ───────────
+      (function setupImageDrag() {
+        let dragging = false;
+        let startX = 0, startY = 0;
+        let startTx = 0, startTy = 0;
+        const SCALE = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--canvas-px")) / 1024 || 0.371;
+
+        function onPointerDown(e) {
+          if (!els.imageSlot.classList.contains("has-image")) return;
+          dragging = true;
+          els.imageSlot.classList.add("is-dragging");
+          startX = e.clientX; startY = e.clientY;
+          startTx = imgState.tx; startTy = imgState.ty;
+          els.imageSlot.setPointerCapture && els.imageSlot.setPointerCapture(e.pointerId);
+          e.preventDefault();
+        }
+        function onPointerMove(e) {
+          if (!dragging) return;
+          const dxView = e.clientX - startX;
+          const dyView = e.clientY - startY;
+          const dxCanvas = dxView / SCALE;
+          const dyCanvas = dyView / SCALE;
+          imgState.tx = Math.max(-300, Math.min(300, startTx + dxCanvas / imgState.zoom));
+          imgState.ty = Math.max(-300, Math.min(300, startTy + dyCanvas / imgState.zoom));
+          syncImageInputs();
+          applyImageTransform();
+        }
+        function onPointerUp(e) {
+          if (!dragging) return;
+          dragging = false;
+          els.imageSlot.classList.remove("is-dragging");
+          els.imageSlot.releasePointerCapture && els.imageSlot.releasePointerCapture(e.pointerId);
+        }
+        els.imageSlot.addEventListener("pointerdown", onPointerDown);
+        els.imageSlot.addEventListener("pointermove", onPointerMove);
+        els.imageSlot.addEventListener("pointerup", onPointerUp);
+        els.imageSlot.addEventListener("pointercancel", onPointerUp);
+
+        els.imageSlot.addEventListener("wheel", (e) => {
+          if (!els.imageSlot.classList.contains("has-image")) return;
+          e.preventDefault();
+          const delta = -e.deltaY * 0.0015;
+          imgState.zoom = Math.max(1, Math.min(3, imgState.zoom + delta));
+          syncImageInputs();
+          applyImageTransform();
+        }, { passive: false });
+      })();
+
+      els.imageInput.addEventListener("change", () => {
+        const file = els.imageInput.files && els.imageInput.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const url = String(reader.result || "");
+          state.imageDataUrl = url;
+          els.imageSlot.innerHTML = "";
+          els.imageSlot.classList.add("has-image");
+          const img = document.createElement("img");
+          img.className = "user-image";
+          img.src = url;
+          els.imageSlot.appendChild(img);
+          resetImageTransform();
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Init
+      rebuildTierDropdowns();
+      render();
+      resetMaskTransform();
+
+      // ─────────── Capture-Mode (?capture=1) ───────────
+      (function () {
+        const params = new URLSearchParams(location.search);
+        if (params.get("capture")) document.body.classList.add("capture-mode");
+      })();
+
+      // ─────────── PNG-Export 1024 × 1024 (via html-to-image) ───────────
+      async function inlineImagesToDataUrl() {
+        const imgs = Array.from(document.querySelectorAll("#canvas img"));
+        await Promise.all(imgs.map(async (img) => {
+          if (!img.src || img.src.startsWith("data:")) return;
+          try {
+            const res = await fetch(img.src, { cache: "force-cache" });
+            const blob = await res.blob();
+            const dataUrl = await new Promise((resolve, reject) => {
+              const r = new FileReader();
+              r.onload = () => resolve(String(r.result || ""));
+              r.onerror = reject;
+              r.readAsDataURL(blob);
+            });
+            img.src = dataUrl;
+          } catch (e) {
+            console.warn("Could not inline image:", img.src, e);
+          }
+        }));
+      }
+
+      const downloadBtn = document.getElementById("downloadPngBtn");
+      downloadBtn.addEventListener("click", async () => {
+        if (typeof htmlToImage === "undefined" || !htmlToImage.toBlob) {
+          alert("Could not load the html-to-image library. Check your connection and reload.");
+          return;
+        }
+
+        const canvasEl = document.getElementById("canvas");
+        if (!canvasEl) return;
+
+        const originalLabel = downloadBtn.textContent;
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = "Rendering PNG…";
+
+        const prevTransform = canvasEl.style.transform;
+        const prevPosition = canvasEl.style.position;
+        canvasEl.style.transform = "none";
+        canvasEl.style.position = "absolute";
+        await inlineImagesToDataUrl();
+
+        try {
+          const blob = await htmlToImage.toBlob(canvasEl, {
+            width: 1024,
+            height: 1024,
+            pixelRatio: 1,
+            backgroundColor: "#000000",
+            cacheBust: true,
+            style: {
+              transform: "none",
+              transformOrigin: "top left",
+              borderRadius: "0",
+              width: "1024px",
+              height: "1024px",
+            },
+          });
+
+          if (!blob) throw new Error("Empty blob");
+
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "lookscroll-rating-1024.png";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 1500);
+        } catch (err) {
+          console.error("PNG export failed:", err);
+          alert("PNG export failed: " + (err && err.message ? err.message : err));
+        } finally {
+          canvasEl.style.transform = prevTransform;
+          canvasEl.style.position = prevPosition;
+          downloadBtn.disabled = false;
+          downloadBtn.textContent = originalLabel;
+        }
+      });
+    </script>
+  </body>
+</html>

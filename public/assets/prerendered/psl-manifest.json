@@ -1,0 +1,5 @@
+{
+  "version": 2,
+  "defaultVideo": "/assets/prerendered/psl-intro-rating-2.5s.mp4",
+  "notes": "Place the final pre-rendered 2.5s intro+rating video at defaultVideo path."
+}

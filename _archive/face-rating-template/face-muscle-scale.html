@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face Rating Template — LookScroll APP Clipper</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #06070d;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+    }
+    .clipper-site-nav {
+      width: 100%;
+      max-width: min(1200px, 100%);
+      margin: 0 auto;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #1f2230;
+    }
+    .clipper-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid #2a3660;
+      background: #0d1226;
+      color: #c5cdee;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .03em;
+      transition: all .15s ease;
+    }
+    .clipper-tab:hover { border-color: #4a63b8; color: #ffffff; }
+    .clipper-tab.active {
+      background: linear-gradient(180deg, #243663, #182549);
+      border-color: #6e8bff;
+      color: #ffffff;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+    }
+    .brand-title {
+      max-width: 1200px;
+      margin: 14px auto 0;
+      padding: 0 16px;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: .02em;
+      color: #ffffff;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 26px 16px 50px;
+      display: grid;
+      gap: 20px;
+      grid-template-columns: minmax(320px, 460px) minmax(320px, 1fr);
+    }
+    @media (max-width: 980px) {
+      .container { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .brand-title {
+        font-size: 21px;
+        margin-top: 10px;
+      }
+      .container {
+        padding: 14px 10px 28px;
+        gap: 12px;
+      }
+      .panel {
+        border-radius: 14px;
+        padding: 12px;
+      }
+      .panel h1 {
+        font-size: 18px;
+      }
+      .preview-wrap {
+        min-height: auto;
+        padding: 8px;
+        border-radius: 14px;
+      }
+      .phone-preview {
+        width: min(100%, 390px);
+        border-radius: 18px;
+      }
+      /* Overlay-Abstände/Typo bleiben wie Desktop für identischen Look */
+      .ratings {
+        gap: 9px;
+      }
+      .rating-row {
+        padding: 8px 9px;
+      }
+      .control-box {
+        padding: 9px 10px;
+      }
+    }
+
+    .panel {
+      background: #0c101a;
+      border: 1px solid #1f2230;
+      border-radius: 20px;
+      padding: 18px;
+    }
+    .panel h1 {
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+    .muted { color: #9ea6bf; font-size: 13px; }
+
+    .upload-zone {
+      margin-top: 14px;
+      border: 1px dashed #3e4a71;
+      border-radius: 16px;
+      padding: 18px;
+      background: #0a0f1b;
+    }
+    .upload-zone input[type="file"] {
+      width: 100%;
+      margin-top: 8px;
+      color: #d7def7;
+    }
+    .controls-grid {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .control-box {
+      background: #101525;
+      border: 1px solid #202844;
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .control-box label {
+      display: block;
+      font-size: 12px;
+      color: #b7c0df;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .control-box input[type="range"],
+    .control-box select {
+      width: 100%;
+    }
+    .gender-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .gender-btn {
+      background: #121a2f;
+      color: #c7d2f3;
+      border: 1px solid #2a3660;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s ease;
+    }
+    .gender-btn.active {
+      background: #243663;
+      border-color: #6e8bff;
+      color: #fff;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.15);
+    }
+    .control-row {
+      display: grid;
+      grid-template-columns: 1fr 84px;
+      gap: 8px;
+      align-items: center;
+    }
+    .control-row input[type="number"] {
+      width: 100%;
+      background: #0b1020;
+      border: 1px solid #2b3658;
+      color: #fff;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .download-btn {
+      margin-top: 8px;
+      width: 100%;
+      border: 1px solid #2d6bff;
+      background: linear-gradient(180deg, #2f78ff, #1f5ee0);
+      color: #fff;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      padding: 11px 12px;
+      cursor: pointer;
+    }
+    .download-btn:hover {
+      filter: brightness(1.05);
+    }
+
+    .ratings {
+      margin-top: 18px;
+      display: grid;
+      gap: 12px;
+    }
+    .rating-row {
+      background: #101525;
+      border: 1px solid #202844;
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+    .rating-slider {
+      margin-top: 8px;
+      width: 100%;
+      accent-color: #8fb4ff;
+    }
+    .rating-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .rating-value {
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: 0.02em;
+    }
+    .bar {
+      height: 8px;
+      border-radius: 999px;
+      background: #27304d;
+      overflow: hidden;
+    }
+    .bar > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      transition: width .35s ease;
+      filter: brightness(1.08) saturate(1.05);
+    }
+
+    .preview-wrap {
+      background: #060a14;
+      border: 1px solid #1d2642;
+      border-radius: 22px;
+      min-height: 620px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .phone-preview {
+      width: min(430px, 100%);
+      aspect-ratio: 3 / 4;
+      border-radius: 28px;
+      overflow: hidden;
+      position: relative;
+      background: linear-gradient(180deg, #18213d 0%, #0a0f1e 100%);
+      border: 1px solid #2b3557;
+    }
+    .phone-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+    }
+    .phone-preview-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .placeholder {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #8e98b8;
+      text-align: center;
+      padding: 20px;
+      font-size: 14px;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      padding: 16px 14px;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(7,10,18,.18) 25%, rgba(7,10,18,.76) 70%, rgba(7,10,18,.92) 100%);
+      display: none;
+    }
+    .overlay-brand {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.065em;
+      text-transform: uppercase;
+      color: #f7fbff;
+      font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex: 1 1 auto;
+      min-width: min-content;
+      line-height: 1;
+      position: relative;
+      z-index: 1;
+    }
+    .overlay-brand-icon {
+      width: 24px;
+      height: 24px;
+      display: block;
+      flex: 0 0 auto;
+      object-fit: contain;
+    }
+    .top-score {
+      align-self: end;
+      margin-bottom: 26px;
+    }
+    .label {
+      flex: 0 0 auto;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      opacity: 0.95;
+    }
+    .label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      transform: translateY(-14px);
+    }
+    .main-score {
+      font-size: 66px;
+      line-height: .95;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+    .tier-label {
+      flex: 0 0 auto;
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.28);
+    }
+    .grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 12px;
+    }
+    .metric {
+      border-top: 1px solid rgba(255,255,255,.14);
+      padding-top: 6px;
+    }
+    .metric-name {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,.78);
+      text-transform: uppercase;
+    }
+    .metric-value {
+      font-size: 44px;
+      font-weight: 800;
+      line-height: .95;
+      margin-top: 2px;
+    }
+    .metric-line {
+      margin-top: 5px;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.16);
+      overflow: hidden;
+    }
+    .metric-line span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      width: 0%;
+      transition: width .35s ease;
+      filter: brightness(1.08) saturate(1.05);
+    }
+  </style>
+</head>
+<body>
+  <nav class="clipper-site-nav" aria-label="Clipper tools">
+    <a class="clipper-tab active" href="/face-muscle-scale.html" aria-current="page">Face Rating Template</a>
+    <a class="clipper-tab" href="/face-video-tab.html">Promo video</a>
+  </nav>
+  <div class="brand-title">LookScroll APP</div>
+
+  <main class="container">
+    <section class="panel">
+      <h1>Face Rating Template</h1>
+      <p class="muted">Upload an image -> auto-generate the rating template look.</p>
+
+      <div class="upload-zone">
+        <label for="photoInput"><strong>Select image</strong></label>
+        <input id="photoInput" type="file" accept="image/*">
+        <p class="muted" style="margin-top:10px;">After upload, scores are generated and shown in the overlay.</p>
+      </div>
+
+      <div class="controls-grid">
+        <div class="control-box">
+          <label for="averageRange">Set average manually</label>
+          <div class="control-row">
+            <input id="averageRange" type="range" min="1" max="7" step="0.1" value="5.4">
+            <input id="averageNumber" type="number" min="1" max="7" step="0.1" value="5.4">
+          </div>
+        </div>
+        <div class="control-box">
+          <label>Rating mode</label>
+          <div class="gender-buttons">
+            <button id="genderMaleBtn" class="gender-btn active" type="button">Male (True Adam)</button>
+            <button id="genderFemaleBtn" class="gender-btn" type="button">Female (True Eve)</button>
+          </div>
+        </div>
+        <div class="control-box">
+          <label for="zoomRange">Image zoom</label>
+          <div class="control-row">
+            <input id="zoomRange" type="range" min="0.6" max="2.4" step="0.01" value="1">
+            <input id="zoomNumber" type="number" min="0.6" max="2.4" step="0.01" value="1">
+          </div>
+        </div>
+        <div class="control-box">
+          <label for="xRange">Move horizontally</label>
+          <div class="control-row">
+            <input id="xRange" type="range" min="-220" max="220" step="1" value="0">
+            <input id="xNumber" type="number" min="-220" max="220" step="1" value="0">
+          </div>
+        </div>
+        <div class="control-box">
+          <label for="yRange">Move vertically</label>
+          <div class="control-row">
+            <input id="yRange" type="range" min="-320" max="320" step="1" value="0">
+            <input id="yNumber" type="number" min="-320" max="320" step="1" value="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="ratings" id="ratings"></div>
+      <button id="downloadBtn" class="download-btn" type="button">Download Template</button>
+    </section>
+
+    <section class="preview-wrap">
+      <div class="phone-preview">
+        <img id="previewImage" alt="Uploaded face">
+        <canvas id="previewCanvas" class="phone-preview-canvas" aria-label="Template preview"></canvas>
+        <div class="placeholder" id="placeholder">Upload an image to generate your rating template.</div>
+
+        <div class="overlay" id="ratingOverlay">
+          <div class="top-score">
+            <div class="label-row">
+              <div class="label">AVERAGE</div>
+              <div class="overlay-brand">
+                <img id="appStoreBrandIcon" class="overlay-brand-icon" alt="" width="24" height="24" decoding="async">
+                <span>LookScroll APP</span>
+              </div>
+              <div class="tier-label" id="tierLabel">SUB3</div>
+            </div>
+            <div class="main-score" id="averageValue">85</div>
+          </div>
+
+          <div class="grid-two">
+            <div class="metric">
+              <div class="metric-name">POTENTIAL</div>
+              <div class="metric-value" id="potentialValue">95</div>
+              <div class="metric-line"><span id="potentialBar"></span></div>
+            </div>
+            <div class="metric">
+              <div class="metric-name">EYES</div>
+              <div class="metric-value" id="eyesValue">78</div>
+              <div class="metric-line"><span id="eyesBar"></span></div>
+            </div>
+            <div class="metric">
+              <div class="metric-name">MIDFACE</div>
+              <div class="metric-value" id="midfaceValue">81</div>
+              <div class="metric-line"><span id="midfaceBar"></span></div>
+            </div>
+            <div class="metric">
+              <div class="metric-name">LOWER THIRD</div>
+              <div class="metric-value" id="lowerThirdValue">89</div>
+              <div class="metric-line"><span id="lowerThirdBar"></span></div>
+            </div>
+            <div class="metric">
+              <div class="metric-name">UPPER THIRD</div>
+              <div class="metric-value" id="upperThirdValue">83</div>
+              <div class="metric-line"><span id="upperThirdBar"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="face-muscle-scale.js" defer></script>
+</body>
+</html>

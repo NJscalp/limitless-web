@@ -1,0 +1,92 @@
+/* Cortisol gauge marketing card — 1:1 Referenz-Animation (3:4, schwarz) */
+
+:root {
+  --preview-w: 318px;
+  --card-bg: rgba(0, 0, 0, 0.88);
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Rounded", system-ui, sans-serif;
+}
+
+.preview-card-shell {
+  width: var(--preview-w);
+  max-width: 100%;
+  aspect-ratio: 3 / 4;
+  position: relative;
+  border-radius: 20px;
+  background:
+    repeating-conic-gradient(rgba(255, 255, 255, 0.06) 0% 25%, transparent 0% 50%) 50% / 14px 14px,
+    #0a0a0a;
+}
+
+.marketing-card {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  background: var(--card-bg);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cortisol-gauge-wrap {
+  width: 92%;
+  max-width: 292px;
+  margin: 0 auto;
+}
+
+.cortisol-gauge-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.cortisol-gauge-wrap .gauge-title {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  fill: url(#cortisolTitleGrad);
+}
+
+.cortisol-gauge-wrap .arc-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  fill: #fff;
+  text-transform: uppercase;
+}
+
+.cortisol-gauge-wrap .brand-lookscroll {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  fill: url(#lookscrollGrad);
+}
+
+.cortisol-gauge-wrap .brand-app {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  fill: #b8b4ff;
+}
+
+.cortisol-gauge-wrap .needle {
+  filter: drop-shadow(0 0 6px rgba(57, 255, 90, 0.65));
+}
+
+.cortisol-gauge-wrap .hub-ring {
+  fill: rgba(0, 0, 0, 0.92);
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 1;
+}
+
+.cortisol-gauge-wrap .hub-mesh {
+  fill: none;
+  stroke: rgba(220, 225, 235, 0.85);
+  stroke-width: 0.9;
+  stroke-linejoin: round;
+}

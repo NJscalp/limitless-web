@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LookScroll — Focus Marketing Template (Clipper)</title>
+  <meta name="description" content="1:1 Focus-Tab Marketing-Karte — Score, Potential, Apps blocked, Unlock Tasks.">
+  <style>
+    :root {
+      --accent: #ffb30a;
+      --accent-bright: #ffd24a;
+      --accent-soft: rgba(255, 179, 10, 0.55);
+      --bg: #000;
+      --card-bg: rgb(15, 15, 18);
+      --mesh-bg: rgb(36, 36, 41);
+      --text: #fff;
+      --muted: rgba(255, 255, 255, 0.45);
+      --preview-w: 318px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 48px;
+      gap: 20px;
+    }
+    .tab-nav {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .tab-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(20, 20, 20, 0.7);
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      transition: all 0.15s ease;
+    }
+    .tab-link:hover { border-color: var(--accent-soft); color: #fff; }
+    .tab-link.active {
+      background: linear-gradient(180deg, rgba(255, 179, 10, 0.18), rgba(255, 179, 10, 0.05));
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 18px rgba(255, 179, 10, 0.25);
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(300px, 380px) var(--preview-w);
+      gap: 32px;
+      align-items: start;
+      justify-content: center;
+      width: 100%;
+      max-width: 1040px;
+    }
+    @media (max-width: 860px) {
+      .workspace { grid-template-columns: 1fr; justify-items: center; }
+    }
+    .editor {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      max-width: 380px;
+    }
+    .editor h1 {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .editor p.sub {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      margin-top: -6px;
+    }
+    .panel {
+      background: rgba(20, 20, 20, 0.85);
+      border: 1px solid rgba(255, 179, 10, 0.28);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .panel h2 {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+    }
+    label.field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.55);
+    }
+    label.field input[type="number"],
+    label.field input[type="text"],
+    label.field select {
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: inherit;
+    }
+    label.field select {
+      cursor: pointer;
+      width: 100%;
+    }
+    label.field select option {
+      color: #111;
+      background: #fff;
+    }
+    label.field input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .range-val {
+      min-width: 36px;
+      text-align: right;
+      font-size: 14px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+    .task-editor {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 10px;
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .task-editor h3 {
+      font-size: 12px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.75);
+    }
+    .task-editor-hint {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.45);
+      line-height: 1.35;
+      margin: -4px 0 6px;
+    }
+    .task-benefit-preview {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.55);
+      line-height: 1.35;
+      margin: -2px 0 2px;
+    }
+    .image-upload-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn-upload,
+    .btn-ghost {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 179, 10, 0.45);
+      background: linear-gradient(180deg, rgba(255, 179, 10, 0.2), rgba(255, 179, 10, 0.06));
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      transition: filter 0.12s ease;
+    }
+    .btn-upload:hover { filter: brightness(1.08); }
+    .btn-ghost {
+      border-color: rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.65);
+    }
+    .image-upload-hint {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.38);
+      line-height: 1.35;
+    }
+    .image-upload input[type="file"] {
+      position: absolute;
+      width: 0;
+      height: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .task-picker {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .task-pick-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 9px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(0, 0, 0, 0.35);
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 11px;
+      font-weight: 700;
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+    }
+    .task-pick-btn:hover:not(:disabled) {
+      border-color: rgba(255, 179, 10, 0.45);
+      background: rgba(255, 179, 10, 0.08);
+    }
+    .task-pick-btn.is-active {
+      border-color: var(--pick-accent, var(--accent));
+      background: color-mix(in srgb, var(--pick-accent, var(--accent)) 14%, rgba(0, 0, 0, 0.4));
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pick-accent, var(--accent)) 35%, transparent);
+      color: #fff;
+    }
+    .task-pick-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .task-pick-emoji {
+      font-size: 16px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .task-pick-name {
+      line-height: 1.2;
+      min-width: 0;
+    }
+    .preview-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .preview-card-shell {
+      width: var(--preview-w);
+      max-width: 100%;
+      aspect-ratio: 3 / 4;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .preview-meta {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.45);
+    }
+    .download-bar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      max-width: var(--preview-w);
+    }
+    .btn-download-png {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(180deg, var(--accent-bright), var(--accent));
+      color: #1a1100;
+      font-size: 13px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+        0 6px 20px rgba(255, 179, 10, 0.35);
+      transition: filter 0.12s ease, transform 0.1s ease;
+    }
+    .btn-download-png:hover:not(:disabled) { filter: brightness(1.06); }
+    .btn-download-png:active:not(:disabled) { transform: scale(0.98); }
+    .btn-download-png:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+    .download-hint {
+      font-size: 9px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.38);
+      text-align: center;
+      line-height: 1.35;
+    }
+  </style>
+  <link rel="stylesheet" href="focus-marketing-template.css">
+</head>
+<body>
+  <nav class="tab-nav" aria-label="Clipper tools">
+    <a class="tab-link" href="tasks-videos.html">Tasks videos</a>
+    <a class="tab-link active" href="focus-marketing-template.html">Focus template</a>
+  </nav>
+
+  <div class="workspace">
+    <aside class="editor">
+      <h1>Focus Marketing</h1>
+      <p class="sub">1:1 wie die iOS Focus-Karte (3:4). Score, Potential, blockierte Apps &amp; Unlock-Tasks.</p>
+
+      <div class="panel">
+        <h2>Score &amp; Potential</h2>
+        <label class="field">
+          Score (0–100)
+          <div class="range-row">
+            <input type="range" id="scoreRange" min="0" max="100" value="62">
+            <span class="range-val" id="scoreVal">62</span>
+          </div>
+        </label>
+        <label class="field">
+          Potential (0–100)
+          <div class="range-row">
+            <input type="range" id="potentialRange" min="0" max="100" value="78">
+            <span class="range-val" id="potentialVal">78</span>
+          </div>
+        </label>
+        <label class="field">
+          Face mesh Bild
+          <div class="image-upload-row">
+            <input type="file" id="faceImageFile" accept="image/*">
+            <button type="button" class="btn-upload" id="faceImagePick">Bild hochladen</button>
+            <button type="button" class="btn-ghost" id="faceImageClear" hidden>Bild entfernen</button>
+          </div>
+          <span class="image-upload-hint">PNG/JPG — erscheint rechts in der Karte (Mesh-Kachel)</span>
+          <input type="text" id="faceImageUrl" placeholder="oder Bild-URL einfügen">
+        </label>
+        <label class="field">
+          <input type="checkbox" id="lockedBadge" checked> LOCKED Badge anzeigen
+        </label>
+      </div>
+
+      <div class="panel" id="taskPanels"></div>
+    </aside>
+
+    <div class="preview-wrap">
+      <p class="preview-meta">Preview · 3:4 · Kompakt · <span id="previewSizeLabel">318×424</span></p>
+      <div class="preview-card-shell">
+        <div id="marketingCard" class="marketing-card" aria-label="Focus marketing preview"></div>
+      </div>
+      <div class="download-bar">
+        <button type="button" id="downloadPngBtn" class="btn-download-png">Template als PNG herunterladen</button>
+        <span class="download-hint">Exakt wie Vorschau · 3:4 · hochskaliert (~1024 px breit)</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js"></script>
+  <script src="focus-marketing-template.js"></script>
+</body>
+</html>

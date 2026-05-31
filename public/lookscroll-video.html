@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LookScroll — Lookscroll video</title>
+  <meta name="description" content="Lookscroll APP intro template — 1:1 square format, animated headline (1.5s) for Clipper edits.">
+  <script defer src="https://unpkg.com/html-to-image@1.11.13/dist/html-to-image.js"></script>
+  <style>
+    :root {
+      --accent: #ffb30a;
+      --accent-bright: #ffd24a;
+      --accent-soft: rgba(255, 179, 10, 0.55);
+      --bg: #000;
+      --panel: rgba(20, 20, 20, 0.75);
+      --text: #fff;
+      --muted: rgba(255, 255, 255, 0.62);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+    }
+    .wrap { width: 100%; max-width: 720px; }
+    .tab-nav {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .tab-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(20, 20, 20, 0.7);
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      transition: all 0.15s ease;
+    }
+    .tab-link:hover { border-color: var(--accent-soft); color: #fff; }
+    .tab-link.active {
+      background: linear-gradient(180deg, rgba(255, 179, 10, 0.18), rgba(255, 179, 10, 0.05));
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 18px rgba(255, 179, 10, 0.25);
+    }
+    h1 {
+      font-size: clamp(22px, 4vmin, 28px);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .lead {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.45;
+      margin-bottom: 22px;
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ============================================
+       1:1 Template (square)
+       ============================================ */
+    .template-wrap {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .template-stage {
+      /* Square stage that visually holds the (absolutely positioned) template.
+         This is its own box so the editor & controls underneath remain a
+         normal sibling and don't collapse behind the template. */
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      overflow: visible;
+      margin-bottom: 16px;
+    }
+    .template {
+      /* The template has a FIXED internal size (720×720). We scale it down
+         (or up) to the wrap via JS-driven transform: scale(). That way the
+         layout, paddings, shadows, fonts and icons are 100% identical on
+         phone, tablet and desktop — only the visual scale changes.
+         The same fixed 720×720 size is what we capture for the download. */
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 720px;
+      height: 720px;
+      transform-origin: top left;
+      will-change: transform;
+      /* Container queries still work and now resolve to a constant
+         1cqw = 7.2px because the container is always 720px wide. */
+      container-type: inline-size;
+      background:
+        radial-gradient(
+          circle at 50% 50%,
+          #d9d6cc 0%,
+          #c4c0b3 18%,
+          #4a4842 55%,
+          #141310 84%,
+          #000000 100%
+        );
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.18);
+      box-shadow: 0 24px 56px rgba(0, 0, 0, 0.55);
+      display: flex;
+      flex-direction: column;
+    }
+    .template-text {
+      position: relative;
+      flex: 0 0 30%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8% 22px 0;
+      background: transparent;
+      z-index: 5;
+      overflow: hidden;
+    }
+    .template-text .headline {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      white-space: nowrap;
+      text-align: center;
+      line-height: 1;
+      /* Always visible from frame 0 — just grows in size */
+      transform: scale(0.55);
+      opacity: 1;
+      will-change: transform;
+      display: inline-flex;
+      align-items: center;
+      gap: clamp(8px, 2.6cqw, 16px);
+      padding: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .template.is-playing .template-text .headline {
+      animation: lookscrollHeadlineGrow 1500ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes lookscrollHeadlineGrow {
+      0%   { transform: scale(0.55); }
+      100% { transform: scale(1); }
+    }
+    .template-text .headline .ls-app-icon {
+      width: clamp(40px, 11cqw, 80px);
+      height: clamp(40px, 11cqw, 80px);
+      border-radius: 24%;
+      display: inline-block;
+      object-fit: cover;
+      overflow: hidden;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28), 0 0 0 2px rgba(255, 255, 255, 0.85);
+      flex-shrink: 0;
+      background: #ff7a00;
+    }
+    .template-text .headline .brand {
+      font-size: clamp(34px, 9.5cqw, 70px);
+      color: #fff;
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.45);
+    }
+    .template-text .headline .suffix {
+      font-size: clamp(28px, 7.4cqw, 56px);
+      color: #ffffff;
+      margin-left: 0.04em;
+      padding: 0.06em 0.3em;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.22);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+    }
+
+    .template-image {
+      flex: 1 1 auto;
+      position: relative;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* allow the round avatar to overlap the upper text area without being clipped */
+      overflow: visible;
+    }
+    .template-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .template-image .placeholder {
+      text-align: center;
+      padding: 22px;
+      color: rgba(40, 30, 0, 0.45);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      line-height: 1.5;
+    }
+    .template-image .placeholder span {
+      display: block;
+      color: #c98a00;
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+
+    /* ============================================
+       TikTok blocked overlay (visible 0 - 0.5s, no entrance)
+       ============================================ */
+    .tt-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      background:
+        radial-gradient(
+          circle at 50% 50%,
+          #d9d6cc 0%,
+          #c4c0b3 18%,
+          #4a4842 55%,
+          #141310 84%,
+          #000000 100%
+        );
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 3% 6% 6%;
+      pointer-events: none;
+      opacity: 1;
+    }
+    .template.is-playing .tt-overlay {
+      animation: ttOverlayEnd 200ms 500ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes ttOverlayEnd {
+      0%   { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.96); }
+    }
+    .tt-stage {
+      position: relative;
+      width: 20%;
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tt-icon-tile {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #010101;
+      /* Apple "squircle" approximation — same proportion as App Store icons */
+      border-radius: 22.37%;
+      /* Red frame around the icon to indicate "blocked" */
+      border: 4px solid #ff2d2d;
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32),
+                  0 0 0 1px rgba(255, 45, 45, 0.25),
+                  0 0 20px rgba(255, 45, 45, 0.35);
+    }
+    .tt-icon-tile svg.tt-logo {
+      width: 56%;
+      height: 56%;
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    /* Padlock badge tucked into the top-right corner, fused to the red frame */
+    .tt-corner-dot {
+      position: absolute;
+      top: -12%;
+      right: -12%;
+      width: 34%;
+      height: 34%;
+      border-radius: 50%;
+      background: #ff2d2d;
+      border: 4px solid #ff2d2d;
+      box-shadow: 0 4px 12px rgba(255, 45, 45, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+    .tt-corner-dot svg {
+      width: 58%;
+      height: 58%;
+      display: block;
+      filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+    }
+    .tt-blocked-pill {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+      font-weight: 900;
+      font-size: clamp(11px, 2.6cqw, 14px);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #fff;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #ff5a5a, #c20000);
+      box-shadow: 0 0 14px rgba(255, 45, 45, 0.55);
+    }
+    .tt-caption {
+      position: absolute;
+      left: 50%;
+      bottom: 28%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      color: #ffffff;
+      white-space: nowrap;
+    }
+    .tt-caption .ascend-line {
+      font-size: clamp(28px, 9cqw, 64px);
+      color: #ffffff;
+    }
+    .tt-caption .accent-word { color: #ffd24a; -webkit-text-fill-color: #ffd24a; }
+
+    /* ============================================
+       Score / Potential card (appears after 0.5s)
+       ============================================ */
+    .score-view {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      padding: 4% 5% 5%;
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+      will-change: opacity, transform;
+      pointer-events: none;
+    }
+    .template.is-playing .score-view {
+      animation: scoreViewIn 320ms 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes scoreViewIn {
+      0%   { opacity: 0; transform: translateY(10px) scale(0.98); }
+      100% { opacity: 1; transform: translateY(0)    scale(1); }
+    }
+
+    .score-card {
+      position: relative;
+      width: 100%;
+      max-width: 94%;
+      background: #ffffff;
+      border-radius: 24px;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
+      padding: 24px 18px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .score-image {
+      position: relative;
+      transform: translateY(-32%);
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-width: 100%;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #f1ead0;
+      border: 4px solid #ffffff;
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.22), 0 0 0 2px rgba(201, 138, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+    }
+    .score-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .score-image .ph {
+      text-align: center;
+      font-size: clamp(10px, 2.4cqw, 12px);
+      font-weight: 800;
+      color: rgba(40, 30, 0, 0.5);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      line-height: 1.3;
+      padding: 0 6px;
+    }
+    .score-image .ph span {
+      display: block;
+      font-size: clamp(22px, 6cqw, 30px);
+      color: #c98a00;
+      margin-bottom: 2px;
+    }
+
+    .score-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr clamp(140px, 46%, 200px) 1fr;
+      align-items: center;
+      gap: clamp(8px, 2.6cqw, 16px);
+      margin-bottom: 0;
+    }
+    .score-side {
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+      color: #1a1a1a;
+    }
+    .score-side .label {
+      display: block;
+      font-size: clamp(14px, 3.8cqw, 22px);
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(0, 0, 0, 0.55);
+      margin-bottom: 6px;
+    }
+    .score-side .value {
+      display: block;
+      font-size: clamp(40px, 13cqw, 76px);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .score-side.score   .value { color: #1a1a1a; }
+    .score-side.potential .value {
+      background: linear-gradient(180deg, #ffb30a 0%, #c98a00 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .score-side .caption {
+      display: block;
+      margin-top: 6px;
+      font-size: clamp(14px, 4cqw, 22px);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+    .score-side.score   .caption { color: rgba(0, 0, 0, 0.65); }
+    .score-side.potential .caption { color: #c98a00; }
+
+    .score-task {
+      width: 100%;
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+      color: #1a1a1a;
+      padding-top: 8px;
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    .score-task .task-title {
+      display: block;
+      font-size: clamp(24px, 7.2cqw, 38px);
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      margin-bottom: 8px;
+    }
+    .score-task .task-reps {
+      display: block;
+      font-size: clamp(16px, 4.6cqw, 24px);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: rgba(0, 0, 0, 0.65);
+    }
+    .score-task .task-reps b {
+      color: #c98a00;
+      font-weight: 900;
+    }
+
+    /* ============================================
+       Tier pill (inside the card — shows current tier name)
+       ============================================ */
+    .tier-pill {
+      align-self: center;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+      font-size: clamp(20px, 6.2cqw, 30px);
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #fff;
+      padding: 10px 26px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #ffb30a 0%, #c98a00 100%);
+      box-shadow: 0 8px 20px rgba(201, 138, 0, 0.38);
+      /* Pull the tier pill up so it sits closer to the avatar */
+      margin-top: -52px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    /* ============================================
+       Editor menu (outside the template)
+       ============================================ */
+    .editor {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .editor-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: rgba(20, 20, 20, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 10px 14px;
+    }
+    .editor-row .label {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.55);
+    }
+    .gender-switch {
+      display: inline-flex;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 2px;
+    }
+    .gender-switch button {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.6);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 7px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .gender-switch button.is-active {
+      background: linear-gradient(180deg, var(--accent-bright), var(--accent));
+      color: #1a1100;
+      box-shadow: 0 4px 10px rgba(255, 179, 10, 0.32);
+    }
+    .tier-picker {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .tier-picker button {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(0, 0, 0, 0.4);
+      color: rgba(255, 255, 255, 0.7);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .tier-picker button:hover {
+      border-color: var(--accent-soft);
+      color: #fff;
+    }
+    .tier-picker button.is-active {
+      background: linear-gradient(180deg, #ffb30a 0%, #c98a00 100%);
+      border-color: #ffd24a;
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(201, 138, 0, 0.35);
+    }
+    .slider-row {
+      flex-wrap: nowrap;
+    }
+    .slider-row .label { flex-shrink: 0; min-width: 80px; }
+    .score-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 8px;
+      background: transparent;
+      cursor: pointer;
+      margin: 0 12px;
+    }
+    .score-slider::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ffb30a 0%, #ffb30a var(--filled, 50%), rgba(255, 255, 255, 0.14) var(--filled, 50%), rgba(255, 255, 255, 0.14) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .score-slider::-moz-range-track {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .score-slider::-moz-range-progress {
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ff9500 0%, #ffb30a 100%);
+    }
+    .score-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--accent);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      margin-top: -8px;
+      cursor: pointer;
+      transition: transform 0.12s ease;
+    }
+    .score-slider::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--accent);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+    }
+    .score-slider:active::-webkit-slider-thumb { transform: scale(1.08); }
+    .score-slider:focus { outline: none; }
+    .slider-value {
+      flex-shrink: 0;
+      min-width: 48px;
+      text-align: right;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--accent-bright);
+      letter-spacing: -0.01em;
+    }
+
+    /* ============================================
+       Controls
+       ============================================ */
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 18px;
+    }
+    .btn {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(30, 30, 30, 0.9);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn:hover { border-color: var(--accent-soft); background: rgba(40, 40, 40, 0.95); }
+    .btn.primary {
+      background: linear-gradient(180deg, var(--accent-bright), var(--accent));
+      border-color: var(--accent-bright);
+      color: #1a1100;
+      box-shadow: 0 8px 22px rgba(255, 179, 10, 0.32);
+    }
+    .btn.primary:hover { transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .hidden-input { display: none; }
+
+    /* ============================================
+       Sample video section (view-only, no download)
+       ============================================ */
+    .sample-block {
+      margin-bottom: 28px;
+      padding: 18px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 179, 10, 0.35);
+      background: rgba(20, 20, 20, 0.88);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+      text-align: center;
+    }
+    .sample-block h2 {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      margin-bottom: 8px;
+    }
+    .sample-block .sample-intro {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 14px;
+    }
+    .sample-frame {
+      width: 100%;
+      max-width: 360px;
+      margin: 0 auto;
+      aspect-ratio: 9 / 16;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #000;
+      border: 1px solid rgba(255, 179, 10, 0.28);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+      position: relative;
+    }
+    .sample-frame video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #000;
+    }
+
+    /* ============================================
+       Content guidelines + CPM payouts (matches tasks-videos.html)
+       ============================================ */
+    .guidelines-block {
+      margin-bottom: 28px;
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 179, 10, 0.45);
+      background: linear-gradient(165deg, rgba(255, 179, 10, 0.1) 0%, rgba(20, 20, 20, 0.9) 42%);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    }
+    .guidelines-block h2 {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .guidelines-block ol {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      counter-reset: guideline;
+      padding: 0;
+      margin: 0;
+    }
+    .guidelines-block li {
+      counter-increment: guideline;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.9);
+      padding-left: 28px;
+      position: relative;
+    }
+    .guidelines-block li::before {
+      content: counter(guideline);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      background: rgba(255, 179, 10, 0.2);
+      border: 1px solid rgba(255, 179, 10, 0.45);
+      color: var(--accent-bright);
+      font-size: 11px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .guidelines-block .tag,
+    .guidelines-block .example { color: var(--accent-bright); font-weight: 800; }
+    .guidelines-block .warning {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 179, 10, 0.22);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.4;
+      color: rgba(255, 200, 120, 0.95);
+      text-align: center;
+    }
+    .payouts-block {
+      margin-bottom: 28px;
+      padding: 18px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 179, 10, 0.35);
+      background: rgba(20, 20, 20, 0.88);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    }
+    .payouts-block > h2 {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .payouts-min {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .payouts-min span { color: var(--accent-bright); }
+    .payout-submit {
+      list-style: none;
+      max-width: 420px;
+      margin: 0 auto 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 0;
+    }
+    .payout-submit li {
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.75);
+      text-align: center;
+    }
+    .payout-submit strong { color: var(--accent-bright); font-weight: 800; }
+    .payout-tiers {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 720px) { .payout-tiers { grid-template-columns: 1fr; } }
+    .payout-tier {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 179, 10, 0.22);
+      border-radius: 12px;
+      padding: 12px 10px;
+    }
+    .payout-tier h3 {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      margin-bottom: 4px;
+    }
+    .payout-tier ul { list-style: none; display: flex; flex-direction: column; gap: 6px; padding: 0; margin: 0; }
+    .payout-tier li {
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    .payout-tier li span:last-child { color: var(--accent-bright); white-space: nowrap; }
+    .payout-bonus {
+      border-top: 1px solid rgba(255, 179, 10, 0.22);
+      padding-top: 14px;
+    }
+    .payout-bonus h3 {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .payout-bonus ul {
+      list-style: none;
+      max-width: 360px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 0;
+    }
+    .payout-bonus li {
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: rgba(255, 255, 255, 0.88);
+    }
+    .payout-bonus li span:last-child { color: var(--accent-bright); font-weight: 800; }
+    .payout-cap {
+      margin-top: 12px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: rgba(255, 200, 120, 0.95);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="tab-nav" aria-label="Clipper tools">
+      <a class="tab-link" href="tasks-videos.html">Tasks videos</a>
+      <a class="tab-link active" href="lookscroll-video.html" aria-current="page">Lookscroll video</a>
+      <a class="tab-link" href="lookscroll-rating.html">Lookscroll rating</a>
+    </nav>
+    <h1>Lookscroll video</h1>
+    <p class="lead">1:1 intro template. The <strong>Lookscroll APP</strong> headline grows from small to large over <strong>1.5 seconds</strong> — record the template with screen capture and drop it into your edit.</p>
+
+    <section class="guidelines-block" aria-labelledby="content-guidelines-title">
+      <h2 id="content-guidelines-title">Content Guideline Rules</h2>
+      <ol>
+        <li>Put in the <strong>Lookscroll Video Template</strong> for <strong>1.5 sec</strong> within the first <strong>10 sec</strong>.</li>
+        <li>Tag us in the first line of the description <span class="tag">@lookscroll_app</span></li>
+        <li>Use a description like <span class="example">Block Apps and Ascend with @lookscroll_app</span> (like that).</li>
+      </ol>
+      <p class="warning">Videos that don’t follow these rules may not be counted for payouts.</p>
+    </section>
+
+    <section class="payouts-block" aria-labelledby="payouts-title">
+      <h2 id="payouts-title">CPM Payouts</h2>
+      <p class="payouts-min">Minimum payout: <span>$10</span></p>
+      <ul class="payout-submit">
+        <li>Submit payout within <strong>72h</strong> of hitting the minimum — after 72h, no payout.</li>
+        <li>Send <strong>video analytics</strong> (total views) so we can verify the post date.</li>
+      </ul>
+      <div class="payout-tiers">
+        <article class="payout-tier">
+          <h3>Tier 1 · 15% requirements</h3>
+          <ul>
+            <li><span>10k views</span><span>$2.50</span></li>
+            <li><span>20k views</span><span>$7.50</span></li>
+            <li><span>40k views</span><span>$15</span></li>
+          </ul>
+        </article>
+        <article class="payout-tier">
+          <h3>Tier 1 · 25% requirements</h3>
+          <ul>
+            <li><span>10k views</span><span>$5</span></li>
+            <li><span>20k views</span><span>$10</span></li>
+            <li><span>40k views</span><span>$20</span></li>
+          </ul>
+        </article>
+        <article class="payout-tier">
+          <h3>Tier 1 · 30% requirements</h3>
+          <ul>
+            <li><span>20k views</span><span>$15</span></li>
+            <li><span>40k views</span><span>$25</span></li>
+          </ul>
+        </article>
+      </div>
+      <div class="payout-bonus">
+        <h3>Tier 1 · 40% bonus payouts</h3>
+        <ul>
+          <li><span>200k views</span><span>extra $15</span></li>
+          <li><span>500k views</span><span>extra $30</span></li>
+          <li><span>1M views</span><span>extra $50</span></li>
+        </ul>
+        <p class="payout-cap">Max payout per video: <strong>$135</strong></p>
+      </div>
+    </section>
+
+    <section class="sample-block" aria-labelledby="sample-title">
+      <h2 id="sample-title">Sample Video</h2>
+      <p class="sample-intro">Example only — watch how the Lookscroll template is placed inside an edit.</p>
+      <div class="sample-frame">
+        <video
+          src="videos/lookscroll-sample-01.mp4"
+          controls
+          playsinline
+          preload="metadata"
+          controlsList="nodownload noremoteplayback noplaybackrate"
+          disablepictureinpicture
+          disableremoteplayback
+          oncontextmenu="return false;">
+          Your browser can't play this video.
+        </video>
+      </div>
+    </section>
+
+    <div class="template-wrap">
+      <div class="template-stage">
+      <div class="template is-playing" id="template" aria-label="Lookscroll APP intro template, 1.5 second animation">
+        <div class="template-text">
+          <div class="headline">
+            <img class="ls-app-icon" src="assets/lookscroll-app-icon-256.png" alt="Lookscroll app icon" crossorigin="anonymous" decoding="sync" loading="eager" />
+            <span class="brand">Lookscroll</span>
+            <span class="suffix">APP</span>
+          </div>
+        </div>
+        <div class="template-image" id="templateImage">
+          <div class="score-view" aria-hidden="false">
+            <div class="score-card">
+              <div class="score-row">
+                <div class="score-side score">
+                  <span class="label">Score</span>
+                  <span class="value" id="scoreValue">4.5</span>
+                  <span class="caption">Doomscroller</span>
+                </div>
+                <div class="score-image" id="scoreImage">
+                  <div class="ph" id="scorePlaceholder">
+                    <span>＋</span>
+                    Your photo
+                  </div>
+                </div>
+                <div class="score-side potential">
+                  <span class="label">Potential</span>
+                  <span class="value" id="potentialValue">7.2</span>
+                  <span class="caption">Ascender</span>
+                </div>
+              </div>
+              <div class="tier-pill" id="tierPill" aria-label="Looksmax tier">MTN</div>
+              <div class="score-task">
+                <span class="task-title">Jaw Exercises</span>
+                <span class="task-reps"><b>5</b>/15 Reps Left to Unlock</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tt-overlay" aria-hidden="true">
+          <div class="tt-stage">
+            <div class="tt-icon-tile">
+              <svg class="tt-logo" viewBox="0 0 48 48" aria-hidden="true">
+                <defs>
+                  <!--
+                    Official TikTok "d-with-musical-note" glyph, redrawn from the
+                    App-Store-icon proportions.
+                  -->
+                  <path id="ttGlyph" d="M30.4 6.8c.4 3.6 2.4 6.7 5.4 8.6 2 1.3 4.4 2 6.8 2v6.6c-3 0-6-.7-8.7-2.1-1.2-.6-2.3-1.4-3.4-2.3v13.9c0 6.9-5.6 12.5-12.5 12.5S5.5 40.4 5.5 33.5 11.1 21 18 21c.7 0 1.4.1 2.1.2v6.8c-.7-.2-1.4-.4-2.1-.4-3.3 0-5.9 2.7-5.9 5.9s2.6 5.9 5.9 5.9 5.9-2.6 5.9-5.9V4.5h6.5v2.3z"/>
+                </defs>
+                <use href="#ttGlyph" fill="#25f4ee" transform="translate(1.4 -1.2)"/>
+                <use href="#ttGlyph" fill="#fe2c55" transform="translate(-1.4 1.2)"/>
+                <use href="#ttGlyph" fill="#ffffff"/>
+              </svg>
+              <div class="tt-corner-dot" aria-hidden="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <!-- Shackle -->
+                  <path d="M8 10V7a4 4 0 1 1 8 0v3" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"/>
+                  <!-- Body -->
+                  <rect x="5.2" y="10" width="13.6" height="10.4" rx="2.2" fill="#ffffff"/>
+                  <!-- Keyhole -->
+                  <circle cx="12" cy="14.2" r="1.5" fill="#ff2d2d"/>
+                  <rect x="11.2" y="14.2" width="1.6" height="3.4" rx="0.6" fill="#ff2d2d"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="tt-blocked-pill">Blocked</div>
+          <div class="tt-caption">
+            <span class="ascend-line">Ascend <span class="accent-word">to Unlock</span></span>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <div class="controls">
+        <button type="button" class="btn primary" id="replayBtn">▶ Replay (1.5 s)</button>
+        <button type="button" class="btn" id="downloadBtn">⬇ Download video</button>
+        <button type="button" class="btn" id="uploadBtn">⬆ Upload image</button>
+        <button type="button" class="btn" id="resetBtn">↺ Reset image</button>
+        <input type="file" accept="image/*" id="fileInput" class="hidden-input">
+      </div>
+      <p id="downloadHint" style="margin-top: 10px; text-align: center; font-size: 11px; color: rgba(255,255,255,0.55); max-width: 520px; margin-left: auto; margin-right: auto;">
+        Renders the animation in-page and downloads it as a video file. Works on iOS Safari, Android Chrome, Mac & Windows browsers — no screen-share permission needed.
+      </p>
+
+      <div class="editor">
+        <div class="editor-row">
+          <span class="label">Gender</span>
+          <div class="gender-switch" role="tablist" aria-label="Gender">
+            <button type="button" id="genderMale" class="is-active" role="tab" aria-selected="true">Male</button>
+            <button type="button" id="genderFemale" role="tab" aria-selected="false">Female</button>
+          </div>
+        </div>
+        <div class="editor-row slider-row">
+          <span class="label">Score</span>
+          <input class="score-slider" id="scoreInput" type="range" min="1.0" max="8.0" step="0.1" value="4.5" aria-label="Score">
+          <span class="slider-value" id="scoreValueLabel">4.5</span>
+        </div>
+        <div class="editor-row slider-row">
+          <span class="label">Potential</span>
+          <input class="score-slider" id="potentialInput" type="range" min="1.0" max="8.0" step="0.1" value="7.2" aria-label="Potential">
+          <span class="slider-value" id="potentialValueLabel">7.2</span>
+        </div>
+        <div class="editor-row" style="flex-direction: column; align-items: stretch;">
+          <span class="label" style="margin-bottom: 6px;">Tier</span>
+          <div class="tier-picker" id="tierPicker" style="justify-content: flex-start;">
+            <button type="button" data-tier="sub3">Sub-3</button>
+            <button type="button" data-tier="sub5">Sub-5</button>
+            <button type="button" data-tier="ltn">LTN</button>
+            <button type="button" data-tier="mtn" class="is-active">MTN</button>
+            <button type="button" data-tier="htn">HTN</button>
+            <button type="button" data-tier="top">Chad</button>
+            <button type="button" data-tier="true">True Adam</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const template = document.getElementById('template');
+      const replayBtn = document.getElementById('replayBtn');
+      const uploadBtn = document.getElementById('uploadBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const fileInput = document.getElementById('fileInput');
+      const scoreImage = document.getElementById('scoreImage');
+      const scorePlaceholder = document.getElementById('scorePlaceholder');
+      let uploadedImage = null;
+
+      // ----- Inline images as data URLs ----------------------------------
+      // html-to-image normally fetches each <img>'s src at render time and
+      // converts it to a data URL. On mobile Safari/Chrome this can fail
+      // (CORS, slow loads, foreignObject restrictions), which makes the
+      // Lookscroll app-icon vanish in the downloaded video.
+      // Fix: fetch the image ourselves once, base64-encode it, and assign
+      // the data URL straight to the <img>.src. After that, html-to-image
+      // sees an already-embedded image and never tries to fetch anything.
+      async function inlineImageElement(img) {
+        if (!img || !img.src) return;
+        if (img.src.startsWith('data:')) return;
+        if (img.src.startsWith('blob:')) return; // user-uploaded photo
+        try {
+          const res = await fetch(img.src, { mode: 'cors', credentials: 'same-origin' });
+          if (!res.ok) return;
+          const blob = await res.blob();
+          const dataUrl = await new Promise(function (resolve, reject) {
+            const reader = new FileReader();
+            reader.onload  = function () { resolve(reader.result); };
+            reader.onerror = function () { reject(reader.error); };
+            reader.readAsDataURL(blob);
+          });
+          img.src = dataUrl;
+          // Wait for the new src to decode before any capture
+          if (img.decode) { try { await img.decode(); } catch (e) {} }
+        } catch (e) {
+          console.warn('Image inline failed:', img.src, e);
+        }
+      }
+
+      function inlineAllStaticTemplateImages() {
+        return Promise.all(
+          Array.from(template.querySelectorAll('img')).map(inlineImageElement)
+        );
+      }
+
+      // Kick it off immediately so the first download is already prepared.
+      inlineAllStaticTemplateImages();
+
+      // ----- Fit the fixed 720×720 template into its responsive wrapper -----
+      // The template uses a constant 720×720 internal size and is visually
+      // scaled to fit the .template-wrap via transform: scale(...). This way
+      // every paddings/font/icon/shadow renders at the SAME pixel size on
+      // phone, tablet and desktop — only the visual scale changes.
+      const TEMPLATE_SIZE = 720;
+      const templateStage = template.parentElement; // .template-stage
+      function fitTemplate() {
+        if (!templateStage) return;
+        const w = templateStage.getBoundingClientRect().width;
+        if (w > 0) {
+          template.style.transform = 'scale(' + (w / TEMPLATE_SIZE) + ')';
+        }
+      }
+      fitTemplate();
+      window.addEventListener('resize', fitTemplate);
+      window.addEventListener('orientationchange', fitTemplate);
+      window.addEventListener('load', fitTemplate);
+      if (typeof ResizeObserver !== 'undefined') {
+        try {
+          new ResizeObserver(fitTemplate).observe(templateStage);
+        } catch (e) { /* non-fatal */ }
+      }
+
+      function play() {
+        template.classList.remove('is-playing');
+        // Force reflow so the animation restarts cleanly
+        void template.offsetWidth;
+        template.classList.add('is-playing');
+        // Restart the Score / Potential count-up animation (synced with the card fade-in)
+        if (typeof startCountersForPlay === 'function') startCountersForPlay();
+      }
+
+      replayBtn.addEventListener('click', play);
+
+      // ----- Record / download the template as a true 1.5 s video file -----
+      const downloadBtn = document.getElementById('downloadBtn');
+
+      const FPS = 30;
+      const DURATION_MS = 1500;
+      const FRAME_MS = 1000 / FPS;
+      const TOTAL_FRAMES = Math.round(DURATION_MS / FRAME_MS); // 45 frames
+
+      function pickRecorderMime() {
+        const candidates = [
+          { mime: 'video/mp4;codecs=h264,aac', ext: 'mp4' },
+          { mime: 'video/mp4;codecs=avc1',     ext: 'mp4' },
+          { mime: 'video/mp4',                  ext: 'mp4' },
+          { mime: 'video/webm;codecs=vp9',      ext: 'webm' },
+          { mime: 'video/webm;codecs=vp8',      ext: 'webm' },
+          { mime: 'video/webm',                 ext: 'webm' }
+        ];
+        for (const c of candidates) {
+          if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c.mime)) {
+            return c;
+          }
+        }
+        return null;
+      }
+
+      function easeOutCubicLocal(t) { return 1 - Math.pow(1 - t, 3); }
+
+      // Freeze the entire template at animation-time `t` (ms) so that
+      // html-to-image can capture a clean still of that exact frame.
+      function setTemplateStateAtTime(t) {
+        const headline  = template.querySelector('.template-text .headline');
+        const ttOverlay = template.querySelector('.tt-overlay');
+        const ttCaption = template.querySelector('.tt-caption');
+        const scoreView = template.querySelector('.score-view');
+
+        // Headline: lookscrollHeadlineGrow 1500ms ease-out forwards (scale 0.55 → 1.0)
+        if (headline) {
+          headline.style.animation = 'lookscrollHeadlineGrow 1500ms cubic-bezier(0.22, 1, 0.36, 1) forwards';
+          headline.style.animationDelay = '-' + t + 'ms';
+          headline.style.animationPlayState = 'paused';
+        }
+
+        // TikTok blocked overlay: opacity 1 from 0–500ms, fade out 500–700ms, gone after
+        if (ttOverlay) {
+          if (t < 500) {
+            ttOverlay.style.animation = 'none';
+            ttOverlay.style.opacity = '1';
+            ttOverlay.style.transform = 'scale(1)';
+          } else if (t < 700) {
+            ttOverlay.style.animation = 'ttOverlayEnd 200ms cubic-bezier(0.22, 1, 0.36, 1) forwards';
+            ttOverlay.style.animationDelay = '-' + (t - 500) + 'ms';
+            ttOverlay.style.animationPlayState = 'paused';
+          } else {
+            ttOverlay.style.animation = 'none';
+            ttOverlay.style.opacity = '0';
+            ttOverlay.style.transform = 'scale(0.96)';
+          }
+        }
+
+        // Ascend caption: no animation (glow removed), nothing to scrub.
+
+        // Score-view fade-in: starts at 520ms, runs 320ms
+        if (scoreView) {
+          if (t < 520) {
+            scoreView.style.animation = 'none';
+            scoreView.style.opacity = '0';
+            scoreView.style.transform = 'translateY(10px) scale(0.98)';
+          } else if (t < 840) {
+            scoreView.style.animation = 'scoreViewIn 320ms cubic-bezier(0.22, 1, 0.36, 1) forwards';
+            scoreView.style.animationDelay = '-' + (t - 520) + 'ms';
+            scoreView.style.animationPlayState = 'paused';
+          } else {
+            scoreView.style.animation = 'none';
+            scoreView.style.opacity = '1';
+            scoreView.style.transform = 'translateY(0) scale(1)';
+          }
+        }
+
+        // JS-driven Score / Potential count-up: starts at 520ms, runs 200ms
+        const targetScore = parseFloat(scoreInput.value);
+        const targetPot   = parseFloat(potentialInput.value);
+        if (t < 520) {
+          scoreValue.textContent = '0.0';
+          potentialValue.textContent = '0.0';
+        } else if (t < 720) {
+          const p = (t - 520) / 200;
+          const e = easeOutCubicLocal(p);
+          scoreValue.textContent = formatRating(targetScore * e);
+          potentialValue.textContent = formatRating(targetPot * e);
+        } else {
+          scoreValue.textContent = formatRating(targetScore);
+          potentialValue.textContent = formatRating(targetPot);
+        }
+      }
+
+      function clearTemplateInlineState() {
+        const els = [
+          template.querySelector('.template-text .headline'),
+          template.querySelector('.tt-overlay'),
+          template.querySelector('.tt-caption'),
+          template.querySelector('.score-view')
+        ];
+        for (const el of els) {
+          if (!el) continue;
+          el.style.animation = '';
+          el.style.animationDelay = '';
+          el.style.animationPlayState = '';
+          el.style.opacity = '';
+          el.style.transform = '';
+        }
+      }
+
+      async function recordTemplate() {
+        if (typeof MediaRecorder === 'undefined' || !window.htmlToImage) {
+          alert(
+            "Your browser can't record this page. Try Safari (iOS 14+), Chrome, Edge or Firefox — " +
+            "or use your device's built-in screen recorder."
+          );
+          return;
+        }
+        const chosen = pickRecorderMime();
+        if (!chosen) {
+          alert("Your browser doesn't support any of the video formats this tool can write.");
+          return;
+        }
+        const originalLabel = downloadBtn.textContent;
+        downloadBtn.disabled = true;
+
+        // Stop any live animation; we'll scrub it manually
+        template.classList.remove('is-playing');
+        await new Promise(function (r) { requestAnimationFrame(r); });
+
+        // The template is ALREADY a constant 720×720 (the user-visible scaling
+        // is only a transform). For html-to-image we simply override that
+        // transform to `none` so the output renders at the true 720×720 size.
+        const RENDER_SIZE = TEMPLATE_SIZE; // 720
+
+        // Defensive: re-inline any static images as data URLs (idempotent
+        // if already inlined). This guarantees the app icon is embedded
+        // BEFORE html-to-image tries to clone the DOM.
+        await inlineAllStaticTemplateImages();
+
+        // Then wait for every <img> to be fully decoded.
+        await Promise.all(
+          Array.from(template.querySelectorAll('img')).map(function (img) {
+            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+            return new Promise(function (resolve) {
+              img.addEventListener('load',  resolve, { once: true });
+              img.addEventListener('error', resolve, { once: true });
+            });
+          })
+        );
+
+        // 1) Pre-render every frame at its exact animation time
+        const frames = [];
+        for (let i = 0; i < TOTAL_FRAMES; i++) {
+          const t = i * FRAME_MS;
+          setTemplateStateAtTime(t);
+          // give the browser a tick to apply styles
+          await new Promise(function (r) { requestAnimationFrame(r); });
+          try {
+            const c = await window.htmlToImage.toCanvas(template, {
+              cacheBust: false,
+              pixelRatio: 1,
+              width: RENDER_SIZE,
+              height: RENDER_SIZE,
+              backgroundColor: '#000000',
+              style: {
+                // Cancel the live scale transform — we want the native 720×720
+                transform: 'none',
+                width:    RENDER_SIZE + 'px',
+                height:   RENDER_SIZE + 'px',
+                maxWidth: 'none',
+                minWidth: '0',
+                position: 'static',
+                top:  'auto',
+                left: 'auto',
+              }
+            });
+            frames.push(c);
+          } catch (err) {
+            console.error('Frame render failed at t=' + t + 'ms', err);
+            frames.push(frames[frames.length - 1] || null);
+          }
+          downloadBtn.textContent = 'Rendering ' + (i + 1) + '/' + TOTAL_FRAMES + '…';
+        }
+
+        // Restore the live template (clear inline animation overrides + resume)
+        clearTemplateInlineState();
+        template.classList.add('is-playing');
+        if (typeof startCountersForPlay === 'function') startCountersForPlay();
+
+        // 2) Build the output canvas + recorder
+        const outCanvas = document.createElement('canvas');
+        outCanvas.width  = RENDER_SIZE;
+        outCanvas.height = RENDER_SIZE;
+        const outCtx = outCanvas.getContext('2d');
+        outCtx.imageSmoothingEnabled = true;
+        outCtx.imageSmoothingQuality = 'high';
+
+        const stream = outCanvas.captureStream(FPS);
+        const recorder = new MediaRecorder(stream, {
+          mimeType: chosen.mime,
+          videoBitsPerSecond: 6_000_000
+        });
+        const chunks = [];
+        recorder.ondataavailable = function (e) {
+          if (e.data && e.data.size > 0) chunks.push(e.data);
+        };
+        recorder.onstop = function () {
+          stream.getTracks().forEach(function (t) { t.stop(); });
+          const blob = new Blob(chunks, { type: chosen.mime.split(';')[0] });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'lookscroll-intro-1500ms.' + chosen.ext;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+          downloadBtn.disabled = false;
+          downloadBtn.textContent = originalLabel;
+        };
+
+        // Paint first frame, then start recorder so the very first frame is in
+        if (frames[0]) {
+          outCtx.clearRect(0, 0, outCanvas.width, outCanvas.height);
+          outCtx.drawImage(frames[0], 0, 0, outCanvas.width, outCanvas.height);
+        }
+        recorder.start();
+        downloadBtn.textContent = 'Encoding video…';
+
+        // 3) Play the pre-rendered frames back at the real 30fps wall-clock pace
+        const startWall = performance.now();
+        let writtenIdx = 0;
+        function tick() {
+          const elapsed = performance.now() - startWall;
+          const targetIdx = Math.min(TOTAL_FRAMES - 1, Math.floor(elapsed / FRAME_MS));
+          while (writtenIdx <= targetIdx) {
+            const f = frames[writtenIdx];
+            if (f) {
+              outCtx.clearRect(0, 0, outCanvas.width, outCanvas.height);
+              outCtx.drawImage(f, 0, 0, outCanvas.width, outCanvas.height);
+            }
+            writtenIdx++;
+          }
+          if (elapsed >= DURATION_MS) {
+            // Tiny grace period to ensure the last frame is captured, then stop.
+            setTimeout(function () {
+              if (recorder.state !== 'inactive') recorder.stop();
+            }, 100);
+            return;
+          }
+          requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }
+
+      downloadBtn.addEventListener('click', recordTemplate);
+
+      uploadBtn.addEventListener('click', function () { fileInput.click(); });
+
+      fileInput.addEventListener('change', function (e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          if (uploadedImage) uploadedImage.remove();
+          if (scorePlaceholder) scorePlaceholder.style.display = 'none';
+          uploadedImage = document.createElement('img');
+          uploadedImage.src = ev.target.result;
+          uploadedImage.alt = 'Custom score photo';
+          scoreImage.appendChild(uploadedImage);
+        };
+        reader.readAsDataURL(file);
+      });
+
+      resetBtn.addEventListener('click', function () {
+        if (uploadedImage) {
+          uploadedImage.remove();
+          uploadedImage = null;
+        }
+        if (scorePlaceholder) scorePlaceholder.style.display = '';
+        fileInput.value = '';
+      });
+
+      // Drag & Drop on the round avatar
+      ['dragenter', 'dragover'].forEach(function (evt) {
+        scoreImage.addEventListener(evt, function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          scoreImage.style.outline = '2px dashed ' + getComputedStyle(document.documentElement).getPropertyValue('--accent-bright');
+        });
+      });
+      ['dragleave', 'drop'].forEach(function (evt) {
+        scoreImage.addEventListener(evt, function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          scoreImage.style.outline = '';
+        });
+      });
+      scoreImage.addEventListener('drop', function (e) {
+        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (!file) return;
+        fileInput.files = e.dataTransfer.files;
+        fileInput.dispatchEvent(new Event('change'));
+      });
+
+      // ----- Editor: gender + score / potential + tier selector → updates template -----
+      const genderMale = document.getElementById('genderMale');
+      const genderFemale = document.getElementById('genderFemale');
+      const tierPicker = document.getElementById('tierPicker');
+      const tierPill = document.getElementById('tierPill');
+      const scoreInput = document.getElementById('scoreInput');
+      const potentialInput = document.getElementById('potentialInput');
+      const scoreValue = document.getElementById('scoreValue');
+      const potentialValue = document.getElementById('potentialValue');
+      const scoreValueLabel = document.getElementById('scoreValueLabel');
+      const potentialValueLabel = document.getElementById('potentialValueLabel');
+
+      function formatRating(n) { return (Math.round(n * 10) / 10).toFixed(1); }
+      function trackFillPercent(input) {
+        const min = parseFloat(input.min);
+        const max = parseFloat(input.max);
+        const val = parseFloat(input.value);
+        return ((val - min) / (max - min)) * 100;
+      }
+
+      // ----- Count-up animation 0 → target over 200ms -----
+      let scoreRaf = null;
+      let potentialRaf = null;
+      function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+      function animateNumber(displayEl, toValue, durationMs, isScore) {
+        if (isScore && scoreRaf) cancelAnimationFrame(scoreRaf);
+        if (!isScore && potentialRaf) cancelAnimationFrame(potentialRaf);
+        const startTs = performance.now();
+        displayEl.textContent = '0.0';
+        function step(now) {
+          const t = Math.min(1, (now - startTs) / durationMs);
+          const v = toValue * easeOutCubic(t);
+          displayEl.textContent = formatRating(v);
+          if (t < 1) {
+            const id = requestAnimationFrame(step);
+            if (isScore) scoreRaf = id; else potentialRaf = id;
+          } else {
+            displayEl.textContent = formatRating(toValue);
+            if (isScore) scoreRaf = null; else potentialRaf = null;
+          }
+        }
+        const id = requestAnimationFrame(step);
+        if (isScore) scoreRaf = id; else potentialRaf = id;
+      }
+      function startCountersForPlay() {
+        const targetScore = parseFloat(scoreInput.value);
+        const targetPotential = parseFloat(potentialInput.value);
+        scoreValue.textContent = '0.0';
+        potentialValue.textContent = '0.0';
+        // Begin the count-up just as the score card fades in (~520ms after play)
+        setTimeout(function () {
+          animateNumber(scoreValue, targetScore, 200, true);
+          animateNumber(potentialValue, targetPotential, 200, false);
+        }, 520);
+      }
+
+      function syncSlider(input, templateEl, labelEl) {
+        const val = parseFloat(input.value);
+        if (!isFinite(val)) return;
+        const formatted = formatRating(val);
+        // If the user is editing the slider, cancel any in-flight count animation
+        // so the manual value wins.
+        if (templateEl === scoreValue && scoreRaf) { cancelAnimationFrame(scoreRaf); scoreRaf = null; }
+        if (templateEl === potentialValue && potentialRaf) { cancelAnimationFrame(potentialRaf); potentialRaf = null; }
+        templateEl.textContent = formatted;
+        labelEl.textContent = formatted;
+        // Update the filled portion of the WebKit track (Chrome / Safari)
+        input.style.setProperty('--filled', trackFillPercent(input) + '%');
+      }
+
+      // Initial paint (label + track fill), then run the first count-up
+      syncSlider(scoreInput, scoreValue, scoreValueLabel);
+      syncSlider(potentialInput, potentialValue, potentialValueLabel);
+      startCountersForPlay();
+
+      scoreInput.addEventListener('input',  function () { syncSlider(scoreInput, scoreValue, scoreValueLabel); });
+      potentialInput.addEventListener('input', function () { syncSlider(potentialInput, potentialValue, potentialValueLabel); });
+
+      // Display labels per gender. LTN/MTN/HTN → LTB/MTB/HTB for female,
+      // and the top tiers swap to Stacy / True Eve.
+      const labels = {
+        male:   { sub3: 'Sub-3', sub5: 'Sub-5', ltn: 'LTN', mtn: 'MTN', htn: 'HTN', top: 'Chad',  'true': 'True Adam' },
+        female: { sub3: 'Sub-3', sub5: 'Sub-5', ltn: 'LTB', mtn: 'MTB', htn: 'HTB', top: 'Stacy', 'true': 'True Eve' }
+      };
+
+      let currentGender = 'male';
+      let currentTier   = 'mtn';
+
+      function refresh() {
+        const set = labels[currentGender];
+        // Update picker labels for top + true
+        tierPicker.querySelectorAll('button[data-tier]').forEach(function (btn) {
+          const slug = btn.getAttribute('data-tier');
+          btn.textContent = set[slug];
+          btn.classList.toggle('is-active', slug === currentTier);
+        });
+        // Update the in-template tier pill
+        tierPill.textContent = set[currentTier];
+        // Update gender switch state
+        const isFemale = currentGender === 'female';
+        genderMale.classList.toggle('is-active', !isFemale);
+        genderFemale.classList.toggle('is-active', isFemale);
+        genderMale.setAttribute('aria-selected', String(!isFemale));
+        genderFemale.setAttribute('aria-selected', String(isFemale));
+      }
+
+      genderMale.addEventListener('click', function () {
+        currentGender = 'male';
+        refresh();
+      });
+      genderFemale.addEventListener('click', function () {
+        currentGender = 'female';
+        refresh();
+      });
+      tierPicker.addEventListener('click', function (e) {
+        const btn = e.target.closest('button[data-tier]');
+        if (!btn) return;
+        currentTier = btn.getAttribute('data-tier');
+        refresh();
+      });
+
+      refresh();
+    })();
+  </script>
+</body>
+</html>
