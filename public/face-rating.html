@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LookScroll — Face rating</title>
+    <style>
+      :root {
+        /* App-Theme (Dark Mode only) — 1:1 aus GlassModifiers.swift */
+        --bg: rgb(18, 18, 20);          /* AppTheme.background */
+        --card-bg: rgb(33, 33, 38);     /* AppTheme.cardBg */
+        --card-border: rgb(56, 56, 61); /* AppTheme.cardBorder */
+        --text-primary: rgb(250, 250, 255);
+        --text-secondary: rgb(184, 184, 194);
+        --text-tertiary: rgb(128, 128, 138);
+
+        --ui-accent: #ffb30a;
+        --ui-accent-soft: rgba(255, 179, 10, 0.55);
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        min-height: 100%;
+        background: #060606;
+        color: var(--text-primary);
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+          "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 24px 16px 48px;
+        gap: 22px;
+      }
+
+      /* ───────────── Tabs ───────────── */
+      .tab-nav { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+      .tab-link {
+        display: inline-flex; align-items: center;
+        padding: 10px 18px; border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(20, 20, 20, 0.7);
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        font-size: 13px; font-weight: 700; letter-spacing: 0.03em;
+        transition: all 0.15s ease; cursor: pointer;
+      }
+      .tab-link:hover { border-color: var(--ui-accent-soft); color: #fff; }
+      .tab-link.active {
+        background: linear-gradient(180deg, rgba(255, 179, 10, 0.18), rgba(255, 179, 10, 0.05));
+        border-color: var(--ui-accent); color: #fff;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 18px rgba(255, 179, 10, 0.3);
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 390px 280px;
+        gap: 28px;
+        align-items: start;
+        width: 100%;
+        max-width: 760px;
+        justify-content: center;
+      }
+      @media (max-width: 760px) {
+        .workspace { grid-template-columns: 1fr; max-width: 420px; }
+      }
+
+      /* ───────────── Phone-Frame (Face Tab) ───────────── */
+      .phone {
+        width: 390px;
+        max-width: 100%;
+        background: var(--bg);
+        border-radius: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+        overflow: hidden;
+        padding: 0;
+      }
+      .face-tab {
+        padding: 26px 20px 34px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      /* ───────────── Identity Hero ───────────── */
+      .identity { position: relative; display: flex; flex-direction: column; align-items: center; gap: 12px; padding-top: 8px; }
+      .identity-glow {
+        position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+        display: flex; width: 300px; height: 200px; pointer-events: none;
+      }
+      .identity-glow .g {
+        flex: 1; height: 200px; border-radius: 50%; filter: blur(60px);
+      }
+      .avatar-wrap {
+        position: relative; width: 150px; height: 150px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .avatar-tile {
+        position: absolute; inset: 0;
+        border-radius: 20px;
+        background: rgba(33, 33, 38, 0.55);
+        border: 1.5px solid transparent;
+        background-clip: padding-box;
+      }
+      .avatar-border {
+        position: absolute; inset: 0; border-radius: 20px; padding: 1.5px;
+        background: linear-gradient(135deg, var(--score-accent), var(--pot-accent));
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor; mask-composite: exclude;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.24), 0 0 6px var(--score-accent);
+      }
+      .avatar-photo {
+        position: absolute; width: 136px; height: 136px; top: 7px; left: 7px;
+        border-radius: 14px; overflow: hidden;
+        background: rgba(128,128,128,0.12);
+        display: flex; align-items: center; justify-content: center;
+      }
+      .avatar-photo img { width: 100%; height: 100%; object-fit: cover; }
+      .avatar-photo .placeholder { font-size: 56px; color: rgba(160,160,160,0.45); }
+      .tier-pill-float {
+        position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 12px; border-radius: 999px;
+        background: linear-gradient(135deg, var(--score-accent), var(--score-deep));
+        box-shadow: 0 3px 6px rgba(0,0,0,0.24), 0 0 6px var(--score-accent);
+        z-index: 3;
+      }
+      .tier-pill-float .dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; }
+      .tier-pill-float span {
+        font-size: 11px; font-weight: 900; letter-spacing: 0.09em; color: #fff;
+      }
+      .cam-btn {
+        position: absolute; top: -8px; right: -6px;
+        width: 32px; height: 36px; border-radius: 50%;
+        background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(128,128,128,0.7));
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 1.5px rgba(0,0,0,0.2); cursor: pointer; z-index: 4;
+        border: none;
+      }
+      .cam-btn svg { width: 15px; height: 15px; fill: rgba(0,0,0,0.75); }
+      .cam-btn input { display: none; }
+
+      .hud-line {
+        display: flex; align-items: center; gap: 8px;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 8px; font-weight: 900; letter-spacing: 0.04em;
+        margin-top: 6px;
+      }
+      .hud-line .acq { color: var(--score-accent); opacity: 0.85; }
+      .hud-line .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--score-accent); opacity: 0.85; }
+      .hud-line .lock { color: var(--pot-accent); opacity: 0.85; }
+
+      .identity-name {
+        display: flex; align-items: center; gap: 6px;
+      }
+      .identity-name .u { font-size: 17px; font-weight: 900; color: var(--text-primary); }
+      .identity-name .sep { color: var(--text-tertiary); }
+      .identity-name .d { font-size: 12px; font-weight: 600; color: var(--text-tertiary); }
+
+      /* ───────────── Laser beams ───────────── */
+      .beams { display: flex; justify-content: center; gap: 120px; height: 18px; margin-top: -2px; }
+      .beams .b { width: 1.2px; height: 26px; }
+      .beams .b.left { background: linear-gradient(to bottom, transparent, var(--score-accent), transparent); opacity: 0.55; }
+      .beams .b.right { background: linear-gradient(to bottom, transparent, var(--pot-accent), transparent); opacity: 0.55; }
+
+      /* ───────────── Score → Potential Hero ───────────── */
+      .trajectory { display: flex; flex-direction: column; gap: 10px; }
+      .traj-row { display: flex; align-items: center; gap: 10px; }
+      .hero-card {
+        position: relative; flex: 1;
+        padding: 12px 10px;
+        border-radius: 16px;
+        background:
+          linear-gradient(135deg, var(--c-accent-12), var(--c-deep-04)),
+          rgba(33, 33, 38, 0.65);
+        border: 1px solid;
+        border-image: linear-gradient(135deg, var(--c-accent-border), var(--c-deep-08)) 1;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.24), 0 0 8px var(--c-accent-glow);
+        display: flex; flex-direction: column; align-items: center; gap: 6px;
+        overflow: hidden;
+      }
+      /* Corner brackets */
+      .hero-card .bracket {
+        position: absolute; width: 8px; height: 8px; pointer-events: none;
+        border-color: var(--c-accent); border-style: solid; border-width: 0;
+      }
+      .hero-card .bracket.tl { top: 4px; left: 4px; border-top-width: 1.5px; border-left-width: 1.5px; }
+      .hero-card .bracket.tr { top: 4px; right: 4px; border-top-width: 1.5px; border-right-width: 1.5px; }
+      .hero-card .bracket.bl { bottom: 4px; left: 4px; border-bottom-width: 1.5px; border-left-width: 1.5px; }
+      .hero-card .bracket.br { bottom: 4px; right: 4px; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+      .hero-card .h-label {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 10px; font-weight: 700; letter-spacing: 0.15em;
+        color: var(--c-accent); opacity: 0.85;
+      }
+      .hero-card .h-value {
+        font-size: 44px; font-weight: 900; line-height: 1;
+        color: var(--c-accent);
+        text-shadow: 0 1.5px 3px rgba(0,0,0,0.35), 0 0 6px var(--c-accent-glow);
+        font-variant-numeric: tabular-nums;
+      }
+      .hero-card .h-tier {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 3px 8px; border-radius: 999px;
+        background: var(--c-accent-12);
+        border: 0.8px solid var(--c-accent-30);
+      }
+      .hero-card .h-tier .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--c-accent); }
+      .hero-card .h-tier span { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: var(--c-accent); }
+
+      .traj-arrow { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 36px; }
+      .traj-arrow .arr { font-size: 18px; font-weight: 900; color: var(--pot-accent); line-height: 1; }
+      .traj-arrow .delta { font-size: 11px; font-weight: 900; color: var(--pot-accent); font-variant-numeric: tabular-nums; }
+      .traj-caption {
+        text-align: center; font-size: 10px; font-weight: 900; letter-spacing: 0.07em;
+        color: var(--text-tertiary);
+      }
+
+      /* ───────────── Regional Analysis ───────────── */
+      .regional-head { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+      .regional-head .scope { color: var(--text-tertiary); font-size: 12px; }
+      .regional-head .title { font-size: 11px; font-weight: 900; letter-spacing: 0.14em; color: var(--text-tertiary); }
+      .regional-head .spacer { flex: 1; }
+      .regional-head .legend { display: flex; align-items: center; gap: 5px; }
+      .regional-head .legend .dot { width: 7px; height: 7px; border-radius: 50%; }
+      .regional-head .legend .lbl { font-size: 9px; font-weight: 900; letter-spacing: 0.07em; color: var(--text-tertiary); }
+
+      .mesh-stage {
+        position: relative; width: 100%; height: 470px; margin-top: 4px;
+      }
+      .mesh-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+
+      .region-label {
+        position: absolute; width: 120px;
+        padding: 11px 14px; border-radius: 16px;
+        background: var(--card-bg);
+        border: 1px solid;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.24);
+        display: flex; flex-direction: column; gap: 3px;
+        cursor: default;
+      }
+      .region-label .r-title { font-size: 13px; font-weight: 800; letter-spacing: 0.06em; color: var(--text-primary); }
+      .region-label .r-score { font-size: 40px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+      .region-label .r-tier { font-size: 10px; font-weight: 900; letter-spacing: 0.07em; }
+      .region-label.left { align-items: flex-end; text-align: right; }
+      .region-label.right { align-items: flex-start; text-align: left; }
+
+      /* ───────────── Editor Panel ───────────── */
+      .editor {
+        background: rgba(20, 20, 20, 0.7);
+        border: 1px solid rgba(255, 179, 10, 0.3);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 0 12px 36px rgba(0,0,0,0.4);
+        display: flex; flex-direction: column; gap: 16px;
+        position: sticky; top: 20px;
+      }
+      .editor h3 { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ui-accent); font-weight: 800; }
+      .editor .group { display: flex; flex-direction: column; gap: 8px; }
+      .editor .group-title { font-size: 10.5px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.45); }
+      .editor label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.75); }
+      .editor label small { font-size: 9px; font-weight: 500; color: rgba(255,255,255,0.4); }
+      .slider-row { display: flex; align-items: center; gap: 8px; }
+      .slider-row input[type="range"] {
+        flex: 1; height: 4px; border-radius: 999px; background: rgba(255,255,255,0.16);
+        outline: none; -webkit-appearance: none; appearance: none; cursor: pointer;
+      }
+      .slider-row input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%;
+        background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      }
+      .num-pill {
+        min-width: 38px; text-align: center; font-size: 11px; font-weight: 800;
+        color: var(--ui-accent); font-variant-numeric: tabular-nums;
+      }
+      .seg { display: grid; grid-template-columns: 1fr 1fr; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); padding: 3px; border-radius: 10px; }
+      .seg button { background: transparent; border: 0; color: rgba(255,255,255,0.55); padding: 6px; font-family: inherit; font-size: 11px; font-weight: 700; border-radius: 7px; cursor: pointer; }
+      .seg button.active { background: linear-gradient(180deg, rgba(255,179,10,0.22), rgba(255,179,10,0.08)); border: 1px solid rgba(255,179,10,0.35); color: #fff; }
+      .image-pick { border: 1px dashed rgba(255,179,10,0.45); background: rgba(255,179,10,0.04); padding: 10px; border-radius: 10px; text-align: center; cursor: pointer; }
+      .image-pick:hover { background: rgba(255,179,10,0.08); border-color: var(--ui-accent); }
+      .image-pick input { display: none; }
+      .download-btn {
+        width: 100%; padding: 11px; border-radius: 12px; border: none; cursor: pointer;
+        background: linear-gradient(180deg, #ffd24a, #ffb30a); color: #1a1100;
+        font-size: 12px; font-weight: 800; font-family: inherit;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18), 0 6px 16px rgba(255,179,10,0.35);
+      }
+      .download-btn:hover { filter: brightness(1.05); }
+    </style>
+  </head>
+  <body>
+    <nav class="tab-nav" aria-label="Clipper tools">
+      <a class="tab-link" href="tasks-videos.html">Tasks videos</a>
+      <a class="tab-link" href="lookscroll-video.html">Lookscroll video</a>
+      <a class="tab-link active" href="face-rating.html" aria-current="page">Face rating</a>
+    </nav>
+
+    <div class="workspace">
+      <!-- ────────── PHONE / FACE TAB ────────── -->
+      <div class="phone" id="captureRoot">
+        <div class="face-tab">
+          <!-- Identity Hero -->
+          <div class="identity">
+            <div class="identity-glow">
+              <div class="g" id="glowLeft"></div>
+              <div class="g" id="glowRight"></div>
+            </div>
+            <div class="avatar-wrap">
+              <div class="avatar-tile"></div>
+              <div class="avatar-border"></div>
+              <div class="avatar-photo" id="avatarPhoto">
+                <span class="placeholder">☻</span>
+              </div>
+              <label class="cam-btn" title="Choose photo">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM9 2l-1.8 2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.2L15 2H9z"/></svg>
+                <input id="imageInput" type="file" accept="image/*" />
+              </label>
+              <div class="tier-pill-float">
+                <span class="dot"></span>
+                <span id="tierPillText">CHAD</span>
+              </div>
+            </div>
+            <div class="hud-line">
+              <span class="acq">TARGET ACQUISITION: 100%</span>
+              <span class="dot"></span>
+              <span class="lock">LOCK OK</span>
+            </div>
+            <div class="identity-name">
+              <span class="u" id="identUser">Your Face</span>
+              <span class="sep">·</span>
+              <span class="d" id="identDate">Today</span>
+            </div>
+          </div>
+
+          <!-- Laser beams -->
+          <div class="beams">
+            <div class="b left"></div>
+            <div class="b right"></div>
+          </div>
+
+          <!-- Score → Potential Hero -->
+          <div class="trajectory">
+            <div class="traj-row">
+              <div class="hero-card" id="cardScore">
+                <span class="bracket tl"></span><span class="bracket tr"></span>
+                <span class="bracket bl"></span><span class="bracket br"></span>
+                <div class="h-label">SCORE</div>
+                <div class="h-value" id="scoreValue">7,0</div>
+                <div class="h-tier"><span class="dot"></span><span id="scoreTier">MTN</span></div>
+              </div>
+              <div class="traj-arrow">
+                <span class="arr">→</span>
+                <span class="delta" id="deltaText">+1,5</span>
+              </div>
+              <div class="hero-card" id="cardPot">
+                <span class="bracket tl"></span><span class="bracket tr"></span>
+                <span class="bracket bl"></span><span class="bracket br"></span>
+                <div class="h-label">POTENTIAL</div>
+                <div class="h-value" id="potValue">8,5</div>
+                <div class="h-tier"><span class="dot"></span><span id="potTier">HTN</span></div>
+              </div>
+            </div>
+            <div class="traj-caption" id="trajCaption">Reach your potential in 30 days</div>
+          </div>
+
+          <!-- Regional Analysis -->
+          <div class="regional-head">
+            <span class="scope">⊕</span>
+            <span class="title">REGIONAL ANALYSIS</span>
+            <span class="spacer"></span>
+            <span class="legend">
+              <span class="dot" id="legScore"></span>
+              <span class="lbl">SCORE</span>
+              <span class="lbl" style="opacity:0.6;">▭</span>
+              <span class="lbl">POTENTIAL</span>
+              <span class="dot" id="legPot"></span>
+            </span>
+          </div>
+
+          <div class="mesh-stage" id="meshStage">
+            <svg viewBox="0 0 390 470" id="meshSvg" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <linearGradient id="splitGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="var(--score-accent)" />
+                  <stop offset="50%" stop-color="var(--score-accent)" />
+                  <stop offset="50%" stop-color="var(--pot-accent)" />
+                  <stop offset="100%" stop-color="var(--pot-accent)" />
+                </linearGradient>
+              </defs>
+              <!-- Background glow halves -->
+              <ellipse cx="120" cy="235" rx="105" ry="200" id="glowMeshL" />
+              <ellipse cx="270" cy="235" rx="105" ry="200" id="glowMeshR" />
+              <!-- vertical scanner axis -->
+              <line x1="195" y1="35" x2="195" y2="435" stroke="rgba(255,255,255,0.22)" stroke-width="1.2" />
+              <!-- horizontal scanline -->
+              <line x1="60" y1="210" x2="330" y2="210" stroke="url(#splitGrad)" stroke-width="1.5" opacity="0.45" />
+              <!-- ARKit face mesh wireframe (connectors + leaders rendered via JS) -->
+              <g id="meshGroup" stroke="url(#splitGrad)" fill="none"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <!-- jaw / face outline -->
+                <path d="M195,70
+                         C150,72 120,95 112,140
+                         C108,170 110,210 120,255
+                         C130,305 160,355 195,370
+                         C230,355 260,305 270,255
+                         C280,210 282,170 278,140
+                         C270,95 240,72 195,70 Z"
+                      stroke-width="1.6" opacity="0.95"/>
+                <!-- horizontal contour bands (mesh feel) -->
+                <path d="M118,130 Q195,118 272,130" stroke-width="0.8" opacity="0.6"/>
+                <path d="M116,165 Q195,152 274,165" stroke-width="0.8" opacity="0.6"/>
+                <path d="M120,205 Q195,196 270,205" stroke-width="0.8" opacity="0.6"/>
+                <path d="M126,250 Q195,244 264,250" stroke-width="0.8" opacity="0.6"/>
+                <path d="M140,300 Q195,298 250,300" stroke-width="0.8" opacity="0.55"/>
+                <!-- brows -->
+                <path d="M134,150 Q160,138 184,148" stroke-width="1.1"/>
+                <path d="M206,148 Q230,138 256,150" stroke-width="1.1"/>
+                <!-- eyes -->
+                <path d="M138,168 Q160,158 182,168 Q160,180 138,168 Z" stroke-width="1.1"/>
+                <path d="M208,168 Q230,158 252,168 Q230,180 208,168 Z" stroke-width="1.1"/>
+                <!-- nose -->
+                <path d="M195,172 L188,232 M195,172 L202,232" stroke-width="0.9"/>
+                <path d="M182,236 Q195,248 208,236" stroke-width="1.0"/>
+                <!-- lips -->
+                <path d="M168,288 Q195,278 222,288 Q195,302 168,288 Z" stroke-width="1.1"/>
+                <path d="M168,288 Q195,292 222,288" stroke-width="0.7" opacity="0.7"/>
+                <!-- cheek/midface contours -->
+                <path d="M128,200 Q150,250 175,300" stroke-width="0.7" opacity="0.5"/>
+                <path d="M262,200 Q240,250 215,300" stroke-width="0.7" opacity="0.5"/>
+              </g>
+              <!-- leader lines + markers injected by JS -->
+              <g id="leaderGroup"></g>
+            </svg>
+
+            <!-- 4 anatomical labels positioned by JS -->
+            <div class="region-label right" id="lbl-upper" data-region="Upper Third" style="left: 250px; top: 36px;"></div>
+            <div class="region-label left"  id="lbl-eyes"  data-region="Eyes"        style="left: 20px;  top: 150px;"></div>
+            <div class="region-label right" id="lbl-mid"   data-region="Midface"     style="left: 250px; top: 235px;"></div>
+            <div class="region-label left"  id="lbl-lower" data-region="Lower Third" style="left: 20px;  top: 345px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────── EDITOR ────────── -->
+      <aside class="editor">
+        <h3>Face Tab Editor</h3>
+
+        <div class="group">
+          <span class="group-title">Photo</span>
+          <label class="image-pick">
+            Choose photo
+            <small>shown in the avatar tile</small>
+            <input id="imageInput2" type="file" accept="image/*" />
+          </label>
+        </div>
+
+        <div class="group">
+          <span class="group-title">Identity</span>
+          <label>
+            Username
+            <input id="userInput" type="text" value="Your Face" style="width:100%;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);padding:6px 10px;border-radius:8px;color:#fff;font-family:inherit;font-size:11px;font-weight:600;outline:none;" />
+          </label>
+          <label>
+            Date
+            <input id="dateInput" type="text" value="Today" style="width:100%;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);padding:6px 10px;border-radius:8px;color:#fff;font-family:inherit;font-size:11px;font-weight:600;outline:none;" />
+          </label>
+        </div>
+
+        <div class="group">
+          <span class="group-title">Gender</span>
+          <div class="seg" id="genderSeg">
+            <button type="button" data-value="male" class="active">Male</button>
+            <button type="button" data-value="female">Female</button>
+          </div>
+        </div>
+
+        <div class="group">
+          <span class="group-title">Score</span>
+          <div class="slider-row">
+            <input id="scoreRange" type="range" min="1" max="10" step="0.1" value="7" />
+            <span class="num-pill" id="scoreNum">7,0</span>
+          </div>
+        </div>
+
+        <div class="group">
+          <span class="group-title">Potential</span>
+          <div class="slider-row">
+            <input id="potRange" type="range" min="1" max="10" step="0.1" value="8.5" />
+            <span class="num-pill" id="potNum">8,5</span>
+          </div>
+        </div>
+
+        <div class="group">
+          <span class="group-title">Upper Third</span>
+          <div class="slider-row">
+            <input id="upperRange" type="range" min="1" max="10" step="0.1" value="7" />
+            <span class="num-pill" id="upperNum">7,0</span>
+          </div>
+        </div>
+        <div class="group">
+          <span class="group-title">Eyes</span>
+          <div class="slider-row">
+            <input id="eyesRange" type="range" min="1" max="10" step="0.1" value="6.5" />
+            <span class="num-pill" id="eyesNum">6,5</span>
+          </div>
+        </div>
+        <div class="group">
+          <span class="group-title">Midface</span>
+          <div class="slider-row">
+            <input id="midRange" type="range" min="1" max="10" step="0.1" value="7.5" />
+            <span class="num-pill" id="midNum">7,5</span>
+          </div>
+        </div>
+        <div class="group">
+          <span class="group-title">Lower Third</span>
+          <div class="slider-row">
+            <input id="lowerRange" type="range" min="1" max="10" step="0.1" value="8" />
+            <span class="num-pill" id="lowerNum">8,0</span>
+          </div>
+        </div>
+
+        <button class="download-btn" id="downloadBtn">Download PNG</button>
+      </aside>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js"></script>
+    <script>
+      // ─────────── FaceScoreTier (1:1 aus FaceScoreHeroViews.swift) ───────────
+      // score100 (0..100). UI nutzt 1..10 → score100 = value*10.
+      function tierAccent(score100) {
+        const r = Math.round(score100 / 10);
+        if (r <= 3) return "#eb264f";   // Crimson  (0.92,0.15,0.31)
+        if (r <= 5) return "#ff731a";   // Vibrant Orange (1.00,0.45,0.10)
+        if (r === 6) return "#fac22e";  // Honey Gold (0.98,0.76,0.18)
+        if (r === 7) return "#33c7a6";  // Mint Teal (0.20,0.78,0.65)
+        if (r === 8) return "#0fb873";  // Emerald (0.06,0.72,0.45)
+        return "#ffd140";               // Royal Gold (1.00,0.82,0.25)
+      }
+      function tierAccentDeep(score100) {
+        const r = Math.round(score100 / 10);
+        if (r <= 3) return "#9e1429";
+        if (r <= 5) return "#c74d0d";
+        if (r === 6) return "#b88500";
+        if (r === 7) return "#0f8a73";
+        if (r === 8) return "#057347";
+        return "#c78c1a";
+      }
+      function tierIsPremium(score100) { return Math.round(score100 / 10) >= 9; }
+      function tierLabel(score100, gender) {
+        const r = Math.round(score100 / 10);
+        if (r <= 3) return "SUB 3";
+        if (r <= 5) return "SUB 5";
+        if (r === 6) return "LTN";
+        if (r === 7) return "MTN";
+        if (r === 8) return "HTN";
+        if (r === 9) return "CHAD";
+        return gender === "female" ? "TRUE EVE" : "TRUE ADAM";
+      }
+      function tierFormat(score100) {
+        const v = Math.max(1, Math.min(10, score100 / 10));
+        return (Math.round(v * 10) / 10).toFixed(1).replace(".", ",");
+      }
+      function hexA(hex, a) {
+        const n = parseInt(hex.slice(1), 16);
+        const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+        return `rgba(${r},${g},${b},${a})`;
+      }
+
+      const state = {
+        gender: "male",
+        score: 70, potential: 85,
+        upper: 70, eyes: 65, mid: 75, lower: 80,
+      };
+
+      const $ = (id) => document.getElementById(id);
+
+      // ─────────── Hero-Card-Styling (Corner brackets + glow + colors) ───────────
+      function styleHeroCard(cardEl, score100) {
+        const accent = tierAccent(score100);
+        const deep = tierAccentDeep(score100);
+        const premium = tierIsPremium(score100);
+        cardEl.style.setProperty("--c-accent", accent);
+        cardEl.style.setProperty("--c-accent-12", hexA(accent, 0.12));
+        cardEl.style.setProperty("--c-accent-30", hexA(accent, 0.30));
+        cardEl.style.setProperty("--c-accent-border", hexA(accent, premium ? 0.55 : 0.25));
+        cardEl.style.setProperty("--c-accent-glow", hexA(accent, premium ? 0.18 : 0.08));
+        cardEl.style.setProperty("--c-deep-04", hexA(deep, 0.04));
+        cardEl.style.setProperty("--c-deep-08", hexA(deep, 0.08));
+      }
+
+      // ─────────── Region label rendering ───────────
+      const REGIONS = [
+        { key: "upper", el: "lbl-upper", title: "UPPER THIRD", side: "right", marker: { x: 195, y: 122 }, edge: { x: 310, y: 60 } },
+        { key: "eyes",  el: "lbl-eyes",  title: "EYES",        side: "left",  marker: { x: 140, y: 197 }, edge: { x: 80,  y: 175 } },
+        { key: "mid",   el: "lbl-mid",   title: "MIDFACE",     side: "right", marker: { x: 195, y: 258 }, edge: { x: 310, y: 258 } },
+        { key: "lower", el: "lbl-lower", title: "LOWER THIRD", side: "left",  marker: { x: 195, y: 348 }, edge: { x: 80,  y: 368 } },
+      ];
+
+      function renderRegionLabels() {
+        const leaderGroup = $("leaderGroup");
+        leaderGroup.innerHTML = "";
+        REGIONS.forEach((reg) => {
+          const score100 = state[reg.key];
+          const accent = tierAccent(score100);
+          const premium = tierIsPremium(score100);
+          // label content
+          const el = $(reg.el);
+          el.style.borderColor = hexA(accent, premium ? 0.55 : 0.25);
+          el.style.boxShadow = `0 6px 12px rgba(0,0,0,0.24), 0 0 8px ${hexA(accent, premium ? 0.18 : 0.08)}`;
+          el.innerHTML =
+            `<div class="r-title">${reg.title}</div>` +
+            `<div class="r-score" style="color:${accent};text-shadow:0 1.5px 3px rgba(0,0,0,0.35),0 0 8px ${hexA(accent, premium ? 0.28 : 0.15)};">${tierFormat(score100)}</div>` +
+            `<div class="r-tier" style="color:${hexA(accent, 0.85)};">${tierLabel(score100, state.gender)}</div>`;
+
+          // leader bezier (marker → edge) + markers
+          const m = reg.marker, e = reg.edge;
+          const midX = (m.x + e.x) / 2;
+          const ns = "http://www.w3.org/2000/svg";
+          const path = document.createElementNS(ns, "path");
+          path.setAttribute("d", `M${m.x},${m.y} C${midX},${m.y} ${midX},${e.y} ${e.x},${e.y}`);
+          path.setAttribute("stroke", accent);
+          path.setAttribute("stroke-width", "1.8");
+          path.setAttribute("fill", "none");
+          path.setAttribute("stroke-linecap", "round");
+          path.setAttribute("opacity", "0.92");
+          leaderGroup.appendChild(path);
+
+          // edge pin
+          const pin = document.createElementNS(ns, "circle");
+          pin.setAttribute("cx", e.x); pin.setAttribute("cy", e.y); pin.setAttribute("r", "3");
+          pin.setAttribute("fill", accent);
+          leaderGroup.appendChild(pin);
+
+          // mesh marker halo + core + white rim
+          const halo = document.createElementNS(ns, "circle");
+          halo.setAttribute("cx", m.x); halo.setAttribute("cy", m.y); halo.setAttribute("r", "11");
+          halo.setAttribute("fill", hexA(accent, 0.35));
+          leaderGroup.appendChild(halo);
+          const core = document.createElementNS(ns, "circle");
+          core.setAttribute("cx", m.x); core.setAttribute("cy", m.y); core.setAttribute("r", "5");
+          core.setAttribute("fill", accent);
+          leaderGroup.appendChild(core);
+          const rim = document.createElementNS(ns, "circle");
+          rim.setAttribute("cx", m.x); rim.setAttribute("cy", m.y); rim.setAttribute("r", "5");
+          rim.setAttribute("fill", "none");
+          rim.setAttribute("stroke", "rgba(255,255,255,0.95)");
+          rim.setAttribute("stroke-width", "1.6");
+          leaderGroup.appendChild(rim);
+        });
+      }
+
+      // ─────────── Main render ───────────
+      function render() {
+        const sAcc = tierAccent(state.score);
+        const pAcc = tierAccent(state.potential);
+        const root = document.documentElement;
+        // global accents used by identity glow, beams, mesh split
+        $("captureRoot").style.setProperty("--score-accent", sAcc);
+        $("captureRoot").style.setProperty("--pot-accent", pAcc);
+        $("captureRoot").style.setProperty("--score-deep", tierAccentDeep(state.score));
+        document.querySelectorAll(".face-tab").forEach((ft) => {
+          ft.style.setProperty("--score-accent", sAcc);
+          ft.style.setProperty("--pot-accent", pAcc);
+          ft.style.setProperty("--score-deep", tierAccentDeep(state.score));
+        });
+
+        // identity glow
+        $("glowLeft").style.background = hexA(sAcc, 0.24);
+        $("glowRight").style.background = hexA(pAcc, 0.24);
+        $("glowMeshL").setAttribute("fill", hexA(sAcc, 0.20));
+        $("glowMeshR").setAttribute("fill", hexA(pAcc, 0.20));
+
+        // tier pill (uses score)
+        $("tierPillText").textContent = tierLabel(state.score, state.gender);
+        const tp = document.querySelector(".tier-pill-float");
+        tp.style.background = `linear-gradient(135deg, ${sAcc}, ${tierAccentDeep(state.score)})`;
+        tp.style.boxShadow = `0 3px 6px rgba(0,0,0,0.24), 0 0 6px ${hexA(sAcc, 0.6)}`;
+
+        // legend dots
+        $("legScore").style.background = sAcc;
+        $("legPot").style.background = pAcc;
+
+        // hero cards
+        styleHeroCard($("cardScore"), state.score);
+        styleHeroCard($("cardPot"), state.potential);
+        $("scoreValue").textContent = tierFormat(state.score);
+        $("potValue").textContent = tierFormat(state.potential);
+        $("scoreTier").textContent = tierLabel(state.score, state.gender);
+        $("potTier").textContent = tierLabel(state.potential, state.gender);
+
+        // delta caption
+        const delta = Math.max(0, (state.potential / 10) - (state.score / 10));
+        if (delta > 0) {
+          $("deltaText").style.display = "";
+          $("deltaText").textContent = "+" + (Math.round(delta * 10) / 10).toFixed(1).replace(".", ",");
+          $("trajCaption").style.display = "";
+        } else {
+          $("deltaText").style.display = "none";
+          $("trajCaption").style.display = "none";
+        }
+
+        // identity text
+        $("identUser").textContent = $("userInput").value || "Your Face";
+        $("identDate").textContent = $("dateInput").value || "Today";
+
+        renderRegionLabels();
+      }
+
+      // ─────────── Editor bindings ───────────
+      function bindScore(rangeId, numId, key) {
+        const range = $(rangeId), num = $(numId);
+        range.addEventListener("input", () => {
+          const v = parseFloat(range.value);
+          state[key] = Math.round(v * 10);
+          num.textContent = (Math.round(v * 10) / 10).toFixed(1).replace(".", ",");
+          render();
+        });
+      }
+      bindScore("scoreRange", "scoreNum", "score");
+      bindScore("potRange", "potNum", "potential");
+      bindScore("upperRange", "upperNum", "upper");
+      bindScore("eyesRange", "eyesNum", "eyes");
+      bindScore("midRange", "midNum", "mid");
+      bindScore("lowerRange", "lowerNum", "lower");
+
+      $("genderSeg").querySelectorAll("button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          $("genderSeg").querySelectorAll("button").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          state.gender = btn.dataset.value;
+          render();
+        });
+      });
+
+      $("userInput").addEventListener("input", render);
+      $("dateInput").addEventListener("input", render);
+
+      function handleImage(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          $("avatarPhoto").innerHTML = `<img src="${reader.result}" alt="face" />`;
+        };
+        reader.readAsDataURL(file);
+      }
+      $("imageInput").addEventListener("change", (e) => handleImage(e.target.files[0]));
+      $("imageInput2").addEventListener("change", (e) => handleImage(e.target.files[0]));
+
+      // ─────────── PNG Export ───────────
+      $("downloadBtn").addEventListener("click", async () => {
+        if (typeof htmlToImage === "undefined") { alert("Export library failed to load."); return; }
+        const node = $("captureRoot");
+        try {
+          const blob = await htmlToImage.toBlob(node, { pixelRatio: 2, backgroundColor: "#121214", cacheBust: true });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url; a.download = "lookscroll-face-rating.png";
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 1500);
+        } catch (err) {
+          alert("PNG export failed: " + (err && err.message ? err.message : err));
+        }
+      });
+
+      // Init
+      render();
+    </script>
+  </body>
+</html>
