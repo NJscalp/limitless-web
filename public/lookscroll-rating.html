@@ -523,7 +523,8 @@
             <!-- ARKit Mask Overlay clipped to circle -->
             <div class="mask-container" id="maskContainer">
               <svg class="arkit-mask" id="arkitMask" viewBox="0 0 260 340" aria-hidden="true">
-                <g class="mesh">
+                <!-- Preset 1: Full Mesh (Standard) -->
+                <g class="mesh-preset" id="preset-full" style="display: block;">
                   <path class="mesh-jaw" d="M78,221 Q98,275 130,262 Q162,275 182,221"/>
                   <ellipse class="mesh-eye" cx="96"  cy="116" rx="11" ry="4.5"/>
                   <ellipse class="mesh-eye" cx="164" cy="116" rx="11" ry="4.5"/>
@@ -532,6 +533,28 @@
                   <path class="mesh-nose" d="M128,120 L126,158 M132,120 L134,158"/>
                   <path class="mesh-nose" d="M124,160 Q130,170 136,160"/>
                   <path class="mesh-lips" d="M116,196 Q130,190 144,196 Q130,205 116,196 Z"/>
+                </g>
+                <!-- Preset 2: Eye Area Focus -->
+                <g class="mesh-preset" id="preset-eyes" style="display: none;">
+                  <ellipse class="mesh-eye" cx="96"  cy="116" rx="13" ry="6" style="stroke-width: 1.5; filter: drop-shadow(0 0 4px rgba(128, 204, 255, 0.95));"/>
+                  <ellipse class="mesh-eye" cx="164" cy="116" rx="13" ry="6" style="stroke-width: 1.5; filter: drop-shadow(0 0 4px rgba(128, 204, 255, 0.95));"/>
+                  <path class="mesh-brow" d="M80,100 Q96,90 112,100" style="stroke-width: 1.2; stroke: rgb(205, 235, 255);"/>
+                  <path class="mesh-brow" d="M148,100 Q164,90 180,100" style="stroke-width: 1.2; stroke: rgb(205, 235, 255);"/>
+                </g>
+                <!-- Preset 3: Jawline Definition -->
+                <g class="mesh-preset" id="preset-jaw" style="display: none;">
+                  <path class="mesh-jaw" d="M72,215 Q98,285 130,270 Q162,285 188,215" style="stroke-width: 2.2; stroke: rgb(255, 224, 166); filter: drop-shadow(0 0 6px rgba(255, 178, 76, 0.95));"/>
+                  <path class="mesh-lips" d="M116,196 Q130,190 144,196 Q130,205 116,196 Z" style="stroke-width: 0.8; opacity: 0.5;"/>
+                </g>
+                <!-- Preset 4: Cheekbones/Symmetry -->
+                <g class="mesh-preset" id="preset-cheekbones" style="display: none;">
+                  <path class="mesh-jaw" d="M78,221 Q98,275 130,262 Q162,275 182,221" style="opacity: 0.4;"/>
+                  <path class="mesh-nose" d="M128,120 L126,158 M132,120 L134,158"/>
+                  <path class="mesh-nose" d="M124,160 Q130,170 136,160"/>
+                  <!-- Symmetrielinien -->
+                  <line x1="130" y1="80" x2="130" y2="280" style="stroke: rgba(255,255,255,0.4); stroke-width: 1; stroke-dasharray: 4 4;"/>
+                  <line x1="70" y1="116" x2="190" y2="116" style="stroke: rgba(128, 204, 255, 0.4); stroke-width: 0.8; stroke-dasharray: 4 4;"/>
+                  <line x1="70" y1="196" x2="190" y2="196" style="stroke: rgba(255, 128, 128, 0.4); stroke-width: 0.8; stroke-dasharray: 4 4;"/>
                 </g>
               </svg>
             </div>
@@ -611,6 +634,16 @@
           <label style="display: flex; flex-direction: row; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 6px;">
             <input id="maskToggle" type="checkbox" checked style="width: auto; margin: 0;" />
             Show ARKit Mask
+          </label>
+
+          <label>
+            Mask Preset (Variant)
+            <select id="maskPresetSelect">
+              <option value="preset-full" selected>Full Mesh (Standard)</option>
+              <option value="preset-eyes">Eye Area Focus</option>
+              <option value="preset-jaw">Jawline Definition</option>
+              <option value="preset-cheekbones">Cheekbones & Symmetry</option>
+            </select>
           </label>
 
           <label>
@@ -801,6 +834,7 @@
         genderSeg: document.getElementById("genderSeg"),
         arkitMask: document.getElementById("arkitMask"),
         maskToggle: document.getElementById("maskToggle"),
+        maskPresetSelect: document.getElementById("maskPresetSelect"),
         maskScaleRange: document.getElementById("maskScaleRange"),
         maskTxRange: document.getElementById("maskTxRange"),
         maskTyRange: document.getElementById("maskTyRange"),
@@ -955,7 +989,7 @@
       imgResetBtn.addEventListener("click", resetImageTransform);
 
       // ─────────── ARKit Mask Overlay Logic ───────────
-      const maskState = { scale: 1.0, tx: 0, ty: 0, visible: true };
+      const maskState = { scale: 1.0, tx: 0, ty: 0, visible: true, preset: "preset-full" };
 
       function applyMaskTransform() {
         if (!els.arkitMask) return;
@@ -963,6 +997,13 @@
         els.arkitMask.style.setProperty("--mask-tx", `${maskState.tx}px`);
         els.arkitMask.style.setProperty("--mask-ty", `${maskState.ty}px`);
         els.arkitMask.style.display = maskState.visible ? "block" : "none";
+
+        // Alle Presets ausblenden und nur das ausgewählte einblenden
+        const presets = ["preset-full", "preset-eyes", "preset-jaw", "preset-cheekbones"];
+        presets.forEach((p) => {
+          const el = document.getElementById(p);
+          if (el) el.style.display = (p === maskState.preset) ? "block" : "none";
+        });
       }
 
       function syncMaskInputs() {
@@ -970,16 +1011,21 @@
         els.maskTxRange.value = String(maskState.tx);
         els.maskTyRange.value = String(maskState.ty);
         els.maskToggle.checked = maskState.visible;
+        els.maskPresetSelect.value = maskState.preset;
       }
 
       function resetMaskTransform() {
-        maskState.scale = 1.0; maskState.tx = 0; maskState.ty = 0; maskState.visible = true;
+        maskState.scale = 1.0; maskState.tx = 0; maskState.ty = 0; maskState.visible = true; maskState.preset = "preset-full";
         syncMaskInputs();
         applyMaskTransform();
       }
 
       els.maskToggle.addEventListener("change", () => {
         maskState.visible = els.maskToggle.checked;
+        applyMaskTransform();
+      });
+      els.maskPresetSelect.addEventListener("change", () => {
+        maskState.preset = els.maskPresetSelect.value;
         applyMaskTransform();
       });
       els.maskScaleRange.addEventListener("input", () => {
