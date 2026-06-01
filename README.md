@@ -23,4 +23,6 @@ Statische Seiten liegen unter `public/` und werden nach `dist/` kopiert (z. B.
 
 Siehe **[DEPLOY_SCHRITTE.md](./DEPLOY_SCHRITTE.md)** (Schritt-für-Schritt auf Deutsch).
 
-Für **KI-Scores wie in der App**: in Vercel `FACE_BACKEND_URL` (Basis-URL deines Node-Servers mit `/v1/face-analyze-full`) und optional `FACE_BACKEND_SECRET` setzen.
+Für **KI-Scores wie in der App**: in Vercel **`ANTHROPIC_API_KEY`** setzen (direkt Anthropic, kein Droplet mehr).
+
+Migration von DigitalOcean: siehe **[MIGRATION_VERCEL.md](./MIGRATION_VERCEL.md)**.

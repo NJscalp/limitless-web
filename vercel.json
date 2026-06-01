@@ -4,18 +4,26 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/v1/face-analyze-full", "destination": "/api/face-analyze" },
+    { "source": "/v1/face-refine", "destination": "/api/face-refine" },
+    { "source": "/v1/arkit-mesh", "destination": "/api/arkit-mesh-upload" },
+    { "source": "/v1/arkit-mesh.json", "destination": "/api/arkit-mesh" },
+    { "source": "/v1/kie/image-to-image", "destination": "/api/kie/image-to-image" },
+    { "source": "/v1/kie/tasks/:taskId", "destination": "/api/kie/tasks/:taskId" },
+    { "source": "/v1/tiktok/test-event", "destination": "/api/tiktok/test-event" },
+    { "source": "/health", "destination": "/api/health" }
+  ],
   "functions": {
-    "api/face-analyze.mjs": {
-      "maxDuration": 60
-    },
-    "api/face-landmarks.mjs": {
-      "maxDuration": 30
-    },
-    "api/render-psl-video.mjs": {
-      "maxDuration": 30
-    },
-    "api/arkit-mesh.mjs": {
-      "maxDuration": 15
-    }
+    "api/face-analyze.mjs": { "maxDuration": 60 },
+    "api/face-refine.mjs": { "maxDuration": 60 },
+    "api/face-landmarks.mjs": { "maxDuration": 30 },
+    "api/render-psl-video.mjs": { "maxDuration": 30 },
+    "api/arkit-mesh.mjs": { "maxDuration": 15 },
+    "api/arkit-mesh-upload.mjs": { "maxDuration": 30 },
+    "api/kie/image-to-image.mjs": { "maxDuration": 30 },
+    "api/kie/tasks/[taskId].mjs": { "maxDuration": 15 },
+    "api/tiktok/test-event.mjs": { "maxDuration": 15 },
+    "api/health.mjs": { "maxDuration": 10 }
   }
 }

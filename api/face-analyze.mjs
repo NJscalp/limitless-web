@@ -1,16 +1,19 @@
 /**
- * Vercel Serverless — echte Face-Analyse via Anthropic Claude Opus (Vision).
- * Selbe Prompt-Logik wie `server/index.mjs /v1/face-analyze-full`, damit Web und
- * iOS-App identische Ratings bekommen.
+ * Vercel Serverless — Face-Analyse via Anthropic Claude Opus (Vision).
+ * Gleiche Logik wie `server/index.mjs /v1/face-analyze-full`.
  *
  * ENV (Vercel → Project Settings → Environment Variables):
- *   ANTHROPIC_API_KEY  (required) — Anthropic API Key
- *   MODEL              (optional) — default "claude-opus-4-6"
- *   FACE_BACKEND_URL   (optional) — falls gesetzt, wird stattdessen dieser Proxy verwendet
- *   FACE_BACKEND_SECRET (optional) — Bearer-Token für FACE_BACKEND_URL
+ *   ANTHROPIC_API_KEY  (required)
+ *   MODEL              (optional — default claude-opus-4-6)
+ *   APP_SHARED_SECRET  (optional — App muss Bearer mitsenden)
  */
-
-const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
+import { isAuthorized, rejectUnauthorized } from './_shared/auth.mjs'
+import {
+  anthropicKey,
+  anthropicModel,
+  anthropicVisionJSON,
+  detectMediaType,
+} from './_shared/anthropic.mjs'
 
 const SYSTEM_PROMPT = `You are an expert facial aesthetics analyst for a looksmaxing / facial wellness app.
 You must analyze the visible face in the selfie and output ONE JSON object only. No markdown, no code fences.
@@ -39,31 +42,26 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'POST')
     return res.status(405).json({ error: 'method_not_allowed' })
   }
+  if (!isAuthorized(req)) return rejectUnauthorized(res)
 
   const body = typeof req.body === 'string' ? safeJson(req.body) : req.body
   const imageBase64 = body?.imageBase64
-
   if (typeof imageBase64 !== 'string' || !imageBase64.length) {
     return res.status(400).json({ error: 'missing_imageBase64' })
   }
 
-  const proxyBase = (process.env.FACE_BACKEND_URL || '').replace(/\/$/, '')
-  if (proxyBase) {
-    return proxyToBackend(proxyBase, imageBase64, res)
-  }
-
-  const anthropicKey = (process.env.ANTHROPIC_API_KEY || '').trim()
-  if (!anthropicKey) {
+  const apiKey = anthropicKey()
+  if (!apiKey) {
     return res.status(501).json({
       error: 'ai_not_configured',
-      hint: 'Set ANTHROPIC_API_KEY in Vercel env — or set FACE_BACKEND_URL to your Node proxy.',
+      hint: 'Set ANTHROPIC_API_KEY in Vercel project environment variables.',
     })
   }
 
   try {
     const analysis = await anthropicVisionJSON({
-      apiKey: anthropicKey,
-      model: (process.env.MODEL || 'claude-opus-4-6').trim(),
+      apiKey,
+      model: anthropicModel(),
       system: SYSTEM_PROMPT,
       userText: USER_PROMPT,
       imageBase64,
@@ -81,119 +79,10 @@ export default async function handler(req, res) {
   }
 }
 
-async function proxyToBackend(base, imageBase64, res) {
-  const secret = (process.env.FACE_BACKEND_SECRET || '').trim()
-  const headers = { 'Content-Type': 'application/json' }
-  if (secret) headers.Authorization = `Bearer ${secret}`
-  try {
-    const r = await fetch(`${base}/v1/face-analyze-full`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ imageBase64 }),
-    })
-    const data = await r.json().catch(() => ({}))
-    return res.status(r.status).json(data)
-  } catch (e) {
-    return res.status(502).json({ error: 'proxy_failed', message: String(e?.message || e) })
-  }
-}
-
-async function anthropicVisionJSON({
-  apiKey,
-  model,
-  system,
-  userText,
-  imageBase64,
-  mediaType,
-  max_tokens = 2000,
-  temperature = 0.22,
-}) {
-  const payload = {
-    model,
-    max_tokens,
-    temperature,
-    system,
-    messages: [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: mediaType,
-              data: imageBase64,
-            },
-          },
-          { type: 'text', text: userText },
-        ],
-      },
-    ],
-  }
-
-  const headers = {
-    'content-type': 'application/json',
-    'x-api-key': apiKey,
-    'anthropic-version': '2023-06-01',
-  }
-
-  const r = await fetch(ANTHROPIC_URL, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload),
-  })
-  const data = await r.json().catch(() => ({}))
-
-  if (!r.ok) {
-    const err = new Error('anthropic_http')
-    err.status = r.status
-    err.detail = data
-    throw err
-  }
-
-  const textBlock = Array.isArray(data?.content) ? data.content.find((c) => c.type === 'text') : null
-  const text = textBlock?.text
-  if (!text) {
-    const err = new Error('no_text_in_response')
-    err.detail = data
-    throw err
-  }
-
-  const jsonStr = extractJSONObject(text)
-  try {
-    return JSON.parse(jsonStr)
-  } catch (e) {
-    const err = new Error('invalid_json_from_model')
-    err.detail = { raw: text.slice(0, 600) }
-    throw err
-  }
-}
-
-function extractJSONObject(text) {
-  const start = text.indexOf('{')
-  const end = text.lastIndexOf('}')
-  if (start === -1 || end <= start) return text
-  return text.slice(start, end + 1)
-}
-
 function safeJson(s) {
   try {
     return JSON.parse(s)
   } catch {
     return {}
   }
-}
-
-/**
- * Best-effort media-type sniff aus Base64-Header (data-URL prefixes werden
- * im Client bereits gestrippt). Fallback jpeg.
- */
-function detectMediaType(b64) {
-  if (typeof b64 !== 'string' || b64.length < 16) return 'image/jpeg'
-  const head = b64.slice(0, 16)
-  if (head.startsWith('iVBOR')) return 'image/png'
-  if (head.startsWith('/9j/')) return 'image/jpeg'
-  if (head.startsWith('UklGR')) return 'image/webp'
-  if (head.startsWith('R0lGO')) return 'image/gif'
-  return 'image/jpeg'
 }
