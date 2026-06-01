@@ -1,5 +1,5 @@
 import { isAuthorized, rejectUnauthorized } from '../_shared/auth.mjs'
-import { kieApiFetch } from '../_shared/kie.mjs'
+import { kieApiFetch, kieApiKey } from '../_shared/kie.mjs'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   }
   if (!isAuthorized(req)) return rejectUnauthorized(res)
 
-  if (!(process.env.KIE_API_KEY || '').trim()) {
+  if (!kieApiKey()) {
     return res.status(500).json({ error: 'server_misconfigured_missing_kie_key' })
   }
 
