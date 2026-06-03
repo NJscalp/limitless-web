@@ -11,6 +11,7 @@ export default async function handler(req, res) {
     platform: 'vercel',
     anthropicConfigured: Boolean((process.env.ANTHROPIC_API_KEY || '').trim()),
     kieConfigured: Boolean((process.env.KIE_API_KEY || process.env.KIE || '').trim()),
+    falConfigured: Boolean((process.env.FAL_KEY || process.env.FAL_API_KEY || '').trim()),
     tiktokConfigured:
       Boolean((process.env.TIKTOK_ACCESS_TOKEN || '').trim()) &&
       Boolean((process.env.TIKTOK_PIXEL_CODE || '').trim()),

@@ -1,5 +1,11 @@
 const KIE_API_BASE = (process.env.KIE_API_BASE || 'https://api.kie.ai').replace(/\/$/, '')
 
+export {
+  FUTURE_SELF_MODES,
+  normalizeFutureSelfMode,
+  futureSelfCombinedPrompt,
+} from './future-self-prompts.mjs'
+
 /** Vercel env may be named `KIE_API_KEY` or `KIE`. */
 export function kieApiKey() {
   return (process.env.KIE_API_KEY || process.env.KIE || '').trim()

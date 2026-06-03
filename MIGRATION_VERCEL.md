@@ -12,7 +12,8 @@ Die **App-API** (Face-Rating, ARKit-Mesh, Kie.ai, TikTok-Proxy) läuft jetzt auf
 | ARKit Mesh lesen | `GET /v1/arkit-mesh.json` | gleich |
 | ARKit Mesh Upload | `POST /v1/arkit-mesh` | gleich (→ Vercel Blob) |
 | Kie Image-to-Image | `POST /v1/kie/image-to-image` | gleich |
-| Kie Task Status | `GET /v1/kie/tasks/:taskId` | gleich |
+| Future Self Glow Up | `POST /v1/kie/future-self` | gleich (Backend: **Fal.ai**) |
+| Task Status | `GET /v1/kie/tasks/:taskId` | gleich (Fal + Kie) |
 | TikTok CAPI Test | `POST /v1/tiktok/test-event` | gleich |
 
 **App-Backend-URL:** `https://limitless-web-beryl.vercel.app`
@@ -46,7 +47,8 @@ In **Vercel → Project → Settings → Environment Variables** eintragen:
 | Variable | Pflicht | Beschreibung |
 |----------|---------|--------------|
 | `ANTHROPIC_API_KEY` | ✅ | Opus-Key (von DO `.env` kopieren) |
-| `KIE_API_KEY` | optional | Kie.ai |
+| `KIE_API_KEY` | optional | Kie.ai (legacy image-to-image) |
+| `FAL_KEY` | ✅ für Glow Up | Fal.ai GPT Image 2 edit (`openai/gpt-image-2/edit`) |
 | `TIKTOK_ACCESS_TOKEN` | optional | TikTok CAPI |
 | `TIKTOK_PIXEL_CODE` | optional | TikTok Pixel |
 | `TIKTOK_TEST_EVENT_CODE` | optional | z. B. `TEST12846` |
@@ -101,10 +103,11 @@ Dann Droplet in DigitalOcean **Power Off** oder löschen.
 ## Checkliste
 
 - [ ] `ANTHROPIC_API_KEY` in Vercel gesetzt
-- [ ] `KIE_API_KEY` in Vercel gesetzt (falls Kie genutzt)
+- [ ] `FAL_KEY` in Vercel gesetzt (Future Self Glow Up)
+- [ ] `KIE_API_KEY` in Vercel gesetzt (optional, legacy i2i)
 - [ ] `FACE_BACKEND_URL` in Vercel **nicht** mehr auf DO
 - [ ] Deploy erfolgreich
-- [ ] `/health` → `kieConfigured` / `anthropicConfigured` true
+- [ ] `/health` → `falConfigured` / `anthropicConfigured` true
 - [ ] App Face-Rating getestet
 - [ ] Discord-Entscheidung getroffen (abschalten oder separat hosten)
 - [ ] DO Droplet gestoppt
