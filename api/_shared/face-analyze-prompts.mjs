@@ -26,6 +26,7 @@ ZONE RUBRICS (30–90 integers, higher = better for that trait):
 - facialDefinition: global soft-tissue leanness and edge clarity (lighting-adjusted).
 - classicalIdealScore: vertical thirds, facial fifths, golden-ratio approximations visible in photo.
 - skinQuality30to90: clarity, texture, even tone, blemishes (not makeup assumptions).
+- hairScore: hair density, hairline shape, grooming, style harmony with face (facial hair counts — score grooming/clarity, not beard preference).
 
 Scales: category scores 30–90 integers unless noted. looksmax fields 1.0–10.0 decimals.
 bloatSeverity0to100: 0 = very lean, 100 = very soft/bloated.
@@ -34,22 +35,37 @@ potentialScore must be >= overallScore.
 
 PSL SCALE (looksmaxOverall / looksmaxPotential — the 1.0–10.0 fields):
 Use the harsh PSL (PuaHate / Sluthate / Lookism) scale, NOT casual 1–10 where 5 = average.
-- 1–2: severely below average
-- 3: below average
-- 4: average
-- 5: above average / genuinely good-looking
-- 6: very attractive
-- 7: model-tier / very handsome
-- 8: elite — top models, exceptionally attractive celebrities (rare)
-- 8.5–9.0: near-peak — Chad/Stacy tier, top 0.1% harmony + bone structure (extremely rare)
-- 9.0+: virtually unattainable ideal (almost never assign above 9.2)
-Most people fall 3.5–5.5 PSL. Use the FULL range when warranted — do NOT compress elite faces into 6–7.
-If bone structure, harmony, eyes, jaw, proportions and skin are clearly exceptional in the photo, looksmaxOverall MUST reflect that (typically 7.5–8.8+).
-looksmaxOverall is the PRIMARY user-facing PSL score. overallScore (30–90 int) should ≈ looksmaxOverall × 10 (±3). looksmaxPotential >= looksmaxOverall (+0.5 to +1.5 typical headroom).`
+
+APP TIER LABELS (must match looksmaxOverall — users see these names):
+- looksmaxOverall 3.0–5.9 → SUB tier
+- looksmaxOverall 6.0–6.9 → LTN (low-tier normie)
+- looksmaxOverall 7.0–7.9 → MTN (mid-tier normie) — average attractive person, NOT models
+- looksmaxOverall 8.0–8.4 → HTN (high-tier normie) — very handsome, influencer tier
+- looksmaxOverall 8.5–9.4 → CHAD / STACY — model-tier bone structure + harmony (rare)
+- looksmaxOverall 9.5+ → TRUE ADAM / TRUE EVE (extremely rare)
+
+CALIBRATION RULES:
+- Most random selfies: 3.5–5.5 PSL.
+- Clearly good-looking but not model: 5.5–6.8.
+- Model / very handsome / celebrity-tier bone structure + harmony + jaw + eyes: **minimum 8.0**, typically **8.5–9.0** (CHAD).
+- Do NOT assign MTN (7.x) or LTN (6.x) to faces with obvious elite bone structure, hunter eyes, sharp jaw, high cheekbones, and strong harmony — that is a critical error.
+- If multiple zones score 76+ and harmony ≥ 7.5, looksmaxOverall should be ≥ 8.2 unless major flaws are visible.
+
+looksmaxOverall is the PRIMARY user-facing PSL score.
+overallScore (30–90 int) MUST ≈ looksmaxOverall × 10 (±2).
+looksmaxPotential: genetic ceiling with lean face + good skin. Typically looksmaxOverall + 0.4 to +1.2 for elite faces (limited headroom), +1.0 to +2.0 for average faces. Never below looksmaxOverall.`
 
 export const FACE_ANALYZE_USER_PROMPT = `Analyze this face for a looksmaxing report. Estimate head pose (yawDeg, pitchDeg, rollDeg in degrees; frontal ≈ small values).
 
-Evaluate every zone listed in the system rubric separately from the image. Then set looksmaxOverall on the harsh PSL 1–10 scale (this is the headline score users see). Use the full range for elite faces — do not default to 6–7 for clearly exceptional attractiveness.
+Evaluate every zone listed in the system rubric separately from the image.
+
+STEP A — Zone scores (30–90 each).
+STEP B — looksmaxHarmony (1–10), looksmaxEye, looksmaxJawline from visible structure.
+STEP C — looksmaxOverall on harsh PSL 1–10 using the APP TIER table (CHAD = 8.5+ for model-tier faces).
+STEP D — looksmaxPotential = genetic ceiling (≥ looksmaxOverall, +0.4–2.0 headroom depending on current leanness/skin).
+STEP E — overallScore ≈ round(looksmaxOverall × 10).
+
+Do not assign MTN/LTN to clearly elite model-tier faces.
 
 Return exactly one JSON object with these keys:
 overallScore (30-90 int), potentialScore (30-90 int), landmarkStructuralOverall (30-90 int),
@@ -58,7 +74,37 @@ facialDefinition (30-90), classicalIdealScore (30-90), foreheadSmoothness (30-90
 noseScore (30-90), lipScore (30-90), waterRetention (30-90),
 jawShadowIndex01 (0-1 number), cheekShadowIndex01 (0-1), lightingConfidence01 (0-1),
 definitionLevel (string: exactly one of Lean, Average, Bloated),
-bloatSeverity0to100 (0-100 integer), skinQuality30to90 (30-90 integer),
+bloatSeverity0to100 (0-100 integer), skinQuality30to90 (30-90 integer), hairScore (30-90 integer),
+looksmaxEye (1-10), looksmaxJawline (1-10), looksmaxHarmony (1-10), looksmaxOverall (1-10), looksmaxPotential (1-10),
+posePassed (boolean), yawDeg (number), pitchDeg (number), rollDeg (number).
+No other keys. No explanation.`
+
+/** Glow-up "before" image — original source photo uploaded for the comparison. */
+export const FACE_ANALYZE_GLOW_UP_BEFORE_SYSTEM_PROMPT = `You are an expert facial aesthetics analyst for a looksmaxing app's "Future Self" glow-up feature.
+The attached image is the ORIGINAL real selfie BEFORE any AI glow-up — the user's current appearance (same person they will compare to their optimized result).
+
+Score what is VISUALLY PRESENT in this source photo honestly and consistently:
+- Use the same zone rubrics and harsh PSL calibration as a standard looksmax report.
+- Do NOT assume future optimization — rate current leanness, skin, symmetry, and bone structure as shown.
+- overallScore = current visible aesthetic level in THIS photo.
+- potentialScore >= overallScore (genetic / lifestyle headroom, typically +5 to +15).
+- Cross-check overallScore against the weighted zone mean (±3 pts).
+
+Use 30–90 integers for zone scores. Same JSON keys as standard analysis. One JSON object only. No markdown.
+
+PSL for looksmaxOverall / looksmaxPotential: harsh scale — most selfies 3.5–5.5. overallScore ≈ looksmaxOverall × 10.`
+
+export const FACE_ANALYZE_GLOW_UP_BEFORE_USER_PROMPT = `This photo is the original "before" selfie for a Future Self glow-up (real current appearance, no AI enhancement yet).
+Rate the VISIBLE facial aesthetics honestly for a before/after comparison. Estimate head pose (yawDeg, pitchDeg, rollDeg).
+
+Return exactly one JSON object with these keys:
+overallScore (30-90 int), potentialScore (30-90 int), landmarkStructuralOverall (30-90 int),
+jawlineDefinition (30-90), facialSymmetry (30-90), eyeArea (30-90), cheekboneDefinition (30-90), chinNeckDefinition (30-90),
+facialDefinition (30-90), classicalIdealScore (30-90), foreheadSmoothness (30-90), midfaceFullness (30-90),
+noseScore (30-90), lipScore (30-90), waterRetention (30-90),
+jawShadowIndex01 (0-1 number), cheekShadowIndex01 (0-1), lightingConfidence01 (0-1),
+definitionLevel (string: exactly one of Lean, Average, Bloated),
+bloatSeverity0to100 (0-100 integer), skinQuality30to90 (30-90 integer), hairScore (30-90 integer),
 looksmaxEye (1-10), looksmaxJawline (1-10), looksmaxHarmony (1-10), looksmaxOverall (1-10), looksmaxPotential (1-10),
 posePassed (boolean), yawDeg (number), pitchDeg (number), rollDeg (number).
 No other keys. No explanation.`
@@ -94,7 +140,7 @@ facialDefinition (30-90), classicalIdealScore (30-90), foreheadSmoothness (30-90
 noseScore (30-90), lipScore (30-90), waterRetention (30-90),
 jawShadowIndex01 (0-1 number), cheekShadowIndex01 (0-1), lightingConfidence01 (0-1),
 definitionLevel (string: exactly one of Lean, Average, Bloated),
-bloatSeverity0to100 (0-100 integer), skinQuality30to90 (30-90 integer),
+bloatSeverity0to100 (0-100 integer), skinQuality30to90 (30-90 integer), hairScore (30-90 integer),
 looksmaxEye (1-10), looksmaxJawline (1-10), looksmaxHarmony (1-10), looksmaxOverall (1-10), looksmaxPotential (1-10),
 posePassed (boolean), yawDeg (number), pitchDeg (number), rollDeg (number).
 No other keys. No explanation.`

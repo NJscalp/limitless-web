@@ -56,12 +56,21 @@ function readJpegDimensions(buf) {
 }
 
 /** Fal custom size — multiples of 16, within GPT Image 2 limits. */
-export function snapToFalCustomSize(width, height) {
+export function snapToFalCustomSize(width, height, options = {}) {
+  const capEdge = Number(options.maxEdge)
+  const maxEdge = Number.isFinite(capEdge) && capEdge > 0 ? capEdge : MAX_EDGE
   let w = Math.max(16, Math.round(Number(width) || 0))
   let h = Math.max(16, Math.round(Number(height) || 0))
   if (w < 16 || h < 16) return { width: 1024, height: 1024 }
 
-  const edge = Math.max(w, h)
+  let edge = Math.max(w, h)
+  if (edge > maxEdge) {
+    const scale = maxEdge / edge
+    w = Math.floor(w * scale)
+    h = Math.floor(h * scale)
+    edge = Math.max(w, h)
+  }
+
   if (edge > MAX_EDGE) {
     const scale = MAX_EDGE / edge
     w = Math.floor(w * scale)
@@ -93,14 +102,34 @@ export function snapToFalCustomSize(width, height) {
 }
 
 export function falCustomImageSizeFromBase64(base64Raw, overrides = {}) {
+  const maxEdge = Number(overrides.maxEdge)
+  const sizeOpts = Number.isFinite(maxEdge) && maxEdge > 0 ? { maxEdge } : {}
   const overrideW = Number(overrides.width)
   const overrideH = Number(overrides.height)
   if (Number.isFinite(overrideW) && Number.isFinite(overrideH) && overrideW > 0 && overrideH > 0) {
-    return snapToFalCustomSize(overrideW, overrideH)
+    return snapToFalCustomSize(overrideW, overrideH, sizeOpts)
   }
 
   const { bytes, mime } = decodeBase64ImageBytes(base64Raw)
   const dims = readImageDimensionsFromBytes(bytes, mime)
-  if (!dims) return snapToFalCustomSize(1024, 1024)
-  return snapToFalCustomSize(dims.width, dims.height)
+  if (!dims) return snapToFalCustomSize(1024, 1024, sizeOpts)
+  return snapToFalCustomSize(dims.width, dims.height, sizeOpts)
+}
+
+/** Default `auto` — Fal picks size from input; keeps cost low with small uploads. */
+export function resolveFalGlowUpImageSize(imageBase64, options = {}) {
+  const mode = String(process.env.FUTURE_SELF_FAL_IMAGE_SIZE || 'auto').trim().toLowerCase()
+  if (mode === 'auto') return 'auto'
+
+  const preset = process.env.FUTURE_SELF_FAL_IMAGE_SIZE?.trim()
+  if (preset && preset !== 'custom' && preset !== 'compact' && !/^\d+$/.test(preset)) {
+    return preset
+  }
+
+  const maxEdge = Number(process.env.FUTURE_SELF_FAL_MAX_EDGE) || 768
+  return falCustomImageSizeFromBase64(imageBase64, {
+    width: options.imageWidth,
+    height: options.imageHeight,
+    maxEdge,
+  })
 }

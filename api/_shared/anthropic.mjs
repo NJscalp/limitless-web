@@ -7,6 +7,38 @@ export function extractJSONObject(text) {
   return text.slice(start, end + 1)
 }
 
+/** Parse JSON from Claude text blocks — tolerates minor formatting issues. */
+export function parseJSONObjectFromText(text) {
+  let raw = String(text || '').trim()
+  raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+  raw = extractJSONObject(raw)
+  try {
+    return JSON.parse(raw)
+  } catch {
+    const cleaned = raw
+      .replace(/,\s*}/g, '}')
+      .replace(/,\s*]/g, ']')
+      .replace(/[\u0000-\u001f]/g, ' ')
+    try {
+      return JSON.parse(cleaned)
+    } catch {
+      // Truncated JSON — close open strings/brackets heuristically
+      let repaired = cleaned
+      const openBraces = (repaired.match(/{/g) || []).length
+      const closeBraces = (repaired.match(/}/g) || []).length
+      const openBrackets = (repaired.match(/\[/g) || []).length
+      const closeBrackets = (repaired.match(/]/g) || []).length
+      if (openBraces > closeBraces || openBrackets > closeBrackets) {
+        repaired = repaired.replace(/,\s*"[^"]*"?\s*:\s*"[^"]*"?$/, '')
+        repaired = repaired.replace(/,\s*$/, '')
+        for (let i = 0; i < openBrackets - closeBrackets; i += 1) repaired += ']'
+        for (let i = 0; i < openBraces - closeBraces; i += 1) repaired += '}'
+      }
+      return JSON.parse(repaired)
+    }
+  }
+}
+
 export function detectMediaType(b64) {
   if (typeof b64 !== 'string' || b64.length < 16) return 'image/jpeg'
   const head = b64.slice(0, 16)
@@ -26,6 +58,8 @@ export async function anthropicVisionJSON({
   mediaType,
   max_tokens = 2000,
   temperature = 0.22,
+  timeoutMs = Number(process.env.ANTHROPIC_VISION_TIMEOUT_MS) || 52_000,
+  signal: externalSignal,
 }) {
   const payload = {
     model,
@@ -50,15 +84,39 @@ export async function anthropicVisionJSON({
     ],
   }
 
-  const r = await fetch(ANTHROPIC_URL, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify(payload),
-  })
+  const controller = new AbortController()
+  const timeout = Number.isFinite(timeoutMs) && timeoutMs > 0
+    ? setTimeout(() => controller.abort(), timeoutMs)
+    : null
+
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort()
+    else externalSignal.addEventListener('abort', () => controller.abort(), { once: true })
+  }
+
+  let r
+  try {
+    r = await fetch(ANTHROPIC_URL, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    })
+  } catch (fetchErr) {
+    if (fetchErr?.name === 'AbortError') {
+      const err = new Error('anthropic_timeout')
+      err.status = 504
+      throw err
+    }
+    throw fetchErr
+  } finally {
+    if (timeout) clearTimeout(timeout)
+  }
+
   const data = await r.json().catch(() => ({}))
 
   if (!r.ok) {
@@ -76,7 +134,7 @@ export async function anthropicVisionJSON({
     throw err
   }
 
-  return JSON.parse(extractJSONObject(text))
+  return parseJSONObjectFromText(text)
 }
 
 export function anthropicKey() {

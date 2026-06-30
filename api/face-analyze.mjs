@@ -9,11 +9,14 @@ import {
   anthropicVisionJSON,
   detectMediaType,
 } from './_shared/anthropic.mjs'
+import { validateImageBase64Length } from './_shared/request-limits.mjs'
 import {
   FACE_ANALYZE_SYSTEM_PROMPT,
   FACE_ANALYZE_USER_PROMPT,
   FACE_ANALYZE_GLOW_UP_AFTER_SYSTEM_PROMPT,
   FACE_ANALYZE_GLOW_UP_AFTER_USER_PROMPT,
+  FACE_ANALYZE_GLOW_UP_BEFORE_SYSTEM_PROMPT,
+  FACE_ANALYZE_GLOW_UP_BEFORE_USER_PROMPT,
 } from './_shared/face-analyze-prompts.mjs'
 
 export default async function handler(req, res) {
@@ -28,11 +31,27 @@ export default async function handler(req, res) {
   if (typeof imageBase64 !== 'string' || !imageBase64.length) {
     return res.status(400).json({ error: 'missing_imageBase64' })
   }
+  const sizeCheck = validateImageBase64Length(imageBase64)
+  if (!sizeCheck.ok) {
+    return res.status(sizeCheck.status).json({
+      error: sizeCheck.error,
+      message: sizeCheck.message,
+    })
+  }
 
   const context = String(body?.context || 'standard').trim().toLowerCase()
   const isGlowUpAfter = context === 'glow_up_after' || context === 'glowup_after'
-  const system = isGlowUpAfter ? FACE_ANALYZE_GLOW_UP_AFTER_SYSTEM_PROMPT : FACE_ANALYZE_SYSTEM_PROMPT
-  const userText = isGlowUpAfter ? FACE_ANALYZE_GLOW_UP_AFTER_USER_PROMPT : FACE_ANALYZE_USER_PROMPT
+  const isGlowUpBefore = context === 'glow_up_before' || context === 'glowup_before'
+  const system = isGlowUpAfter
+    ? FACE_ANALYZE_GLOW_UP_AFTER_SYSTEM_PROMPT
+    : isGlowUpBefore
+      ? FACE_ANALYZE_GLOW_UP_BEFORE_SYSTEM_PROMPT
+      : FACE_ANALYZE_SYSTEM_PROMPT
+  const userText = isGlowUpAfter
+    ? FACE_ANALYZE_GLOW_UP_AFTER_USER_PROMPT
+    : isGlowUpBefore
+      ? FACE_ANALYZE_GLOW_UP_BEFORE_USER_PROMPT
+      : FACE_ANALYZE_USER_PROMPT
 
   const apiKey = anthropicKey()
   if (!apiKey) {
@@ -52,10 +71,24 @@ export default async function handler(req, res) {
       mediaType: detectMediaType(imageBase64),
       max_tokens: 2800,
       temperature: 0.08,
+      timeoutMs: Number(process.env.FACE_ANALYZE_TIMEOUT_MS) || 52_000,
     })
     return res.status(200).json({ analysis })
   } catch (err) {
     console.error('face-analyze', err)
+    if (err?.status === 429) {
+      return res.status(429).json({
+        error: 'anthropic_rate_limited',
+        message: 'AI is busy — please retry in a few seconds.',
+        detail: err.detail,
+      })
+    }
+    if (err?.message === 'anthropic_timeout' || err?.status === 504) {
+      return res.status(504).json({
+        error: 'anthropic_timeout',
+        message: 'Face analysis timed out — please retry.',
+      })
+    }
     if (err?.status) {
       return res.status(502).json({ error: 'anthropic_error', detail: err.detail, message: err.message })
     }

@@ -1,3 +1,6 @@
+import { deriveGlowUpVisionFlags } from './glow-up-vision-utils.mjs'
+import { buildGlowUpStepPrompt } from './glow-up-steps.mjs'
+
 /** Highest-priority — facial hair must match input exactly (never add, never remove). */
 const FACIAL_HAIR_PIXEL_LOCK = `[FACIAL HAIR PIXEL LOCK — ABSOLUTE, NON-NEGOTIABLE]
 Before editing, detect whether the input has visible beard, stubble, mustache, or is clean-shaven.
@@ -16,6 +19,25 @@ IF INPUT HAS BEARD / STUBBLE / MUSTACHE:
 FOR ALL INPUTS:
 - Copy facial-hair pixels from the input wherever hair exists. Treat facial hair as a frozen layer like the background.
 - Eyebrows follow eyebrow rules only — never confuse brow grooming with adding/removing beard.`
+
+/** Scalp / head hair must match input exactly — no restyle, recolor, or volume change. */
+const HEAD_HAIR_PIXEL_LOCK = `[HEAD HAIR PIXEL LOCK — ABSOLUTE, NON-NEGOTIABLE]
+All scalp hair, hairline, temples, crown, and visible hair strands above the forehead are a FROZEN layer — copy from input exactly.
+
+MUST STAY IDENTICAL TO INPUT:
+- Hair color, highlights, gray strands, and tone
+- Hair length, cut, style, parting, direction, and texture (straight/wavy/curly/coily)
+- Hairline shape, temple recession, baby hairs, and edge placement
+- Volume, density, frizz level, and flyaways
+
+FORBIDDEN:
+- New haircut, restyle, blowout, slick-back, fade, trim, or "cleaner groomed" hair look
+- Darker/lighter hair, color refresh, dye, bleached ends, or saturation shift
+- Added volume, thickness, shine boost, or hair-product gloss
+- Moving, lowering, or reshaping the hairline; filling in temples or thinning areas
+- Erasing, shortening, or replacing visible hair with skin
+
+RULE: Treat head hair like the background — pixel-copy from input. Glow-up edits ONLY facial skin and soft tissue BELOW the hairline (forehead skin may be cleaned; hair pixels may NOT be touched).`
 
 /** Cheeks = primary sculpt target via soft tissue; jaw/mandible/chin bones never grow or get invented. */
 const CHEEK_DEFINITION_FOCUS = `[CHEEK / WANG DEFINITION — PRIMARY GOAL, SOFT TISSUE ONLY]
@@ -37,10 +59,17 @@ JAW / MANDIBLE / CHIN BONES — ABSOLUTE BAN (DO NOT ENLARGE OR INVENT):
 const GLOW_UP_ONLY_NO_INVENTION = `[GLOW-UP ONLY — DO NOT INVENT ANYTHING NEW]
 You are retouching the EXISTING photo — NOT generating a new person or new features.
 
-ONLY ALLOWED EDITS (on pixels that already exist):
-- Reduce facial puffiness / water retention (cheeks, mid-face, under-eyes, jaw SOFT tissue)
-- Clear minor skin blemishes, acne, redness — keep pores, freckles, moles, texture
-- Slightly fresher under-eyes; optional minimal brow cleanup (same shape only)
+ONLY ALLOWED EDITS (realistic, achievable on THIS face — soft tissue + skin only):
+- Reduce facial puffiness / water retention (cheeks, mid-face, under-eyes, submental soft fat)
+- Fade dark circles / periorbital hyperpigmentation (same eye shape — under-eye zone only)
+- De-puff under-eye bags and periorbital swelling — clearly rested, open eyes
+- Clear active acne, pimples, redness, blotchy patches — keep pores, freckles, moles, texture
+- Even minor skin tone unevenness — SAME undertone and melanin (no whitening/darkening)
+- Healthier lip hydration / natural lip color (same lip shape and size — no filler)
+- Subtle teeth brightness if teeth visible (same tooth shape)
+- Slightly fuller/healthier brows — grooming only (same shape, arch, position, color)
+- Reduce facial redness / rosacea flare areas
+- Leaner buccal cheeks and cleaner jaw-neck soft tissue line
 
 ABSOLUTELY FORBIDDEN — automatic failure if any appear:
 - Inventing beard, stubble, mustache, scruff, 5-o'clock shadow, or dark jaw fuzz where none exists
@@ -49,10 +78,24 @@ ABSOLUTELY FORBIDDEN — automatic failure if any appear:
 - Changing nose shape/size, lip shape/size, eye shape, iris color, or ear shape
 - Adding accessories (glasses, piercings, hats) or removing existing ones
 - Inventing new bone structure, sharper jaw, or new cheekbone edges
-- Relighting, recoloring skin, changing background/clothing/hair color
+- Relighting, recoloring skin, changing background/clothing, or changing ANY hair (scalp or facial)
+- Changing hairstyle, haircut, hair length, hair color, hairline, or hair volume
+- Making the face look like a different person, face swap, or beauty-filter identity change
 - Plastic/airbrushed skin, porcelain filter, or "different person" look
+- Adding NEW freckles, moles, beauty marks, birthmarks, sun spots, or pigment dots not in the input
+- Removing, fading, or relocating EXISTING freckles, moles, or permanent skin marks
 
-Rule: output = same person, same face, same grooming state — just fresher, less puffy, cleaner skin.`
+Rule: output = same person, same face, same bone structure — dramatically fresher, leaner soft tissue, cleaner skin, rested eyes. Skin marks = copy from input exactly.`
+
+const REALISTIC_ACHIEVABLE_FACE_EDITS = `[REALISTIC ACHIEVABLE EDITS — APPLY ALL RELEVANT TO THIS FACE]
+Maximize visible glow-up through achievable soft-tissue + skin improvements (NOT bone surgery, NOT face swap):
+1) Strong buccal/mid-face de-bloat + water retention drain
+2) Under-eye bag de-puff + dark circle fade (same eye shape/iris)
+3) Active blemish + redness cleanup; even minor tone patchiness (undertone frozen)
+4) Healthier lip hydration/color if lips visible (shape unchanged)
+5) Subtle teeth brightness if smile shows teeth
+6) Brow grooming — fuller/healthier look, exact same shape
+7) Fresher, less tired overall appearance — unmistakable before/after on THIS person`
 
 /** Short hard stop for concise prompts — jaw bones must never be invented. */
 const JAW_BONE_INVENTION_BAN = `[JAW BONE — NEVER INVENT OR ENLARGE]
@@ -105,7 +148,7 @@ Modify ONLY soft-tissue de-bloating (reduce water retention / puffiness) and cle
 /** Always appended — strongest guardrails for identity + scene lock. */
 const SCENE_AND_IDENTITY_LOCK = `[EDIT REGION — FACE + GROOMING]
 - You may edit: facial skin and soft tissue from the frontal hairline down to the jaw/chin (cheeks, jaw, chin, under-eyes, upper/lower eyelids, eyebrows, brow area, nose surface, forehead skin, lips surface) — but NOT facial hair coverage (beard/stubble/mustache pixels are frozen).
-- Hair at the temples and frontal hairline: styling/grooming only — same person, same length/color.
+- Scalp hair, hairline, temples, and all hair strands above the forehead: FROZEN — copy input pixels exactly; no restyle, trim, recolor, or volume change.
 - You must NOT edit: hat, cap, beanie, hood, headband, ears, neck, shirt, jacket, background, walls, or any object/accessory.
 - Treat hat, clothing, and background pixels as a frozen layer — copy them exactly from the input.
 
@@ -113,7 +156,7 @@ const SCENE_AND_IDENTITY_LOCK = `[EDIT REGION — FACE + GROOMING]
 - Every non-face pixel must keep the EXACT same RGB hue, saturation, and brightness as the input — especially hat/headwear, clothing, and background.
 - Hat/cap/beanie: identical color, fabric texture, logos, folds, and shadows — no recolor, no desaturation, no warming/cooling.
 - Clothing: identical color and fabric; no shirt/jacket/hoodie color shift.
-- Hair: same color and general length as input — but allow a cleaner, intentionally styled softmaxxing look at temples and hairline (more polished, better framing of face). No dramatic color change or completely different haircut.
+- Head hair: PIXEL-IDENTICAL to input — same color, length, style, texture, volume, and hairline. No restyle, trim, recolor, or "groomed" hair makeover.
 - Background & environment: pixel-stable — no relighting, no color grade, no contrast change outside the face.
 - Global white balance, exposure, and color grading of the full image must stay identical to the input.
 
@@ -149,15 +192,17 @@ const SCENE_AND_IDENTITY_LOCK = `[EDIT REGION — FACE + GROOMING]
 - Copy facial-hair pixels exactly from input. Never generate new hair density or erase existing hair.
 - Jaw de-bloat edits skin between hairs only — facial hair coverage unchanged.
 
-[EYEBROW LOCK — BEAUTIFY ONLY, DO NOT RESHAPE]
-- Eyebrows: beautify ONLY — cleaner groomed edges, remove stray hairs, slightly neater appearance.
-- Keep the EXACT same brow shape, arch height, arch curve, thickness, length, density, and position as the input.
-- Do NOT reshape the arch, do NOT lift or lower the brow, do NOT make brows fuller/thinner, do NOT change brow color.
+[EYEBROW LOCK — FULLER LOOK, SAME SHAPE]
+- Eyebrows may appear slightly fuller, healthier, and less sparse (rested/groomed look) — but EXACT same brow shape, arch height, arch curve, length, position, and color as input.
+- Allowed: cleaner groomed edges, remove stray hairs, natural density refresh — brows look fuller WITHOUT redrawn or lifted arches.
+- FORBIDDEN: reshape arch, lift or lower brow, block brows, lamination effect, thicker redrawn brows, change brow color.
 - Do NOT move brow bone position or skull ridge.
 
-[EYE LOCK]
-- Eyes: reduce periorbital/under-eye puffiness and upper-lid heaviness; eyes look more open and awake — iris color, eye size, and eye shape unchanged.
-- Do NOT apply heavy eye makeup, false lashes, or change eyelid crease structure.`
+[EYE LOCK — SAME EYES, OPEN RESTED LOOK]
+- Eyes: reduce periorbital/under-eye fat and puffiness; eyes look more open, rested, alert — natural hunter-eye READ from de-bloat ONLY on THIS face.
+- Same iris color, same eye size, same eye shape, same eyelid crease — do NOT change eye geometry.
+- Do NOT apply heavy eye makeup, false lashes, or change eyelid crease structure.
+- Do NOT lift or reshape eyebrows to fake hunter eyes — periorbital soft tissue reduction only.`
 
 const FORBIDDEN_CHANGES = `[FORBIDDEN — DO NOT DO THESE]
 - Inventing ANY new facial feature, grooming, or accessory not present in the input.
@@ -174,35 +219,37 @@ const FORBIDDEN_CHANGES = `[FORBIDDEN — DO NOT DO THESE]
 - Brightening, warming, or recoloring the face or the full image.
 - Relighting or changing shadow direction anywhere in the frame.
 - Recoloring hat, cap, headwear, or clothing (tank top, shirt, hoodie).
-- Changing hair color or the dark moody background/window.
+- Changing head hair color, length, style, texture, volume, or hairline shape.
+- Restyling, trimming, recoloring, or adding shine/volume to scalp hair.
+- Changing the dark moody background/window.
 - Global contrast, saturation, or white-balance shifts.
 - Making skin look "radiant", "glowing", or studio-lit.
 - Changing skin color, undertone, tan level, or skin type (oily/dry/matte/dewy character).
-- Removing freckles, moles, or permanent skin marks.
+- Adding NEW freckles, moles, beauty marks, birthmarks, sun spots, or skin pigment not present in the input.
+- Removing, fading, relocating, or inventing freckles, moles, or permanent skin marks.
 - Airbrushing, blurring, or plasticizing skin texture.
 - Masculinizing a female face (squarer jaw, wider mandible, heavier lower face) or feminizing a male face.
-- Reshaping eyebrows — changing arch, thickness, length, lift, or position.
+- Reshaping eyebrows — changing arch, lift, position, or drawing thicker block brows.
+- Copying an external reference face, model jaw, or celebrity template — edit THIS input person only.
 - Over-sharpening or angularizing cheekbones beyond this person's natural facial structure.
 - Forcing harsh cheek hollows or generic model contours that do not match this specific face.
 - Any "razor-sharp", surgical, or model-grade jaw sculpt — this is a realistic de-bloat edit only.`
 
-const REALISTIC_GLOW_UP_RANGE = `[REALISTIC GLOW-UP CALIBRATION — VISIBLE BUT BELIEVABLE]
-This is a REAL-WORLD softmaxxing preview — months of skincare, sleep, hydration, and lower facial puffiness. NOT surgery. NOT a different face.
-The before/after MUST look clearly different at first glance — same person, visibly fresher and less puffy.
+const REALISTIC_GLOW_UP_RANGE = `[REALISTIC GLOW-UP CALIBRATION — FAT LOSS + FACIAL TRAINING]
+This is a REAL-WORLD preview of 8–12 weeks: lower body fat, facial training (chewing/mewing), sleep, hydration, skincare. NOT surgery. NOT a reference face. NOT a different person.
+The before/after MUST look clearly different — same person, visibly leaner soft-tissue face.
 
 VISIBLE & REQUIRED (soft tissue + grooming only):
-- Clearly less water retention and facial puffiness — face reads noticeably fresher and leaner.
-- Clearly cleaner, smoother skin (retinol/vitamin-C level) — same color and skin type.
-- Clearly fresher under-eyes, less periorbital puffiness.
-- Eyebrows slightly neater (beautify only — same shape).
-- Cheeks clearly less bloated — existing bone structure more visible through reduced soft tissue.
+- Leaner cheeks and mid-face — buccal soft fat visibly reduced; defined cheek area through tissue loss.
+- Rested, open eyes — periorbital de-bloat; same eye shape; hunter-eye read from de-bloat only.
+- Eyebrows slightly fuller/healthier looking — same shape, arch, position.
+- Cleaner skin — same skin color, undertone, melanin.
 
 BONE-SAFE (soft tissue only):
-- Jawline: visible soft-tissue de-puff; mandible BONE outline unchanged — never a new sharp/square jaw bone.
-- Chin/submental: clear soft-tissue reduction under the same chin bone.
-- Cheekbones: clearly clearer through de-bloat — not carved model hollows.
+- Jawline/chin/cheekbones: bones PIXEL-IDENTICAL — never new sharp/square jaw bone.
+- Definition = volume removal on THIS face only — not a copied ideal.
 
-Someone who knows this person should say: "You look way fresher / less puffy" — not "You got surgery."`
+Someone who knows this person should say: "You look leaner and fresher" — not "You got surgery" or "You look like someone else."`
 
 const SOFTMAXXING_GUIDE = `[SOFTMAXXING GLOW-UP — REALISTIC, FACE-MATCHED]
 Simulate believable months of real softmaxxing — NOT surgery. Before/after should show clear but REALISTIC improvements for THIS face.
@@ -241,7 +288,7 @@ const REALISM_CAP = `[VISIBILITY TARGET — STRONG GLOW-UP, ZERO BONE CHANGE]
 The glow-up MUST be clearly visible in before/after — noticeably less puffy, clearly cleaner skin, fresher eyes.
 If trade-off between "invisible/subtle edit" and "visible de-puff" — always choose VISIBLE soft-tissue improvement.
 If trade-off between "more defined jaw bone" and "realistic same person" — keep bones identical; achieve definition through soft-tissue removal only.
-Never invent facial hair. Never reshape eyebrows. Hat, clothing, background, and lighting stay identical.`
+Never invent facial hair. Never change head hair (color/style/length/hairline). Never reshape eyebrows. Hat, clothing, background, and lighting stay identical.`
 
 const SOFT_TISSUE_PUSH = `[PRIMARY TARGETS — VISIBLE FACE-MATCHED GLOW-UP]
 1. Water retention / puffiness — TOP priority. Reduce bloating until face reads CLEARLY fresher and leaner (bones unmoved).
@@ -252,28 +299,44 @@ const SOFT_TISSUE_PUSH = `[PRIMARY TARGETS — VISIBLE FACE-MATCHED GLOW-UP]
 6. Submental / jaw SOFT tissue — LIGHT de-puff only if needed; mandible and chin BONE outline FROZEN; never invent beard or bone.
 Definition = visible cheek/mid-face refinement for THIS face. NOT jaw surgery. NOT bone reshaping. NOT invented mandible.`
 
-const VISIBLE_GLOW_UP_TARGET = `[⚠️ VISIBILITY REQUIREMENT — BEFORE/AFTER MUST DIFFER]
-This is NOT a subtle filter. The output must show a CLEAR, NOTICEABLE glow-up:
-- Face clearly less puffy / bloated (especially cheeks, mid-face, under-eyes).
-- Skin clearly cleaner and more even (blemishes reduced).
-- Eyes clearly more open and rested.
-Same person, same bones, same facial hair — but the improvement must be obvious when comparing before vs after.
-If the result looks nearly identical to the input, the edit FAILED — push de-bloat and skin clarity harder (bones still frozen).`
+const VISIBLE_GLOW_UP_TARGET = `[⚠️ VISIBILITY REQUIREMENT — MAXIMUM GLOW-UP, SAME PERSON]
+This is NOT a subtle filter. The output must show a DRAMATIC, UNMISTAKABLE glow-up on THIS exact person:
+- Face dramatically less puffy — cheeks and mid-face visibly deflated like 12–16 weeks fat loss.
+- Under-eyes dramatically de-puffed — clearly open, rested, brighter eyes.
+- Skin dramatically cleaner — active blemishes mostly gone; same undertone.
+Same person, same identity, same bones, same facial hair, same head hair — NEVER a different face.
+Before/after side-by-side must shock you with the difference. If cheeks/eyes/skin look nearly identical → FAILED: push 2× harder (bones still frozen; never face swap).`
 
-const SKIN_REALISM_GUIDE = `[SKIN — RETINOL + VITAMIN C CLARITY (NO COLOR/TYPE CHANGE)]
-Goal: skin looks like 6+ months of retinol + vitamin C — clearly cleaner, smoother, more even — NOT a beauty filter or makeup.
-DO:
-- Visibly reduce pimples, acne, active blemishes, and localized redness.
-- Smooth rough texture and uneven patches (retinol effect) while keeping real micro-pores and skin grain.
-- Even out tone blotches (vitamin C effect) while keeping natural skin variation, freckles, and moles.
-- Match face skin color exactly to neck, ears, and visible chest — same undertone, no brightening.
-- Preserve freckles, moles, beauty marks, and natural melanin pattern.
-DO NOT:
-- Change skin color, undertone, tan level, or overall brightness.
-- Change skin type (do not turn oily skin into matte porcelain or dry skin into dewy glass).
-- Remove freckles, moles, or permanent skin marks.
-- Apply foundation, concealer, or heavy makeup look.
-- Airbrush, blur, or plasticize the skin.`
+const SAME_PERSON_AMPLIFY = `[SAME PERSON — AMPLIFY GLOW-UP, NEVER SWAP IDENTITY]
+Maximize visible improvement on THIS input face only. More glow-up = more soft-tissue de-bloat + clearer skin + fresher eyes — NOT a new person.
+Forbidden: face swap, different person, model face, porcelain beauty filter, altered nose/lips/eye shape, or "better looking stranger".
+Required: unmistakable before/after on cheeks, under-eyes, and skin while every bone edge and identity feature matches the input.`
+
+const SKIN_MARKS_PRESERVATION_LOCK = `[SKIN MARKS — NEVER ADD, NEVER REMOVE, NEVER MOVE]
+Permanent skin marks are NOT blemishes — treat them as frozen identity pixels. NEVER invent moles (Muttermale), freckles, or pigment.
+
+IF INPUT HAS freckles, moles, beauty marks, birthmarks, or sun spots:
+- Copy them EXACTLY — same count, size, color, and position on forehead, cheeks, nose, chin, jaw, neck.
+- Do NOT fade, blur, airbrush, or relocate them while cleaning skin.
+
+IF INPUT HAS NO freckles/moles/markings:
+- Output MUST have ZERO new moles, Muttermale, freckles, beauty marks, birthmarks, sun spots, or pigment dots.
+- Do NOT add "realistic" freckles, sun spots, beauty marks, or moles for texture — absolutely forbidden.
+
+Active blemishes ONLY (temporary — safe to fade): pimples, whiteheads, blackheads, inflamed acne redness, active cystic spots, flaky patches, uneven red blotches.
+NOT blemishes (never touch): freckles, moles, Muttermale, beauty marks, birthmarks, existing sun spots, permanent pigment.`
+
+const SKIN_REALISM_GUIDE = `[SKIN — CLARITY UP, COLOR FROZEN (PHOTOREALISTIC)]
+Goal: clearly PURER, CLEANER, more even-looking skin — same person, SAME skin color/undertone/pigmentation.
+YOU MUST visibly clean active blemishes on every glow-up:
+- Fade/remove visible pimples, acne, papules, whiteheads, blackheads, inflamed redness, blotchy red patches, flaky patches.
+- Forehead, cheeks, nose, chin, jaw must look clearly reiner than input — obvious before/after on skin clarity.
+COLOR & PIGMENTATION (non-negotiable):
+- EXACT same skin color, undertone, melanin, warmth, tan level as input — match neck/ears.
+- NO lightening, darkening, warming, cooling, color grade, or makeup/foundation look.
+KEEP: micro-pores, skin grain, ALL freckles/moles/beauty marks exact, fine lines, oily/dry skin character.
+FORBIDDEN: color shift, porcelain/airbrush, adding/removing pigment marks, regenerating skin tone.
+FAILED if skin color changed OR blemishes look unchanged OR new marks appear.`
 
 function normalizeFutureSelfMode(raw) {
   const m = String(raw || 'front').trim().toLowerCase()
@@ -281,11 +344,11 @@ function normalizeFutureSelfMode(raw) {
   return 'front'
 }
 
-const FRONT_TASK = `[TASK: VISIBLE NATURAL GLOW-UP — DEFINED CHEEKS + STRONG DE-BLOAT]
-Same person, same bones, same facial hair. Apply a CLEARLY VISIBLE glow-up: defined leaner cheeks (buccal de-bloat), strong water-retention reduction, cleaner skin, fresher eyes — mandible/chin/cheekbone BONE geometry pixel-identical; never enlarged or invented. Before/after must look obviously different.`
+const FRONT_TASK = `[TASK: MAXIMUM VISIBLE GLOW-UP — SAME PERSON ONLY]
+Same person, same bones, same facial hair, same head hair. Apply a DRAMATICALLY VISIBLE glow-up: aggressively leaner cheeks (buccal de-bloat), strong water-retention drain, clearly cleaner/brighter skin (active blemishes strongly faded — moles frozen), much fresher open eyes — mandible/chin/cheekbone BONE geometry pixel-identical; never enlarged or invented. Before/after must look obviously different — but still unmistakably THIS person.`
 
-const SIDE_TASK = `[TASK: SIDE-PROFILE VISIBLE GLOW-UP — STRONG DE-BLOAT]
-Clear submental/cheek soft-tissue de-puff — jaw/chin BONE profile identical to input. Facial hair unchanged. Zero lighting/color drift. Before/after clearly different.`
+const SIDE_TASK = `[TASK: SIDE-PROFILE STRONG GLOW-UP — SAME PERSON]
+Side view: strongly reduce cheek/jaw/submental soft fat + water bloat — clearly leaner profile, cleaner jaw-neck line, brighter skin. Mandible/chin BONE curve and chin projection pixel-identical. Nose/lip/forehead profile unchanged. Same person — never a different face.`
 
 const ZONE_LABELS = {
   jawline: 'Jawline (soft tissue only — mandible bone frozen)',
@@ -311,7 +374,8 @@ export function parseGlowUpMetrics(raw) {
     chinNeck: ['chinNeck', 'chinNeckDefinition', 'chin', 'submental'],
     eyeArea: ['eyeArea', 'eyes', 'underEye'],
     brows: ['brows', 'eyebrows', 'browArea'],
-    skin: ['skin', 'skinQuality', 'skinQuality30to90'],
+    skin: ['skin', 'skinQuality', 'skinQuality30to90', 'skinScore'],
+    hair: ['hair', 'hairScore'],
     forehead: ['foreheadSmoothness', 'forehead'],
     symmetry: ['symmetry', 'facialSymmetry'],
     waterRetention: ['waterRetention', 'bloat', 'puffiness'],
@@ -349,6 +413,12 @@ export function parseFaceProfile(raw) {
   if (jaw) out.looksmaxJaw = jaw
   const bloat = Number(raw.bloatSeverity ?? raw.bloatSeverity0to100)
   if (Number.isFinite(bloat) && bloat >= 0) out.bloatSeverity = Math.min(100, Math.round(bloat))
+  const deBloatPriority = String(raw.deBloatPriority || raw.de_bloat_priority || '').trim().toLowerCase()
+  if (deBloatPriority) out.deBloatPriority = deBloatPriority
+  const skinCleanupPriority = String(raw.skinCleanupPriority || raw.skin_cleanup_priority || '').trim().toLowerCase()
+  if (skinCleanupPriority) out.skinCleanupPriority = skinCleanupPriority
+  const glowUpIntensity = String(raw.glowUpIntensity || raw.glow_up_intensity || '').trim().toLowerCase()
+  if (glowUpIntensity) out.glowUpIntensity = glowUpIntensity
   const gender = String(raw.gender || raw.genderRaw || '').trim().toLowerCase()
   if (gender === 'female' || gender === 'male') out.gender = gender
   const facialHair = String(raw.facialHair || raw.facial_hair || '').trim().toLowerCase()
@@ -456,16 +526,19 @@ export function classifyFacialComposition(metrics, profile) {
   const headroom = Number.isFinite(overall) && Number.isFinite(potential)
     ? potential - overall
     : 0
-  const puffinessHigh = Number.isFinite(water) && water < 56
-  const puffinessModerate = Number.isFinite(water) && water < 68
-  const leanWater = Number.isFinite(water) && water >= 72
-  const strongDef = Number.isFinite(faceDef) && faceDef >= 68
-  const uniformlySoft = Number.isFinite(jaw) && jaw < 52
-    && Number.isFinite(chin) && chin < 52
-    && Number.isFinite(faceDef) && faceDef < 54
-  const strongBone = boneAvg != null && boneAvg >= 58
+  const puffinessHigh = Number.isFinite(water) && water < 68
+  const puffinessModerate = Number.isFinite(water) && water < 80
+  const leanWater = Number.isFinite(water) && water >= 84
+  const strongDef = Number.isFinite(faceDef) && faceDef >= 72
+  const softMidface = Number.isFinite(metrics?.midfaceFullness) && metrics.midfaceFullness < 55
+  const uniformlySoft = (Number.isFinite(jaw) && jaw < 58)
+    || (Number.isFinite(chin) && chin < 58)
+    || (Number.isFinite(faceDef) && faceDef < 58)
+    || softMidface
+  const heavyBloat = Number.isFinite(bloatSeverity) && bloatSeverity >= 42
+    || (Number.isFinite(water) && water < 58)
 
-  if (defLevel === 'lean' || (leanWater && strongDef)) {
+  if (defLevel === 'lean' || (leanWater && strongDef && !heavyBloat)) {
     return {
       type: 'lean',
       strategy: 'definition_polish',
@@ -473,15 +546,17 @@ export function classifyFacialComposition(metrics, profile) {
     }
   }
 
-  if (uniformlySoft && (puffinessModerate || (Number.isFinite(bloatSeverity) && bloatSeverity >= 42))) {
+  if (heavyBloat || (uniformlySoft && (puffinessModerate || (Number.isFinite(bloatSeverity) && bloatSeverity >= 35)))) {
     return {
       type: 'adipose',
       strategy: 'structural_sculpt',
-      label: 'adipose / soft-tissue fullness — realistic facial leanness',
+      label: 'heavy facial fat / soft-tissue fullness — maximum realistic leanness',
     }
   }
 
-  if (puffinessHigh && (strongBone || headroom >= 10 || defLevel === 'bloated')) {
+  const strongBone = boneAvg != null && boneAvg >= 58
+
+  if (puffinessHigh || defLevel === 'bloated' || (Number.isFinite(bloatSeverity) && bloatSeverity >= 40)) {
     return {
       type: 'water_retention',
       strategy: 'de_puff',
@@ -504,11 +579,817 @@ export function classifyFacialComposition(metrics, profile) {
   }
 }
 
+/** Face already lean/defined/good-looking — polish glow-up, not heavy de-bloat. */
+function isAlreadyDefinedFace(metrics, profile) {
+  return resolveGlowUpPlan(metrics, profile, 'front').tier === 'defined'
+}
+
+const COMPACT_BONE_FREEZE = `⛔ BONE FREEZE (HIGHEST PRIORITY): mandible, chin bone, gonial angle, jaw width, chin tip, cheekbone position = PIXEL-IDENTICAL to input. FORBIDDEN: squarer/sharper/longer/wider jaw, new chin mass, shadow-sculpted jawline. Real glow-up NEVER changes bone — only removes soft tissue OVER the same bones.`
+
+const INFRAORBITAL_DEBLOAT = `INFRAORBITAL / UNDER-EYE (PRIMARY DEFINITION ZONE): aggressively drain tear trough, under-eye bags, lower eyelid fluid retention, periorbital puffiness — visibly flatter, more rested infraorbital region; same eye shape/iris; no bone change.`
+
+const COMPACT_IDENTITY_LOCK = `LOCKS: same identity/pose/lighting. Bones frozen. No invented jaw/chin/cheekbone. No added beard/stubble.`
+
+const BONE_SOFT_TISSUE_LOCK = `mandible/chin/cheekbone bones pixel-identical to input — NEVER invent, enlarge, sharpen, square, or extend bone`
+
+const ZERO_INVENTION_LOCK = `⚠️ ZERO INVENTION (automatic fail): Do NOT add ANYTHING not in the input photo — no new moles, Muttermale, freckles, beauty marks, birthmarks, sun spots, scars, stubble, beard, pores-as-spots, or skin pigment. If the input has NO moles/freckles → output must have NONE. Existing marks → copy exact count, size, color, position. Never invent "realistic" skin texture marks.`
+
+const SKIN_TONE_CLARITY_LOCK = `[SKIN — CLEARER BUT SAME COLOR (MANDATORY)]
+Make skin visibly PURER and CLEANER — NOT a different skin color.
+WHAT TO DO: fade ALL active pimples, acne, whiteheads, blackheads, inflamed redness, blotchy red patches until skin reads clearly reiner/even.
+COLOR LOCK: EXACT same skin color, undertone, melanin as input — match neck/ears. NO lightening, darkening, warming, cooling, or tan shift.
+MARKS LOCK: ZERO new moles/Muttermale/freckles; if none in input → none in output; existing marks copied exactly.`
+
+/**
+ * Adaptive glow-up intensity from scan metrics — every face gets a visible, tier-matched edit.
+ * @returns {{ tier: 'heavy'|'balanced'|'defined', deBloatPct: number, skinFocus: string, eyeFocus: string, tierLabel: string, composition: object, metrics: object|null, profile: object|null, extreme: boolean, headroom: number, isSide: boolean, weakZones: string[] }}
+ */
+export function resolveGlowUpPlan(metricsRaw, profileRaw, mode = 'front') {
+  const metrics = parseGlowUpMetrics(metricsRaw)
+  const profile = parseFaceProfile(profileRaw)
+  const composition = classifyFacialComposition(metrics || {}, profile || {})
+  const isSide = normalizeFutureSelfMode(mode) === 'side'
+
+  const gentle = profile?.glowUpIntensity === 'gentle'
+    || profile?.deBloatPriority === 'minimal'
+    || profile?.deBloatPriority === 'low'
+  const extreme = !gentle
+
+  const overall = metrics?.overall ?? null
+  const potential = metrics?.potential ?? overall
+  const headroom = Number.isFinite(overall) && Number.isFinite(potential)
+    ? Math.max(0, potential - overall)
+    : 8
+  const water = metrics?.waterRetention ?? null
+  const def = metrics?.facialDefinition ?? null
+  const bloat = metrics?.bloatSeverity ?? profile?.bloatSeverity
+    ?? (Number.isFinite(water) ? 100 - water : null)
+  const midface = metrics?.midfaceFullness ?? null
+  const skin = skinScore(metrics)
+
+  const needsHeavyDeBloat = composition.type === 'adipose'
+    || (Number.isFinite(bloat) && bloat >= 38)
+    || (Number.isFinite(water) && water < 58)
+    || (Number.isFinite(def) && def < 48)
+    || (Number.isFinite(overall) && overall < 52)
+    || (Number.isFinite(midface) && midface < 45)
+    || (Number.isFinite(metrics?.jawline) && metrics.jawline < 48)
+    || (Number.isFinite(metrics?.chinNeck) && metrics.chinNeck < 48)
+    || (composition.type === 'water_retention'
+      && ((Number.isFinite(water) && water < 64) || (Number.isFinite(bloat) && bloat >= 36)))
+
+  const isDefined = !needsHeavyDeBloat && (
+    composition.type === 'lean'
+    || (Number.isFinite(overall) && overall >= 72
+      && (!Number.isFinite(water) || water >= 74)
+      && (!Number.isFinite(def) || def >= 64))
+  )
+
+  const forceMax = !gentle && (
+    profile?.deBloatPriority === 'maximum'
+    || profile?.deBloatPriority === 'max'
+    || profile?.glowUpIntensity === 'extreme'
+  )
+
+  let tier = 'balanced'
+  if (needsHeavyDeBloat || forceMax) tier = 'heavy'
+  else if (isDefined) tier = 'defined'
+
+  let deBloatPct
+  let fatPct
+  let skinFocus
+  let eyeFocus
+  let tierLabel
+
+  if (tier === 'heavy') {
+    fatPct = 82 + Math.min(6, Math.floor(headroom / 2))
+    if (extreme) fatPct = Math.min(90, fatPct + 4)
+    deBloatPct = fatPct
+    skinFocus = 'strong'
+    eyeFocus = 'strong'
+    tierLabel = 'heavy face — maximum realistic leanness (soft tissue only)'
+  } else if (tier === 'defined') {
+    fatPct = extreme ? 76 : 66
+    deBloatPct = fatPct
+    skinFocus = 'premium'
+    eyeFocus = 'strong'
+    tierLabel = 'already defined — strong soft-tissue refresh (bones frozen)'
+  } else {
+    fatPct = 74 + Math.min(10, Math.floor(headroom / 2))
+    if (extreme) fatPct = Math.min(86, fatPct + 4)
+    deBloatPct = fatPct
+    skinFocus = 'strong'
+    eyeFocus = 'strong'
+    tierLabel = 'balanced — very strong fat + water reduction (soft tissue only)'
+  }
+
+  if (!metrics) {
+    fatPct = extreme ? 84 : 72
+    deBloatPct = fatPct
+    tier = extreme ? 'heavy' : 'balanced'
+    tierLabel = extreme
+      ? 'no scan — assume puffy face needing aggressive soft-tissue reduction'
+      : 'no scan — balanced soft-tissue reduction'
+    skinFocus = 'strong'
+    eyeFocus = 'strong'
+  }
+
+  const waterDrainPct = Math.min(98, fatPct + (extreme ? 32 : 26))
+
+  const weakZones = []
+  if (Number.isFinite(water) && water < 72) weakZones.push(`water-bloat ${water}/100`)
+  if (Number.isFinite(skin) && skin < 72) weakZones.push(`skin ${skin}/100`)
+  if (Number.isFinite(metrics?.jawline) && metrics.jawline < 68) weakZones.push(`jaw ${metrics.jawline}/100`)
+  if (Number.isFinite(metrics?.chinNeck) && metrics.chinNeck < 68) weakZones.push(`submental ${metrics.chinNeck}/100`)
+  if (Number.isFinite(def) && def < 62) weakZones.push(`soft definition ${def}/100`)
+  if (Number.isFinite(metrics?.eyeArea) && metrics.eyeArea < 72) weakZones.push(`eyes ${metrics.eyeArea}/100`)
+
+  return {
+    tier,
+    deBloatPct,
+    fatPct: fatPct ?? deBloatPct,
+    waterDrainPct,
+    skinFocus,
+    eyeFocus,
+    tierLabel,
+    composition,
+    metrics,
+    profile,
+    extreme,
+    headroom,
+    isSide,
+    weakZones,
+  }
+}
+
+function skinLineForPlan(_plan) {
+  return 'STRONGLY fade ALL active pimples/acne/blackheads/inflamed redness until skin reads clearly CLEANER/reiner — SAME color/undertone; ZERO new moles/Muttermale/freckles (none in input = none in output); copy existing marks exact; keep pores+grain — no airbrush'
+}
+
+function skinBlockForPlan(_plan) {
+  return `${skinLineForPlan(_plan)}. Must be obvious in before/after on forehead, cheeks, nose, chin.`
+}
+
+function waterLineForPlan(plan) {
+  const pct = plan.waterDrainPct ?? plan.deBloatPct
+  return `drain ~${pct}% facial water retention — infraorbital/under-eye bags, tear trough, cheeks, mid-face, nasal-labial area MUST look clearly less puffy (soft fluid ONLY; ${BONE_SOFT_TISSUE_LOCK})`
+}
+
+function fatLineForPlan(plan) {
+  const pct = plan.fatPct ?? plan.deBloatPct
+  if (plan.tier === 'defined') {
+    return `reduce buccal/mid-face SOFT fat ~${pct}% — leaner cheeks; infraorbital region flatter; ${BONE_SOFT_TISSUE_LOCK}`
+  }
+  if (plan.isSide) {
+    return `cut buccal/mid-face/submental SOFT fat ~${pct}% — leaner profile; mandible/chin BONE curve unchanged (${BONE_SOFT_TISSUE_LOCK})`
+  }
+  return `reduce buccal + mid-face SOFT fat ~${pct}% — clearly leaner cheeks; same mandible/chin bone outline (${BONE_SOFT_TISSUE_LOCK})`
+}
+
+function deBloatLineForPlan(plan) {
+  return fatLineForPlan(plan)
+}
+
+function eyeLineForPlan(_plan) {
+  return 'MAXIMUM infraorbital/under-eye de-puff — tear trough + lower eyelid bags clearly reduced; brighter, more open, rested eyes; same eye shape/iris'
+}
+
+function buildVisionMarksLine(marks) {
+  if (!marks || typeof marks !== 'object') return null
+  const parts = []
+  if (marks.hasFreckles) parts.push('freckles present — copy exact count/position')
+  else parts.push('NO freckles visible — output must have NONE')
+  if (marks.hasMoles) {
+    const n = Number.isFinite(marks.moleCount) && marks.moleCount > 0 ? marks.moleCount : 'visible'
+    parts.push(`${n} mole(s) visible — copy exact size/color/position`)
+  } else {
+    parts.push('NO moles visible — never invent Muttermale')
+  }
+  if (marks.markNotes) parts.push(marks.markNotes)
+  return parts.join('; ')
+}
+
+function unwrapVisionAnalysis(visionRaw) {
+  if (!visionRaw || typeof visionRaw !== 'object') return null
+  return visionRaw.analysis ?? visionRaw
+}
+
+function buildVisionFaceHeader(vision, mode) {
+  if (!vision) return ''
+  const lines = ['THIS FACE FROM PHOTO (edit ONLY what is described — bones frozen):']
+
+  if (vision.skinTexture || vision.skinUndertone) {
+    const parts = []
+    if (vision.skinTexture) parts.push(vision.skinTexture)
+    if (vision.skinUndertone && vision.skinUndertone !== 'unknown') {
+      parts.push(`${vision.skinUndertone} undertone`)
+    }
+    lines.push(`- Skin: ${parts.join('; ')}`)
+  }
+
+  const marksLine = buildVisionMarksLine(vision.skinMarks)
+  if (marksLine) lines.push(`- Marks: ${marksLine}`)
+
+  if (vision.blemishAreas?.length) {
+    lines.push(`- Blemishes to fade: ${vision.blemishAreas.join(', ')}`)
+  }
+
+  const puff = [
+    vision.faceFullness && vision.faceFullness !== 'unknown' ? vision.faceFullness : null,
+    ...(vision.puffinessAreas || []),
+  ].filter(Boolean)
+  if (puff.length) lines.push(`- Puffiness: ${puff.join(', ')}`)
+
+  if (vision.browShape) {
+    const brow = [vision.browShape, vision.browThickness !== 'unknown' ? vision.browThickness : null]
+      .filter(Boolean)
+      .join(', ')
+    lines.push(`- Brows: ${brow}`)
+  }
+
+  if (vision.hairStructure) lines.push(`- Head hair (FROZEN — copy exactly, do NOT restyle/recolor): ${vision.hairStructure}`)
+  if (vision.facialHairState && vision.facialHairState !== 'unknown') {
+    lines.push(`- Facial hair: ${vision.facialHairState}`)
+  }
+  if (vision.lightingNotes) lines.push(`- Lighting: ${vision.lightingNotes} — preserve`)
+  if (vision.symmetryNotes) lines.push(`- Symmetry: ${vision.symmetryNotes}`)
+
+  if (vision.personalizedEditPrompt) {
+    lines.push(`- Personalized edit: ${vision.personalizedEditPrompt}`)
+  }
+  if (vision.imagePreviewChanges?.length) {
+    lines.push(`- Preview targets: ${vision.imagePreviewChanges.join('; ')}`)
+  }
+  if (vision.waterRetentionLevel && vision.waterRetentionLevel !== 'unknown') {
+    lines.push(`- Water retention: ${vision.waterRetentionLevel}`)
+  }
+  if (vision.buccalFatLevel && vision.buccalFatLevel !== 'unknown') {
+    lines.push(`- Buccal soft fat: ${vision.buccalFatLevel}`)
+  }
+  if (vision.jawDefinitionFocus) {
+    lines.push(`- Jaw definition: ${vision.jawDefinitionFocus}`)
+  }
+
+  if (vision.priorityZones?.length) {
+    lines.push(`- Priority zones: ${vision.priorityZones.join(', ')}`)
+  }
+  if (vision.personalizedKeywords?.length) {
+    lines.push(`- Keywords: ${vision.personalizedKeywords.join('; ')}`)
+  }
+
+  return `\n\n${lines.join('\n')}`
+}
+
+function buildVisionWaterLine(plan, vision) {
+  const { waterPct, needsDeBloat } = resolveRealisticDeBloatPct(plan, vision)
+  const zones = vision.puffinessAreas?.length
+    ? vision.puffinessAreas.join(', ')
+    : 'cheeks, mid-face, under-eyes'
+  return buildRealisticVisionWaterLine(waterPct, zones, vision.waterDrainFocus, needsDeBloat)
+    + ` (${BONE_SOFT_TISSUE_LOCK})`
+}
+
+function buildVisionFatLine(plan, vision) {
+  const { fatPct, needsDeBloat } = resolveRealisticDeBloatPct(plan, vision)
+  const zones = vision.puffinessAreas?.length
+    ? vision.puffinessAreas.filter((z) => !/under-eye|eye/i.test(z)).join(', ') || 'buccal cheeks, jaw soft tissue'
+    : (plan.isSide ? 'cheek/jaw/submental' : 'buccal cheeks, mid-face')
+  return buildRealisticVisionFatLine(fatPct, zones, vision.fatReductionFocus, plan.isSide, needsDeBloat, vision)
+    + `; ${BONE_SOFT_TISSUE_LOCK}`
+}
+
+function buildVisionSkinLine(plan, vision) {
+  return buildRealisticVisionSkinLine(vision, plan)
+}
+
+function buildVisionEyeLine(vision) {
+  return vision.eyeFocus || eyeLineForPlan(null)
+}
+
+function buildVisionBrowLine(plan, vision) {
+  if (vision.browFocus) {
+    return `\n5) BROWS: ${vision.browFocus} — same shape/arch/color.`
+  }
+  if (plan.tier === 'defined' || plan.skinFocus === 'premium') {
+    const shape = vision.browShape ? ` (${vision.browShape})` : ''
+    return `\n5) BROWS: beautify only${shape} — cleaner edges; same shape/arch/color.`
+  }
+  return ''
+}
+
+function buildCompactTierHint(plan) {
+  const water = plan.waterDrainPct ?? plan.deBloatPct
+  const fat = plan.fatPct ?? plan.deBloatPct
+  return `\nTier ${plan.tier}; water ~${water}%; fat ~${fat}% (soft tissue only).`
+}
+
+const VISION_COMPACT_ZERO = `ZERO INVENTION (automatic fail): never add moles, Muttermale, freckles, beauty marks, birthmarks, sun spots, stubble, or beard. Bones frozen; same identity/pose/lighting.`
+
+function buildCompactVisionMarksLock(vision) {
+  const marks = vision?.skinMarks
+  const hasMoles = Boolean(marks?.hasMoles) && (marks?.moleCount ?? 0) > 0
+  const hasFreckles = Boolean(marks?.hasFreckles)
+
+  if (hasMoles) {
+    const n = marks.moleCount || 'visible'
+    return `MARKS LOCK: input has ${n} mole(s)/Muttermale — copy EXACT count, size, color, position. Never add, remove, fade, or move while cleaning skin.`
+  }
+  if (hasFreckles) {
+    return `MARKS LOCK: input has freckles only — copy EXACT freckle positions. ZERO new moles/Muttermale/beauty marks allowed.`
+  }
+  return `MARKS LOCK (CRITICAL): input has ZERO moles/Muttermale/freckles/beauty marks → output MUST stay at ZERO. Fade pimples/acne ONLY — do NOT add brown/dark pigment spots for "realism". Any new mark = FAIL.`
+}
+
+function buildCompactVisionFaceSummary(vision) {
+  const parts = []
+  const marksLock = buildVisionMarksLine(vision.skinMarks)
+  if (marksLock) parts.push(`marks: ${marksLock}`)
+  if (vision.realisticGoal) parts.push(`goal: ${truncatePromptText(vision.realisticGoal, 100)}`)
+  if (vision.faceFullness && vision.faceFullness !== 'unknown') parts.push(`fullness: ${vision.faceFullness}`)
+  if (vision.waterRetentionLevel && vision.waterRetentionLevel !== 'unknown') {
+    parts.push(`water: ${vision.waterRetentionLevel}`)
+  }
+  if (vision.buccalFatLevel && vision.buccalFatLevel !== 'unknown') {
+    parts.push(`buccal fat: ${vision.buccalFatLevel}`)
+  }
+  if (vision.jawDefinitionState && vision.jawDefinitionState !== 'unknown') {
+    parts.push(`jaw: ${vision.jawDefinitionState}`)
+  }
+  if (vision.blemishAreas?.length) parts.push(`blemishes: ${vision.blemishAreas.join(', ')}`)
+  if (vision.skinTexture) parts.push(truncatePromptText(vision.skinTexture, 60))
+  if (vision.puffinessAreas?.length) parts.push(`puff: ${vision.puffinessAreas.join(', ')}`)
+  return parts.join(' | ')
+}
+
+function truncatePromptText(text, max = 160) {
+  const s = String(text ?? '').trim()
+  if (!s) return ''
+  return s.length > max ? `${s.slice(0, max - 1)}…` : s
+}
+
+function ensureVisionMarkAvoid(vision) {
+  const avoid = [...(vision?.unrealisticAvoid || [])]
+  const hasMoles = Boolean(vision?.skinMarks?.hasMoles) && (vision?.skinMarks?.moleCount ?? 0) > 0
+  if (!hasMoles && !avoid.some((a) => /mole|muttermal|beauty mark|pigment spot/i.test(String(a)))) {
+    avoid.unshift('add moles/Muttermale/beauty marks/pigment spots not in input')
+  }
+  if (!avoid.some((a) => /jaw|mandible|bone|chin bone/i.test(String(a)))) {
+    avoid.unshift('invent/sharpen/extend jaw or chin bone')
+  }
+  return avoid.slice(0, 5)
+}
+
+const REALISTIC_FULLNESS_CAPS = {
+  lean: { water: 94, fat: 80 },
+  average: { water: 98, fat: 88 },
+  puffy: { water: 98, fat: 90 },
+  moon_face: { water: 98, fat: 92 },
+}
+
+/** Minimum de-bloat floors — visible fat-loss look (soft tissue only). */
+const DEBLOAT_FLOOR = { water: 86, fat: 72 }
+const DEBLOAT_FLOOR_EXTREME = { water: 92, fat: 78 }
+
+function profileForcesAggressiveDeBloat(plan) {
+  const p = plan?.profile
+  if (!p) return Boolean(plan?.extreme) || plan?.tier === 'heavy'
+  const prio = String(p.deBloatPriority || p.de_bloat_priority || '').toLowerCase()
+  const intensity = String(p.glowUpIntensity || p.glow_up_intensity || '').toLowerCase()
+  return prio === 'maximum' || prio === 'max'
+    || intensity === 'extreme'
+    || Boolean(plan?.extreme)
+    || plan?.tier === 'heavy'
+}
+
+function metricsIndicateDeBloat(metrics) {
+  if (!metrics) return false
+  return (Number.isFinite(metrics.waterRetention) && metrics.waterRetention < 78)
+    || (Number.isFinite(metrics.bloatSeverity) && metrics.bloatSeverity >= 28)
+    || (Number.isFinite(metrics.facialDefinition) && metrics.facialDefinition < 68)
+    || (Number.isFinite(metrics.jawline) && metrics.jawline < 70)
+    || (Number.isFinite(metrics.midfaceFullness) && metrics.midfaceFullness < 52)
+    || (Number.isFinite(metrics.chinNeck) && metrics.chinNeck < 70)
+}
+
+/** Reorder vision zones — buccal cheeks/mid-face MUST come before under-eye/jaw. */
+function cheekFirstPriorityZones(zones) {
+  const list = [...(zones || [])]
+  const isCheek = (z) => /buccal|cheek|mid-face|midface|wang/i.test(String(z))
+  const isJawBone = (z) => /jaw bone|mandible sculpt|chin bone|gonial/i.test(String(z))
+  const cheeks = list.filter(isCheek)
+  const rest = list.filter((z) => !isCheek(z) && !isJawBone(z))
+  const defaults = ['buccal cheeks', 'mid-face', 'cheek fat pads', 'cheek water retention']
+  for (const d of defaults) {
+    if (!cheeks.some((c) => String(c).toLowerCase().includes(d.split(' ')[0]))) {
+      cheeks.push(d)
+    }
+  }
+  return [...cheeks.slice(0, 4), ...rest.slice(0, 3)].slice(0, 6)
+}
+
+/** Merge face-scan metrics into vision when Claude underestimates puffiness. */
+function enrichVisionFromMetrics(vision, plan) {
+  const base = vision || {}
+  const metrics = plan?.metrics
+
+  const puff = [...(base.puffinessAreas || [])]
+  const defaultZones = ['buccal cheeks', 'mid-face', 'cheek fat pads', 'infraorbital region', 'under-eye bags', 'submental']
+  for (const z of defaultZones) {
+    if (!puff.some((p) => p.toLowerCase().includes(z.split(' ')[0]))) puff.push(z)
+  }
+
+  const water = metrics?.waterRetention
+  let waterLevel = base.waterRetentionLevel
+  if (!waterLevel || waterLevel === 'unknown' || waterLevel === 'none') {
+    if (Number.isFinite(water) && water < 48) waterLevel = 'heavy'
+    else if (Number.isFinite(water) && water < 62) waterLevel = 'moderate'
+    else waterLevel = 'moderate'
+  }
+
+  let buccalLevel = base.buccalFatLevel
+  if (!buccalLevel || buccalLevel === 'unknown' || buccalLevel === 'lean') {
+    buccalLevel = (Number.isFinite(water) && water < 55) || plan?.tier === 'heavy'
+      ? 'full'
+      : 'moderate'
+  }
+
+  const visionWater = base.waterDrainRealisticPct ?? 0
+  const visionFat = base.fatReductionRealisticPct ?? 0
+  const metricWater = Number.isFinite(water)
+    ? (water < 45 ? 98 : water < 58 ? 94 : water < 68 ? 90 : 86)
+    : 92
+  const metricFat = Number.isFinite(water)
+    ? (water < 45 ? 88 : water < 58 ? 84 : water < 68 ? 80 : 76)
+    : 82
+
+  let faceFullness = base.faceFullness || 'average'
+  if (faceFullness === 'lean' || faceFullness === 'unknown') faceFullness = 'average'
+
+  return {
+    ...base,
+    skinMarks: { ...(base.skinMarks || {}) },
+    puffinessAreas: puff.slice(0, 8),
+    waterRetentionLevel: waterLevel,
+    buccalFatLevel: buccalLevel,
+    faceFullness,
+    jawDefinitionState: base.jawDefinitionState === 'sharp' ? base.jawDefinitionState : 'soft',
+    waterDrainRealisticPct: Math.max(visionWater, metricWater, plan?.waterDrainPct ?? 0),
+    fatReductionRealisticPct: Math.max(visionFat, metricFat, plan?.fatPct ?? plan?.deBloatPct ?? 0),
+    jawDefinitionFocus: base.jawDefinitionFocus
+      || 'Do NOT sculpt jaw bone — slim buccal cheek soft tissue only; mandible edge traces input exactly',
+    eyeFocus: base.eyeFocus
+      || 'Reduce under-eye fat and periorbital water on THIS face — eyes more open/rested; hunter-eye read from de-bloat only; same iris/shape; do NOT reshape brows',
+    browFocus: base.browFocus
+      || 'Brows slightly fuller/healthier/groomed — EXACT same shape, arch, position, and color; no lift or redraw',
+    fatReductionFocus: base.fatReductionFocus
+      || 'Reduce buccal cheek and mid-face soft fat — leaner face like 8–12 weeks fat loss + facial training; same bones',
+    waterDrainFocus: base.waterDrainFocus
+      || 'Drain cheek and mid-face water retention — visibly leaner soft tissue on THIS face only',
+    priorityZones: cheekFirstPriorityZones(base.priorityZones),
+  }
+}
+
+function visionNeedsDeBloat(vision, plan = null) {
+  if (plan && (profileForcesAggressiveDeBloat(plan) || metricsIndicateDeBloat(plan.metrics))) {
+    return true
+  }
+  return deriveGlowUpVisionFlags(vision).needsDeBloat
+}
+
+/** When puffiness is visible OR profile/metrics demand it: take HIGHER of plan vs vision. */
+function resolveRealisticDeBloatPct(plan, vision) {
+  const enriched = enrichVisionFromMetrics(vision, plan)
+  const fullness = String(enriched?.faceFullness || 'unknown').toLowerCase()
+  const waterLevel = String(enriched?.waterRetentionLevel || 'unknown').toLowerCase()
+  const caps = REALISTIC_FULLNESS_CAPS[fullness] || { water: 94, fat: 80 }
+  const needsDeBloat = true
+  const puffCount = enriched?.puffinessAreas?.length ?? 0
+
+  let waterPct = plan.waterDrainPct ?? plan.deBloatPct
+  let fatPct = plan.fatPct ?? plan.deBloatPct
+
+  const visionWater = enriched?.waterDrainRealisticPct
+  const visionFat = enriched?.fatReductionRealisticPct
+
+  if (Number.isFinite(visionWater)) waterPct = Math.max(waterPct, visionWater)
+  if (Number.isFinite(visionFat)) fatPct = Math.max(fatPct, visionFat)
+
+  const floor = plan.extreme ? DEBLOAT_FLOOR_EXTREME : DEBLOAT_FLOOR
+  waterPct = Math.max(waterPct, floor.water)
+  fatPct = Math.max(fatPct, floor.fat)
+
+  if (fullness === 'moon_face' || waterLevel === 'heavy' || puffCount >= 3) {
+    waterPct = Math.max(waterPct, plan.extreme ? 98 : 94)
+    fatPct = Math.max(fatPct, plan.extreme ? 90 : 84)
+  } else if (fullness === 'puffy' || waterLevel === 'moderate' || puffCount >= 2) {
+    waterPct = Math.max(waterPct, plan.extreme ? 96 : 92)
+    fatPct = Math.max(fatPct, plan.extreme ? 86 : 80)
+  } else if (fullness === 'average' || waterLevel === 'mild' || puffCount >= 1) {
+    waterPct = Math.max(waterPct, plan.extreme ? 94 : 90)
+    fatPct = Math.max(fatPct, plan.extreme ? 82 : 76)
+  } else if (plan.extreme) {
+    waterPct = Math.max(waterPct, 90)
+    fatPct = Math.max(fatPct, 74)
+  }
+
+  if (plan.extreme) {
+    waterPct = Math.min(caps.water, waterPct + 6)
+    fatPct = Math.min(caps.fat, fatPct + 5)
+  }
+
+  waterPct = Math.min(caps.water, waterPct)
+  fatPct = Math.min(caps.fat, fatPct)
+
+  return { waterPct, fatPct, needsDeBloat, enrichedVision: enriched }
+}
+
+function buildRealisticVisionWaterLine(waterPct, zones, visionFocus, strong = true) {
+  const core = strong
+    ? `AGGRESSIVELY drain ~${waterPct}% water retention — infraorbital/under-eye bags, tear trough, ${zones}, cheeks, mid-face MUST look visibly DEFLATED vs input (soft tissue ONLY; mandible/chin/cheekbone bones UNCHANGED)`
+    : `Drain ~${waterPct}% fluid from infraorbital region, under-eyes, ${zones} — less puffy (soft tissue only; bones frozen)`
+  if (!visionFocus) return core
+  return `${core}. ${truncatePromptText(visionFocus, 90)}`
+}
+
+function buildRealisticVisionFatLine(fatPct, zones, visionFocus, isSide, strong = true, vision = null) {
+  const zoneLabel = isSide ? 'buccal/mid-face/submental' : zones
+  const softTissueHint = vision?.eyeFocus
+    ? truncatePromptText(vision.eyeFocus, 90)
+    : 'Max infraorbital de-puff + buccal/mid-face soft fat reduction — mandible/chin bone overlay identical to input'
+  const core = strong
+    ? `AGGRESSIVELY reduce ~${fatPct}% buccal/mid-face SOFT facial fat in ${zoneLabel} — cheeks clearly SLIMMER; infraorbital region flatter; NO bone change`
+    : `Reduce ~${fatPct}% buccal/mid-face SOFT fat in ${zoneLabel} — subtly leaner`
+  return `${core}. ${softTissueHint}${visionFocus ? `. ${truncatePromptText(visionFocus, 90)}` : ''}`
+}
+
+function buildRealisticVisionSkinLine(vision, _plan) {
+  const hasMoles = Boolean(vision?.skinMarks?.hasMoles) && (vision?.skinMarks?.moleCount ?? 0) > 0
+  const blemishZones = vision.blemishAreas?.length
+    ? vision.blemishAreas.join(', ')
+    : 'visible breakout zones'
+  const focus = vision.skinImprovementFocus
+    || vision.skinCleanupFocus
+    || `STRONGLY fade ALL active pimples/acne/blackheads/redness in ${blemishZones} until skin reads clearly cleaner at selfie distance`
+  const undertone = vision.skinUndertone && vision.skinUndertone !== 'unknown'
+    ? ` Keep ${vision.skinUndertone} undertone exact.`
+    : ' Same skin color/undertone.'
+  const noNewMarks = hasMoles
+    ? ' Existing moles/Muttermale unchanged — never add new ones.'
+    : ' ZERO moles/Muttermale in input — copy input skin pigment exactly; fade pimple REDNESS only; NEVER add brown/dark spots or "realistic" freckles/moles.'
+  return `${focus}.${undertone}${noNewMarks} Keep pores+grain — no porcelain/airbrush/repaint.`
+}
+
+/** Ultra-short user prompt — visual targets, not percentages. */
+export function buildShortDeBloatUserPrompt(mode, metricsRaw, faceProfileRaw, visionRaw = null) {
+  const plan = resolveGlowUpPlan(metricsRaw, faceProfileRaw, mode)
+  const vision = unwrapVisionAnalysis(visionRaw)
+  const merged = enrichVisionFromMetrics(vision, plan)
+  const view = plan.isSide ? 'Side profile' : 'Front'
+  const { hasInputMoles } = deriveGlowUpVisionFlags(merged)
+  const marksNote = hasInputMoles
+    ? 'Keep existing moles exactly.'
+    : 'No new moles — fade chin acne/redness only.'
+
+  return `${view} — PERSONALIZED GLOW-UP (THIS FACE ONLY — NO REFERENCE TEMPLATE). Same person/pose/lighting.
+⛔ HEAD HAIR FROZEN: copy exact same hair color, length, style, texture, volume, and hairline from input — zero hair changes.
+⛔ SAME PERSON: amplify glow-up on THIS face — never face swap or different person.
+⛔ NO external reference face. Edit ONLY this input person. Bones frozen (mandible/chin/cheekbone width unchanged).
+
+Simulate 12–16 weeks fat loss + skincare + facial training on THIS face — STRONG visible before/after:
+
+#1 LEANER CHEEKS + MID-FACE (most visible):
+• Aggressively reduce buccal/mid-face soft fat — noticeably thinner face, defined cheek area
+• Cheekbones much clearer through tissue loss — same bone position
+
+#2 RESTED OPEN EYES (same eye shape):
+• Strongly flatten under-eye bags/fat — eyes look clearly more open; hunter-eye from de-bloat ONLY
+• Same iris, same eye size — brows may look slightly fuller/healthier, same shape
+
+#3 CLEANER BRIGHTER SKIN — EXACT same skin color/undertone; strongly fade acne/redness/blackheads.
+${marksNote} Keep pores+grain. Realistic — not surgery, not a new face.`
+}
+
+/**
+ * Ein Fal-Lauf mit gleicher Absicht wie die 3-Step-Pipeline (midface → undereye → skin).
+ * Kombiniert Kurz-Prompt + Vision-Zonen + De-Bloat-/Skin-Targets — kompakt für Nano Banana.
+ */
+export function buildUnifiedGlowUpUserPrompt(mode, metricsRaw, faceProfileRaw, visionRaw = null) {
+  const plan = resolveGlowUpPlan(metricsRaw, faceProfileRaw, mode)
+  const vision = unwrapVisionAnalysis(visionRaw)
+  const merged = enrichVisionFromMetrics(vision, plan)
+  const parts = []
+
+  parts.push('⚠️ MANDATORY: MAXIMUM VISIBLE GLOW-UP on THIS face. Cheeks dramatically slimmer. Under-eyes deflated. Skin much cleaner. Same person — if before≈after on cheeks → FAILED.')
+  parts.push('⛔ HEAD HAIR LOCK: scalp hair, hairline, and temples = pixel-copy from input. No restyle, trim, recolor, length change, or volume change.')
+  parts.push('⛔ SAME PERSON LOCK: dramatically more glow-up on THIS face — never face swap, never a different person.')
+
+  if (plan.tier === 'heavy') {
+    parts.push('Intensity: MAXIMUM — dramatically leaner cheeks, strongly deflated under-eyes, much cleaner skin; mandible/chin bones pixel-identical; same person.')
+  } else if (plan.tier === 'defined') {
+    parts.push('Intensity: VERY STRONG — visible de-puff + skin clarity + rested eyes; clear before/after; bones frozen; same person.')
+  } else {
+    parts.push('Intensity: MAXIMUM — cheeks, under-eyes, and skin must ALL improve dramatically in this single edit; same person.')
+  }
+
+  const lead = buildGlowUpDeBloatPromptLead(mode, metricsRaw, faceProfileRaw, visionRaw)
+  if (lead) parts.push(lead.trim())
+
+  parts.push(buildShortDeBloatUserPrompt(mode, metricsRaw, faceProfileRaw, visionRaw))
+
+  if (merged) {
+    const { waterPct, fatPct, needsDeBloat } = resolveRealisticDeBloatPct(plan, merged)
+    if (needsDeBloat) {
+      const zones = merged.puffinessAreas?.slice(0, 4).join(', ')
+        || merged.priorityZones?.slice(0, 4).join(', ')
+        || 'buccal cheeks, mid-face, under-eyes'
+      parts.push(
+        `ALL-IN-ONE de-bloat (${zones}): drain ~${waterPct}% fluid + reduce ~${fatPct}% buccal/mid-face soft fat AND under-eye puffiness in this single edit — do not skip cheeks or eyes.`,
+      )
+    }
+    const skinLine = buildRealisticVisionSkinLine(merged, plan)
+    if (skinLine) parts.push(`Skin pass (same edit): ${skinLine}`)
+    if (merged.personalizedEditPrompt) {
+      parts.push(`Personalized: ${truncatePromptText(merged.personalizedEditPrompt, 220)}`)
+    }
+    if (merged.priorityZones?.length) {
+      parts.push(`Apply in order: ${merged.priorityZones.slice(0, 5).join(' → ')} — all zones in ONE output.`)
+    }
+  }
+
+  const unified = parts.filter(Boolean).join('\n\n')
+  if (unified.length > 2800) {
+    return `${unified.slice(0, 2780).trim()}…`
+  }
+  return unified
+}
+
+/** Pass 2 — cheek/mid-face ONLY (input often already has jaw/under-eye definition). */
+export function buildSecondPassDeBloatUserPrompt(mode = 'front') {
+  const view = String(mode).toLowerCase().includes('side') ? 'Side profile' : 'Front'
+  return `${view} — CHEEK-ONLY de-bloat pass. THIS input may already have sharper jaw/under-eye.
+⛔ BONE LOCK: cheekbone width + mandible width same as THIS input.
+
+BUCCAL CHEEKS + MID-FACE still too round — fix THIS (80% of edit here):
+• Buccal cheeks significantly SLIMMER vs this input — less cheek fullness, deeper cheek hollow
+• Mid-face less wide/puffy — narrower soft-tissue cheek area
+• Do NOT only edit jaw/chin/submental — WANGEN must change most
+
+Leave under-eye/jaw as-is if already defined. Head hair frozen (same color/style/length/hairline). Same pose/lighting. No new moles.
+FAILED if buccal cheeks still look equally round/full as this input.`
+}
+
+/** Retry when cheeks still puffy after pass 2. */
+export function buildCheekFocusRetryUserPrompt(mode = 'front') {
+  return `${buildSecondPassDeBloatUserPrompt(mode)}
+
+RETRY — buccal cheeks STILL too round. Maximum cheek/mid-face slimming NOW — cheeks must look dramatically narrower than this input. Do NOT touch jaw bone.`
+}
+
+/** Stronger retry prompt when QA detects near-identical puffiness. */
+export function buildDeBloatRetryUserPrompt(mode, metricsRaw, faceProfileRaw, visionRaw = null) {
+  const base = buildShortDeBloatUserPrompt(mode, metricsRaw, faceProfileRaw, visionRaw)
+  return `${base}
+
+RETRY — last edit only defined jaw/under-eye but buccal cheeks still round. This attempt: buccal cheeks + mid-face MUST look dramatically slimmer — bones frozen.`
+}
+
+/** De-bloat percentages + enriched vision for Fal system_prompt extras. */
+export function getGlowUpDeBloatTargets(mode, metricsRaw, faceProfileRaw, visionRaw = null) {
+  const plan = resolveGlowUpPlan(metricsRaw, faceProfileRaw, mode)
+  const vision = unwrapVisionAnalysis(visionRaw)
+  const { waterPct, fatPct, needsDeBloat, enrichedVision } = resolveRealisticDeBloatPct(plan, vision)
+  return { waterPct, fatPct, needsDeBloat, plan, vision: enrichedVision }
+}
+
+/** ~700–1200 chars — deprecated; use buildShortDeBloatUserPrompt for Nano Banana. */
+function buildCompactVisionConcisePrompt(mode, metricsRaw, faceProfileRaw, vision) {
+  return buildShortDeBloatUserPrompt(mode, metricsRaw, faceProfileRaw, vision)
+}
+
+/** Short lead injected into Fal user prompt so the image model prioritizes de-bloat. */
+export function buildGlowUpDeBloatPromptLead(mode, metricsRaw, faceProfileRaw, visionRaw = null) {
+  const plan = resolveGlowUpPlan(metricsRaw, faceProfileRaw, mode)
+  const vision = unwrapVisionAnalysis(visionRaw)
+  const { waterPct, fatPct, needsDeBloat } = resolveRealisticDeBloatPct(plan, vision)
+  if (!needsDeBloat) return ''
+  const merged = enrichVisionFromMetrics(vision, plan)
+  const zones = merged?.puffinessAreas?.slice(0, 5).join(', ') || 'infraorbital, under-eye bags, cheeks, mid-face'
+  return `MANDATORY FIRST: ${COMPACT_BONE_FREEZE} Drain ~${waterPct}% water + reduce ~${fatPct}% buccal/mid-face soft fat in ${zones} — cheeks and under-eyes MUST look dramatically less puffy vs input (same mandible/chin bones; same person). Then strong skin cleanup — zero new moles. Before/after must be obvious. `
+}
+
+/** Step 2 — inject Claude Vision observations into the concise template. */
+export function buildVisionPersonalizationBlock(visionRaw, plan, mode = 'front') {
+  const vision = unwrapVisionAnalysis(visionRaw)
+  if (!vision) return ''
+  return buildVisionFaceHeader(vision, mode)
+}
+
+function buildAdaptiveConcisePrompt(mode, metricsRaw, faceProfileRaw, visionRaw = null, options = {}) {
+  if (options.glowUpStep) {
+    return buildGlowUpStepPrompt(
+      options.glowUpStep,
+      mode,
+      metricsRaw,
+      faceProfileRaw,
+      visionRaw,
+      options.stepIndex ?? 1,
+      options.stepTotal ?? 3,
+    )
+  }
+  if (options.deBloatRetry && options.secondPass) {
+    return buildCheekFocusRetryUserPrompt(mode)
+  }
+  if (options.secondPass) {
+    return buildSecondPassDeBloatUserPrompt(mode)
+  }
+  if (options.deBloatRetry) {
+    return buildDeBloatRetryUserPrompt(mode, metricsRaw, faceProfileRaw, visionRaw)
+  }
+  return buildUnifiedGlowUpUserPrompt(mode, metricsRaw, faceProfileRaw, visionRaw)
+}
+
+const ALREADY_LEAN_POLISH_GUIDE = `[ALREADY LEAN / DEFINED — STILL VISIBLE GLOW-UP REQUIRED]
+This person already has a lean, defined face — NOT fat, NOT bloated. Subtle or skip edits = FAILED.
+Do NOT skip the glow-up. Deliver a clear before/after through PREMIUM POLISH, not heavy de-bloat:
+
+PRIORITY (all mandatory, clearly visible):
+1) SKIN POLISH — retinol + vitamin-C level: smoother, more even, healthier-looking skin; fade active blemishes; keep ALL freckles/moles exact; NEVER add new skin marks; keep pores, grain, undertone.
+2) EYES — brighter, rested, more open; reduce under-eye bags/tired look; same eye shape and iris.
+3) EYEBROWS — beautify only: cleaner edges, stray hairs removed; same shape, arch, thickness, color.
+4) DEFINITION REFRESH (~55–68% fluid + strong de-puff) — dramatically fresher, leaner mid-face; NO hollow cheeks, NO jaw sculpt, bones frozen.
+
+The viewer must notice: dramatically fresher skin, rested open eyes, groomed brows, leaner mid-face — same person, premium softmaxxing glow-up.`
+
 function compositionBoost(composition) {
-  if (composition.type === 'water_retention') return 3
-  if (composition.type === 'mixed') return 2
-  if (composition.type === 'adipose') return 2
-  return 1
+  if (composition.type === 'water_retention') return 6
+  if (composition.type === 'adipose') return 6
+  if (composition.type === 'mixed') return 5
+  return 3
+}
+
+/** Mandatory de-bloat block for puffy / heavier faces (works with or without scan metrics). */
+function buildConciseBloatDirective(metricsRaw, profileRaw) {
+  const metrics = parseGlowUpMetrics(metricsRaw)
+  const profile = parseFaceProfile(profileRaw)
+  const composition = classifyFacialComposition(metrics || {}, profile || {})
+  const deBloatPriority = String(profile?.deBloatPriority || profile?.de_bloat_priority || '').toLowerCase()
+
+  const bloatSeverity = metrics?.bloatSeverity ?? profile?.bloatSeverity
+  const water = metrics?.waterRetention
+  const forceMaximum = deBloatPriority === 'maximum' || deBloatPriority === 'max'
+  const heavy = composition.type === 'adipose'
+    || composition.type === 'water_retention'
+    || forceMaximum
+    || (Number.isFinite(bloatSeverity) && bloatSeverity >= 35)
+    || (Number.isFinite(water) && water < 68)
+
+  if (composition.type === 'lean' && !heavy && !forceMaximum) {
+    return `\n\nDe-bloat level: MODERATE-STRONG (~45%) — even lean faces need visible cheek/under-eye de-puff + premium skin polish. Before/after must be obvious.`
+  }
+
+  if (composition.type === 'lean' && forceMaximum) {
+    return `\n\n⚠️ MAXIMUM GLOW-UP (lean face — still push hard):
+- Face reads lean but MUST still show DRAMATIC visible improvement — not subtle polish.
+- Drain ALL residual cheek/mid-face/under-eye fluid — noticeably fresher, tighter soft tissue.
+- Skin: retinol-level clarity — strongly fade every blemish; same undertone.
+- Before/after side-by-side must look clearly different on cheeks, eyes, and skin.`
+  }
+
+  if (heavy || forceMaximum) {
+    return `\n\n⚠️ MAXIMUM DE-BLOAT REQUIRED (facial fat + water retention):
+- This face reads FULL / PUFFY / BLOATED — remove a LOT of soft tissue. The after photo must look DRAMATICALLY leaner and less swollen — obvious before/after difference.
+- WATER RETENTION (#1): aggressively drain moon-face puffiness, chipmunk cheeks, puffy under-eyes, nasal-labial fluid bloat, morning/fluid retention — face must look clearly deflated, not subtly less puffy.
+- FACIAL FAT (#2): strip buccal fat pads, mid-face fullness, and under-chin soft fat — cheeks and jaw area read noticeably slimmer; same bone outline.
+- DEFINITION: cheekbones and jaw SOFT-tissue edge must read clearer through volume removal — realistic 3–6 month lean-face transformation, NOT surgery.
+- If the person looks overweight in the face, the after must show a dramatically leaner face through volume removal ONLY — never new jaw/chin bones.`
+  }
+
+  return `\n\nDe-bloat level: STRONG — remove substantial facial fat AND water-retention puffiness from cheeks, mid-face, under-eyes, and under-chin. Clearly leaner, less moon-face — same bones. Not a subtle edit.`
+}
+
+/** Mandatory skin cleanup — model often skips skin when de-bloat dominates the prompt. */
+function buildConciseSkinDirective(metricsRaw, profileRaw) {
+  const metrics = parseGlowUpMetrics(metricsRaw)
+  const profile = parseFaceProfile(profileRaw)
+  const skin = skinScore(metrics)
+  const priority = String(profile?.skinCleanupPriority || profile?.skin_cleanup_priority || 'always').toLowerCase()
+  const forceStrong = priority === 'always' || priority === 'maximum' || priority === 'max'
+    || !Number.isFinite(skin) || skin < 78
+
+  let block = `\n\n⚠️ MANDATORY SKIN CLARITY (required — do NOT skip):
+Inspect ALL face skin: forehead, temples, cheeks, nose, chin, jaw, between brows.
+- Fade ALL active pimples, acne, papules, whiteheads, blackheads, inflamed redness, blotchy patches until skin reads clearly REINER/purer vs input — obvious before/after.
+- COLOR FROZEN: EXACT same skin color, undertone, melanin, warmth as input — match neck/ears; NO lightening, darkening, warming, cooling, or tan shift.
+- KEEP micro-pores, skin grain, ALL existing freckles/moles/beauty marks in exact positions — no porcelain filter, no makeup, no new pigment spots.`
+
+  if (forceStrong) {
+    block += `\n- Push until active blemishes are clearly reduced at selfie distance — skin looks cleaner but color identical; permanent marks untouched.`
+  }
+  if (Number.isFinite(skin) && skin < 72) {
+    block += `\n- Scan skin clarity ${skin}/100 — heavy blemish removal on cheeks, forehead, nose, and chin.`
+  }
+
+  return block
 }
 
 function buildDiagnosisSection(metrics, profile, composition) {
@@ -544,8 +1425,10 @@ function buildDiagnosisSection(metrics, profile, composition) {
     lines.push(`[DIAGNOSIS: SOFT-TISSUE FULLNESS]
 - Gently lean buccal/submental soft tissue — realistic de-bloat for this face; cheekbones slightly clearer; jaw bone frozen.`)
   } else if (composition.type === 'lean') {
-    lines.push(`[DIAGNOSIS: LEAN FACE — SKIN/EYES/BROWS POLISH]
-- Focus on skin clarity, under-eye refresh, brow beautify (same shape); minimal jaw/chin change.`)
+    lines.push(`[DIAGNOSIS: LEAN / ALREADY DEFINED — PREMIUM POLISH GLOW-UP]
+- Face is already lean and defined — still deliver CLEARLY VISIBLE glow-up (subtle = FAILED).
+- Priority: skin polish, rested eyes, brow beautify; micro fluid drain (~10%) only if any puffiness visible.
+- Minimal jaw/chin change — bones frozen; NO hollow cheeks or jaw sculpt.`)
   } else {
     lines.push(`[DIAGNOSIS: MIXED — BALANCED REALISTIC GLOW-UP]
 - Balanced de-puff + skin/eye improvement; jaw and chin bone locked.`)
@@ -558,7 +1441,7 @@ function buildDiagnosisSection(metrics, profile, composition) {
 function globalIntensityBoost(metrics) {
   const overall = metrics?.overall
   const potential = metrics?.potential
-  let boost = 2
+  let boost = 3
   if (Number.isFinite(overall) && Number.isFinite(potential)) {
     const gap = potential - overall
     if (gap >= 8) boost += 2
@@ -616,7 +1499,7 @@ function zoneIntensity(score, boost = 0) {
   if (!Number.isFinite(score)) {
     level = 'strong'
   } else if (score >= 92) {
-    level = 'skip'
+    level = 'minimal'
   } else if (score >= 80) {
     level = 'minimal'
   } else if (score >= 64) {
@@ -637,10 +1520,13 @@ function zoneIntensity(score, boost = 0) {
 /** Eyebrows never exceed moderate — beautify only, no reshape. */
 const BROW_CEILING = 'moderate'
 
+/** Skin cleanup must be visible but never porcelain/airbrush level. */
+const SKIN_INTENSITY_CEILING = 'strong'
+
 const INTENSITY_INSTRUCTIONS = {
-  skip: 'SKIP — tiny polish only; still slightly fresher if possible.',
-  minimal: 'MINIMAL — subtle but visible refinement in before/after.',
-  light: 'LIGHT — clear de-puff; noticeably fresher face; jaw/chin BONE unchanged.',
+  skip: 'SKIP — still apply visible skin/eye/brow polish; no heavy de-bloat.',
+  minimal: 'MINIMAL de-bloat — but skin/eyes/brows MUST show clear premium polish in before/after.',
+  light: 'LIGHT — micro fluid drain + noticeable skin/eye refresh; jaw/chin BONE unchanged.',
   moderate: 'MODERATE — strong soft-tissue de-puff on cheeks/eyes/skin; mandible bone identical to input.',
   strong: 'STRONG — maximum water-retention reduction; clearly leaner face; jaw/chin BONE pixel-identical — never sharper mandible bone.',
 }
@@ -670,25 +1556,40 @@ function buildFrontFocus(metrics, composition, profile) {
   const limits = boneAdjacentLimits(profile)
   const jawLimits = jawSoftTissueLimits(profile)
   const gender = normalizeGender(profile)
-  const softFloor = 'moderate'
+  const isLean = composition.type === 'lean'
+  const softFloor = isLean ? 'light' : 'moderate'
+  const skinFloor = isLean ? 'strong' : limits.skinFloor
+  const eyeFloor = 'strong'
   const lines = []
-  lines.push(`[PERSONALIZED FOCUS — VISIBLE de-bloat${gender === 'female' ? ', feminine jaw bone preserved' : ', jaw bone pixel-locked, facial hair unchanged'}]`)
+  lines.push(isLean
+    ? `[PERSONALIZED FOCUS — PREMIUM POLISH on already lean/defined face${gender === 'female' ? ', feminine jaw bone preserved' : ', jaw bone pixel-locked'}]`
+    : `[PERSONALIZED FOCUS — VISIBLE de-bloat${gender === 'female' ? ', feminine jaw bone preserved' : ', jaw bone pixel-locked, facial hair unchanged'}]`)
 
   const bloatBoost = boost + (composition.type === 'water_retention' ? 2 : 1)
   lines.push(zoneLine(
     ZONE_LABELS.waterRetention,
-    intensityFloor(zoneIntensity(metrics.waterRetention, bloatBoost), softFloor),
-    gender === 'female'
-      ? 'Strong water-retention reduction — clearly fresher, less puffy cheeks/mid-face; mandible bone unchanged.'
-      : 'Strong water-retention reduction — clearly less bloated face; mandible bone outline identical to input.',
+    intensityFloor(
+      capIntensity(zoneIntensity(metrics.waterRetention, bloatBoost), isLean ? 'light' : 'strong'),
+      isLean ? 'minimal' : softFloor,
+    ),
+    isLean
+      ? 'Micro fluid drain only — fresher under-eyes; mandible bone unchanged.'
+      : gender === 'female'
+        ? 'Strong water-retention reduction — clearly fresher, less puffy cheeks/mid-face; mandible bone unchanged.'
+        : 'Strong water-retention reduction — clearly less bloated face; mandible bone outline identical to input.',
   ))
 
   lines.push(zoneLine(
     ZONE_LABELS.cheekbones,
-    intensityFloor(zoneIntensity(metrics.cheekbones, boost + 1 + limits.cheekExtra), softFloor),
-    gender === 'female'
-      ? 'Strong buccal de-bloat — clearly leaner cheeks, cheekbones noticeably clearer; jaw bone FROZEN.'
-      : 'Strong buccal de-bloat — clearly leaner cheeks; mandible BONE edge must not move or sharpen.',
+    intensityFloor(
+      capIntensity(zoneIntensity(metrics.cheekbones, boost + 1 + limits.cheekExtra), isLean ? 'light' : 'strong'),
+      isLean ? 'minimal' : softFloor,
+    ),
+    isLean
+      ? 'Light cheek polish — slightly fresher through micro fluid only; jaw bone FROZEN.'
+      : gender === 'female'
+        ? 'Strong buccal de-bloat — clearly leaner cheeks, cheekbones noticeably clearer; jaw bone FROZEN.'
+        : 'Strong buccal de-bloat — clearly leaner cheeks; mandible BONE edge must not move or sharpen.',
   ))
 
   if (metrics.midfaceFullness != null) {
@@ -703,7 +1604,7 @@ function buildFrontFocus(metrics, composition, profile) {
 
   lines.push(zoneLine(
     ZONE_LABELS.eyeArea,
-    intensityFloor(zoneIntensity(metrics.eyeArea, boost + 2), 'strong'),
+    intensityFloor(zoneIntensity(metrics.eyeArea, boost + 2), eyeFloor),
     'Clearly de-puff under-eyes and upper lids — open, rested, awake look; same iris color and eye shape.',
   ))
 
@@ -713,7 +1614,7 @@ function buildFrontFocus(metrics, composition, profile) {
       intensityFloor(zoneIntensity(browScore(metrics), boost), 'light'),
       BROW_CEILING,
     ),
-    'Beautify ONLY — cleaner edges, remove stray hairs, neater groomed look; EXACT same shape, arch, thickness, position, and color as input.',
+    'Beautify ONLY — cleaner edges, remove stray hairs, neater groomed look; slightly fuller/healthier density; EXACT same shape, arch, thickness category, position, and color as input.',
   ))
 
   lines.push(zoneLine(
@@ -748,8 +1649,10 @@ function buildFrontFocus(metrics, composition, profile) {
 
   lines.push(zoneLine(
     ZONE_LABELS.skin,
-    intensityFloor(zoneIntensity(skinScore(metrics), boost + 1), limits.skinFloor),
-    'Retinol + vitamin C clarity — clearly cleaner, smoother skin; keep pores, freckles, moles; same luminance, undertone, and skin type.',
+    intensityFloor(zoneIntensity(skinScore(metrics), boost + (isLean ? 3 : 1)), skinFloor),
+    isLean
+      ? 'Premium retinol/vitamin-C polish — clearly smoother, healthier skin; keep freckles/moles exact; same undertone.'
+      : 'Retinol + vitamin C clarity — clearly cleaner, smoother skin; keep pores, freckles, moles; same luminance, undertone, and skin type.',
   ))
 
   if (gender === 'male' || gender === 'female') {
@@ -774,16 +1677,25 @@ function buildSideFocus(metrics, composition, profile) {
   const limits = boneAdjacentLimits(profile)
   const jawLimits = jawSoftTissueLimits(profile)
   const gender = normalizeGender(profile)
-  const softFloor = 'moderate'
+  const isLean = composition.type === 'lean'
+  const softFloor = isLean ? 'light' : 'moderate'
+  const skinFloor = isLean ? 'strong' : limits.skinFloor
   const lines = []
-  lines.push(`[PERSONALIZED FOCUS — VISIBLE side de-bloat${gender === 'female' ? ', jaw profile pixel-locked' : ''}]`)
+  lines.push(isLean
+    ? `[PERSONALIZED FOCUS — PREMIUM side polish on already lean/defined face${gender === 'female' ? ', jaw profile pixel-locked' : ''}]`
+    : `[PERSONALIZED FOCUS — VISIBLE side de-bloat${gender === 'female' ? ', jaw profile pixel-locked' : ''}]`)
 
   lines.push(zoneLine(
     ZONE_LABELS.cheekbones,
-    intensityFloor(zoneIntensity(metrics.cheekbones, boost + 2 + limits.cheekExtra), softFloor),
-    gender === 'female'
-      ? 'Strong cheek de-bloat; feminine profile bone curve unchanged.'
-      : 'Strong cheek de-bloat from side; mandible profile bone unchanged.',
+    intensityFloor(
+      capIntensity(zoneIntensity(metrics.cheekbones, boost + 2 + limits.cheekExtra), isLean ? 'light' : 'strong'),
+      isLean ? 'minimal' : softFloor,
+    ),
+    isLean
+      ? 'Light cheek polish from side — micro fluid only; profile bone curve unchanged.'
+      : gender === 'female'
+        ? 'Strong cheek de-bloat; feminine profile bone curve unchanged.'
+        : 'Strong cheek de-bloat from side; mandible profile bone unchanged.',
   ))
 
   lines.push(zoneLine(
@@ -804,29 +1716,35 @@ function buildSideFocus(metrics, composition, profile) {
   lines.push(zoneLine(
     ZONE_LABELS.chinNeck,
     intensityFloor(
-      capIntensity(zoneIntensity(metrics.chinNeck, boost + 1), jawLimits.ceiling),
-      jawLimits.floor,
+      capIntensity(zoneIntensity(metrics.chinNeck, boost + 2), isLean ? 'light' : jawLimits.ceiling),
+      isLean ? 'minimal' : 'moderate',
     ),
-    gender === 'female'
-      ? 'Clear submental soft tissue; chin profile bone FROZEN.'
-      : 'Clear submental soft tissue; chin/jaw profile bone pixel-identical.',
+    isLean
+      ? 'Micro submental refresh only if puffiness visible — chin profile bone FROZEN.'
+      : gender === 'female'
+        ? 'Strong submental de-bloat — tighter under-chin, sharper jaw-neck line; chin profile bone FROZEN.'
+        : 'Strong submental de-bloat — tighter under-jaw, leaner neck transition; chin/jaw profile bone pixel-identical.',
   ))
 
   lines.push(zoneLine(
     ZONE_LABELS.jawline,
     intensityFloor(
-      capIntensity(zoneIntensity(metrics.jawline, boost + 1), jawLimits.ceiling),
-      jawLimits.floor,
+      capIntensity(zoneIntensity(metrics.jawline, boost + 2), isLean ? 'light' : 'moderate'),
+      isLean ? 'minimal' : 'moderate',
     ),
-    'Clear jaw soft-tissue de-puff; mandible profile outline must match input exactly.',
+    isLean
+      ? 'Micro jaw soft-tissue polish only — mandible outline must match input exactly.'
+      : 'Lean jaw soft tissue from side — cleaner profile edge; mandible outline must match input exactly.',
   ))
 
   lines.push('- Nose, lips, forehead profile: SKIP — do not alter profile silhouette.')
 
   lines.push(zoneLine(
     ZONE_LABELS.skin,
-    intensityFloor(zoneIntensity(skinScore(metrics), boost + 1), 'strong'),
-    'Retinol + vitamin C clarity from side; same color and skin type.',
+    intensityFloor(zoneIntensity(skinScore(metrics), boost + (isLean ? 3 : 1)), skinFloor),
+    isLean
+      ? 'Premium skin polish from side — clearly smoother, healthier; keep freckles/moles exact.'
+      : 'Retinol + vitamin C clarity from side; same color and skin type.',
   ))
 
   if (gender === 'male' || gender === 'female') {
@@ -840,23 +1758,23 @@ function buildDefaultFocus(mode, profile) {
   const gender = normalizeGender(profile)
   if (mode === 'side') {
     if (gender === 'female') {
-      return `[PERSONALIZED FOCUS — female, VISIBLE glow-up]
+      return `[PERSONALIZED FOCUS — female, VISIBLE side glow-up]
 - Water retention: STRONG — clearly fresher, less puffy; jaw bone frozen.
-- Cheeks: STRONG — clearly leaner; feminine profile unchanged.
-- Eyes: STRONG — clear under-eye de-puff.
+- Cheeks: STRONG — clearly leaner side profile; feminine bone curve unchanged.
+- Eyes: STRONG — clear lateral under-eye de-puff.
 - Eyebrows: MODERATE — beautify only; same shape.
-- Chin & submental: MODERATE — clear soft tissue de-puff; chin bone FROZEN.
-- Jawline (side): LIGHT — soft tissue de-puff; mandible profile identical to input.
-- Skin: STRONG — retinol/vitamin-C clarity.
+- Chin & submental: STRONG — tighten under-chin; sharper jaw-neck line; chin bone FROZEN.
+- Jawline (side): MODERATE — lean jaw soft tissue; mandible profile identical to input.
+- Skin: STRONG — clarity on cheek/jaw/neck.
 - Nose/lips/forehead profile: SKIP.`
     }
     return `[PERSONALIZED FOCUS — VISIBLE side glow-up, jaw bone pixel-locked]
 - Cheeks (side): STRONG — clear de-bloat; bone curve unchanged.
 - Eyes: STRONG — under-eye de-puff.
 - Eyebrows: MODERATE — beautify only.
-- Chin & submental: MODERATE — clear soft tissue; chin/jaw profile FROZEN.
-- Jawline (side): MINIMAL — soft tissue de-puff only if needed; mandible outline identical to input.
-- Skin: STRONG — retinol/vitamin-C clarity.
+- Chin & submental: STRONG — tighten under-chin soft tissue; sharper jaw-neck line; chin/jaw profile BONE frozen.
+- Jawline (side): MODERATE — lean jaw soft tissue from profile; mandible outline identical to input.
+- Skin: STRONG — retinol/vitamin-C clarity on cheek/jaw/neck.
 - Facial hair: match input exactly.
 - Nose/lips/forehead profile: SKIP.`
   }
@@ -899,9 +1817,23 @@ export function buildHybridGlowUpPrompt(mode = 'front', metricsRaw = null, faceP
     : buildDefaultFocus(key, profile)
 
   const facialHairMandatory = buildFacialHairMandatoryBlock(profile)
-  const parts = [facialHairMandatory, GLOW_UP_ONLY_NO_INVENTION, CHEEK_DEFINITION_FOCUS, JAW_BONE_INVENTION_BAN, task, VISIBLE_GLOW_UP_TARGET]
+  const parts = [SAME_PERSON_AMPLIFY, HEAD_HAIR_PIXEL_LOCK, REALISTIC_ACHIEVABLE_FACE_EDITS, facialHairMandatory, ZERO_INVENTION_LOCK, GLOW_UP_ONLY_NO_INVENTION, SKIN_MARKS_PRESERVATION_LOCK, CHEEK_DEFINITION_FOCUS, JAW_BONE_INVENTION_BAN, task, VISIBLE_GLOW_UP_TARGET]
   if (diagnosis) parts.push(diagnosis)
+  const plan = resolveGlowUpPlan(metricsRaw, faceProfileRaw, key)
+  if (plan.tier === 'heavy') {
+    parts.push(buildConciseBloatDirective(metricsRaw, faceProfileRaw))
+    parts.push(buildConciseSkinDirective(metricsRaw, faceProfileRaw))
+    parts.push(SKIN_TONE_CLARITY_LOCK)
+  } else if (plan.tier === 'defined') {
+    parts.push(ALREADY_LEAN_POLISH_GUIDE)
+    parts.push(buildConciseSkinDirective(metricsRaw, faceProfileRaw))
+    parts.push(SKIN_TONE_CLARITY_LOCK)
+  } else {
+    parts.push(buildConciseSkinDirective(metricsRaw, faceProfileRaw))
+    parts.push(SKIN_TONE_CLARITY_LOCK)
+  }
   parts.push(
+    HEAD_HAIR_PIXEL_LOCK,
     FACIAL_HAIR_PIXEL_LOCK,
     REALISTIC_BONE_ENFORCEMENT,
     CHEEK_DEFINITION_FOCUS,
@@ -910,6 +1842,7 @@ export function buildHybridGlowUpPrompt(mode = 'front', metricsRaw = null, faceP
     REALISTIC_GLOW_UP_RANGE,
     SOFTMAXXING_GUIDE,
     SCENE_AND_IDENTITY_LOCK,
+    SKIN_MARKS_PRESERVATION_LOCK,
     SKIN_REALISM_GUIDE,
     FORBIDDEN_CHANGES,
     STRUCTURAL_METHOD,
@@ -919,6 +1852,14 @@ export function buildHybridGlowUpPrompt(mode = 'front', metricsRaw = null, faceP
     focus,
   )
   return parts.join('\n\n')
+}
+
+export function buildConciseHeadHairLine(vision) {
+  const desc = String(vision?.hairStructure || '').trim()
+  if (desc) {
+    return `Head hair: FROZEN — keep EXACTLY "${desc}" — same color, length, style, texture, volume, hairline. No restyle or recolor.`
+  }
+  return 'Head hair: FROZEN — copy input pixels exactly (color, length, style, texture, volume, hairline). No restyle, trim, recolor, or volume change.'
 }
 
 function buildConciseFacialHairLine(profile) {
@@ -944,102 +1885,143 @@ function conciseIntensityWord(level) {
   return 'lightly'
 }
 
-/** 1–3 short lines derived from scan metrics (keeps concise prompt under ~1.2k chars). */
+/** 1–3 short lines derived from scan metrics (keeps concise prompt under ~1.5k chars). */
 function buildConciseMetricsFocus(metricsRaw, profileRaw, mode = 'front') {
   const metrics = parseGlowUpMetrics(metricsRaw)
-  if (!metrics) return ''
   const profile = parseFaceProfile(profileRaw)
-  const composition = classifyFacialComposition(metrics, profile)
+  const composition = metrics
+    ? classifyFacialComposition(metrics, profile || {})
+    : { type: 'mixed' }
   const boost = compositionBoost(composition)
   const lines = []
 
-  const waterLevel = intensityFloor(zoneIntensity(metrics.waterRetention, boost + 1), 'moderate')
+  if (!metrics) {
+    return `\n\nPersonalized focus for this face:
+- Skin (mandatory): fade active pimples, acne, blackheads, redness — calmer skin; keep ALL existing freckles/moles; NEVER add new skin marks; keep pores, grain, texture.
+- Water retention: drain cheek/mid-face/under-eye fluid bloat moderately — fresher, less puffy face.
+- Facial fat: reduce buccal and under-chin soft fat moderately — slightly leaner face, same bones.`
+  }
+
+  const waterLevel = intensityFloor(zoneIntensity(metrics.waterRetention, boost + 5), 'strong')
   if (waterLevel !== 'skip') {
     const adv = conciseIntensityWord(waterLevel)
     lines.push(
       mode === 'side'
-        ? `De-bloat ${adv}: reduce submental/chin pad and cheek puffiness (water retention ${metrics.waterRetention ?? '?'}/100).`
-        : `De-bloat ${adv}: PRIMARY = defined leaner cheeks (buccal/mid-face); also under-eyes — water retention ${metrics.waterRetention ?? '?'}/100. Jaw/chin bones must stay identical; do not invent mandible.`,
+        ? `Water retention ${adv}: aggressively drain ALL puffy/fluid bloat from cheeks, under-eyes, submental — face dramatically less swollen; same bone line (anti-bloat ${metrics.waterRetention ?? '?'}/100).`
+        : `Water retention ${adv}: aggressively drain fluid bloat from cheeks, mid-face, under-eyes, nasal area — dramatically deflated, much less moon-face (anti-bloat ${metrics.waterRetention ?? '?'}/100).`,
     )
+    lines.push(
+      mode === 'side'
+        ? `Facial fat ${adv}: strip buccal/submental SOFT fat — dramatically leaner profile; mandible/chin BONE frozen.`
+        : `Facial fat ${adv}: strip buccal/mid-face fat pads — dramatically leaner, hollower cheeks; jaw/chin/cheekbone BONES pixel-identical.`,
+    )
+  } else {
+    lines.push('Water retention strongly: drain visible cheek/mid-face/under-eye fluid bloat — clearly deflated face.')
+    lines.push('Facial fat strongly: strip buccal and under-chin soft fat — dramatically leaner, same bones.')
   }
 
-  const skinLevel = intensityFloor(zoneIntensity(skinScore(metrics), boost), 'moderate')
-  if (skinLevel !== 'skip') {
-    lines.push(`Skin cleanup ${conciseIntensityWord(skinLevel)}: fewer blemishes/redness, smoother even tone — keep pores and texture.`)
+  if (composition.type === 'adipose' || composition.type === 'water_retention') {
+    lines.unshift('CRITICAL: maximum realistic de-bloat — this face needs dramatic fat + water-retention reduction while keeping the exact same bone structure.')
   }
 
-  const eyeLevel = intensityFloor(zoneIntensity(metrics.eyeArea, boost + 1), 'light')
+  const defLevel = intensityFloor(zoneIntensity(metrics.facialDefinition, boost + 2), 'moderate')
+  if (defLevel !== 'skip' && Number.isFinite(metrics.facialDefinition) && metrics.facialDefinition < 62) {
+    lines.push(`Soft-tissue definition ${conciseIntensityWord(defLevel)}: reduce round/moon-face fullness until cheek and jaw SOFT tissue reads much leaner.`)
+  }
+
+  const midLevel = intensityFloor(zoneIntensity(metrics.midfaceFullness, boost + 2), 'moderate')
+  if (midLevel !== 'skip' && Number.isFinite(metrics.midfaceFullness) && metrics.midfaceFullness < 58) {
+    lines.push(`Mid-face ${conciseIntensityWord(midLevel)}: reduce mid-face puffiness and buccal roundness — leaner mid-face, same bone width.`)
+  }
+
+  const skinLevel = capIntensity(
+    intensityFloor(zoneIntensity(skinScore(metrics), boost + 3), 'strong'),
+    SKIN_INTENSITY_CEILING,
+  )
+  const skinWord = skinLevel === 'skip' ? 'strongly' : conciseIntensityWord(skinLevel)
+  lines.unshift(`Skin ${skinWord} (mandatory): fade active pimples, acne, blackheads, redness — calmer skin; keep ALL existing freckles/moles in exact spots; NEVER add new freckles, moles, or skin marks; keep pores, grain, texture.`)
+
+  const eyeLevel = intensityFloor(zoneIntensity(metrics.eyeArea, boost + 3), 'strong')
   if (eyeLevel !== 'skip') {
     lines.push(`Eyes ${conciseIntensityWord(eyeLevel)}: less under-eye bags, more rested and open.`)
   }
 
   if (composition.type === 'lean') {
-    lines.push('Face already lean — prioritize skin/eyes/brows; minimal jaw change.')
+    lines.push('Already lean/defined — push premium skin + eye + brow polish hard; minimal de-bloat only (~10% fluid). Glow-up must still be obvious.')
   }
 
   if (!lines.length) return ''
   return `\n\nPersonalized focus for this face:\n${lines.map((l) => `- ${l}`).join('\n')}`
 }
 
+function buildCompactScanHint(metricsRaw, profileRaw, mode = 'front', plan = null) {
+  const resolvedPlan = plan || resolveGlowUpPlan(metricsRaw, profileRaw, mode)
+  const metrics = resolvedPlan.metrics
+  const hints = [`scan tier=${resolvedPlan.tier} water ~${resolvedPlan.waterDrainPct}% fat ~${resolvedPlan.fatPct ?? resolvedPlan.deBloatPct}% (soft tissue only, bones frozen)`]
+
+  if (resolvedPlan.weakZones.length) {
+    hints.push(`priority zones: ${resolvedPlan.weakZones.join(', ')}`)
+  }
+
+  if (resolvedPlan.tier === 'defined') {
+    hints.push('push water drain + skin purity + definition refresh hard')
+  } else if (resolvedPlan.tier === 'heavy') {
+    hints.push('puffy face — maximum water drain + definition + skin purity until clearly transformed')
+  } else {
+    hints.push('push strong water + fat reduction — soft tissue only, bones must stay identical')
+  }
+
+  if (!metrics) {
+    return `\n${hints.join('; ')}.`
+  }
+
+  return `\n${hints.join('; ')}.`
+}
+
+function buildConciseSideGlowUpPrompt(metricsRaw, faceProfileRaw) {
+  return buildAdaptiveConcisePrompt('side', metricsRaw, faceProfileRaw)
+}
+
 /**
- * Short, actionable edit prompt for Nano Banana 2 (~500–900 chars).
- * Long hybrid prompts (~20k chars) cause the model to return nearly identical images.
+ * Short, actionable edit prompt for Nano Banana 2 (~600–1100 chars).
+ * Long prompts (~3k+ chars) cause the model to return nearly identical images.
  */
-export function buildConciseGlowUpPrompt(mode = 'front', metricsRaw = null, faceProfileRaw = null) {
-  const key = normalizeFutureSelfMode(mode)
-  const profile = parseFaceProfile(faceProfileRaw)
-  const facialHairMandatory = buildFacialHairMandatoryBlock(profile)
-  const hairLine = buildConciseFacialHairLine(profile)
-  const metricsFocus = buildConciseMetricsFocus(metricsRaw, faceProfileRaw, key)
-
-  const dePuff = key === 'side'
-    ? 'Side profile: defined leaner cheeks and submental/chin pad — same bone profile line, no invented or enlarged jaw/chin bones.'
-    : 'Front: PRIMARY = clearly defined leaner cheeks (buccal/mid-face de-bloat) and fresher under-eyes — jaw/chin BONE silhouette pixel-identical to input.'
-
-  return `${facialHairMandatory}
-
-${GLOW_UP_ONLY_NO_INVENTION}
-
-Retouch this portrait photo. Apply a clearly visible natural glow-up — same person, same pose, same grooming.
-
-${JAW_BONE_INVENTION_BAN}
-
-Edits (must be obvious in before/after):
-- ${dePuff}
-- Cheeks (TOP PRIORITY): reduce buccal puffiness until cheeks look more defined — soft tissue only; same cheekbone bone width/position.
-- Cleaner skin — fewer blemishes, acne, and redness; smoother tone; keep real pores, freckles, moles, and texture.
-- Fresher eyes — less under-eye puffiness; same eye shape and iris color.
-- Eyebrows — same shape only; optional light cleanup of stray hairs; do NOT reshape or thicken.
-
-Constraints: ${hairLine} NEVER add makeup, new facial hair, accessories, or bone changes. Keep lighting, colors, background, clothing, crop, and hair color identical.${metricsFocus}
-
-If output adds beard/stubble, makeup, or new features → FAILED — revert to input grooming and retry glow-up only.
-If nearly identical to input, push cheek de-bloat and skin cleanup harder while keeping bones and facial hair identical.`
+export function buildConciseGlowUpPrompt(mode = 'front', metricsRaw = null, faceProfileRaw = null, visionRaw = null, options = {}) {
+  return buildAdaptiveConcisePrompt(mode, metricsRaw, faceProfileRaw, visionRaw, options)
 }
 
 /** Pick prompt strategy: concise (Nano Banana) or hybrid (legacy/GPT). */
-export function buildGlowUpPrompt(mode = 'front', metricsRaw = null, faceProfileRaw = null, style = 'auto') {
+export function buildGlowUpPrompt(mode = 'front', metricsRaw = null, faceProfileRaw = null, style = 'auto', visionRaw = null, options = {}) {
   const resolved = String(style || process.env.FUTURE_SELF_GLOW_UP_PROMPT_STYLE || 'auto').trim().toLowerCase()
-  if (resolved === 'hybrid') {
-    return buildHybridGlowUpPrompt(mode, metricsRaw, faceProfileRaw)
+  if (resolved === 'hybrid' && !options.secondPass) {
+    const base = buildHybridGlowUpPrompt(mode, metricsRaw, faceProfileRaw)
+    const visionBlock = buildVisionPersonalizationBlock(visionRaw, resolveGlowUpPlan(metricsRaw, faceProfileRaw, mode), mode)
+    return visionBlock ? `${base}\n\n${visionBlock.trim()}` : base
   }
-  if (resolved === 'concise') {
-    return buildConciseGlowUpPrompt(mode, metricsRaw, faceProfileRaw)
-  }
-  // auto: concise for production (Nano Banana); hybrid available via env override
-  return buildConciseGlowUpPrompt(mode, metricsRaw, faceProfileRaw)
+  return buildConciseGlowUpPrompt(mode, metricsRaw, faceProfileRaw, visionRaw, options)
 }
 
-export function glowUpPromptMeta(mode = 'front', metricsRaw = null, faceProfileRaw = null) {
+export function glowUpPromptMeta(mode = 'front', metricsRaw = null, faceProfileRaw = null, visionRaw = null) {
   const metrics = parseGlowUpMetrics(metricsRaw)
   const profile = parseFaceProfile(faceProfileRaw)
   const composition = classifyFacialComposition(metrics || {}, profile || {})
+  const plan = resolveGlowUpPlan(metricsRaw, faceProfileRaw, mode)
+  const vision = visionRaw?.analysis ?? visionRaw
   return {
     mode: normalizeFutureSelfMode(mode),
-    adaptive: Boolean(metrics),
+    adaptive: Boolean(metrics || vision),
+    visionUsed: Boolean(vision),
+    visionConfidence: vision?.confidence ?? null,
+    visionPriorityZones: vision?.priorityZones ?? null,
+    visionKeywords: vision?.personalizedKeywords ?? null,
+    visionError: visionRaw?.error ?? null,
     metricsUsed: metrics ? Object.keys(metrics) : [],
     compositionType: metrics ? composition.type : null,
     compositionStrategy: metrics ? composition.strategy : null,
+    glowUpTier: plan.tier,
+    deBloatTargetPct: plan.deBloatPct,
+    fatTargetPct: plan.fatPct ?? plan.deBloatPct,
+    waterDrainTargetPct: plan.waterDrainPct,
     gender: normalizeGender(profile),
     facialHair: profile?.facialHair ?? null,
     promptStyle: String(process.env.FUTURE_SELF_GLOW_UP_PROMPT_STYLE || 'concise').trim().toLowerCase(),
