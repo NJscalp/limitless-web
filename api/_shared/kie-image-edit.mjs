@@ -11,23 +11,27 @@
 import { kieApiKey, kieApiFetch } from './kie.mjs'
 import { kieUploadBase64 } from './kie-seedance.mjs'
 
-// GPT Image 2 (image-to-image) über kie.ai — realistischer als Nano-Banana.
+// Clavic-Default: Nano Banana 2 (Gemini 3.1 Flash Image auf kie.ai).
+const KIE_DEFAULT_IMAGE_EDIT_MODEL = (process.env.KIE_DEFAULT_IMAGE_EDIT_MODEL || 'nano-banana-2').replace(/^\/+/, '')
+
+// Legacy-Fallback (nur wenn explizit angefordert).
 const KIE_GPT_IMAGE_MODEL = (process.env.KIE_GPT_IMAGE_MODEL || 'gpt-image-2-image-to-image').replace(/^\/+/, '')
 
-// Erlaubte Modell-Overrides (Client kann `model` mitschicken, z. B. für den
-// Chat-Edit-Tab). Default bleibt GPT Image 2 — wird nur ersetzt, wenn ein
-// gültiger Slug aus dieser Allowlist ankommt. Nicht gelistete Werte fallen
-// bewusst auf GPT Image 2 zurück, damit die anderen Templates unangetastet
-// bleiben und kein beliebiges Modell durchgereicht werden kann.
 const KIE_MODEL_OVERRIDES = new Set([
   'nano-banana-pro',
   'nano-banana-2',
   'nano-banana',
+  'gpt-image-2-image-to-image',
 ])
+
+function isNanoBananaModel(model) {
+  return String(model || '').toLowerCase().includes('nano-banana')
+}
 
 function kieEditModelFor(rawModel) {
   const v = String(rawModel || '').trim().toLowerCase()
-  return KIE_MODEL_OVERRIDES.has(v) ? v : KIE_GPT_IMAGE_MODEL
+  if (KIE_MODEL_OVERRIDES.has(v)) return v
+  return KIE_DEFAULT_IMAGE_EDIT_MODEL
 }
 
 // Vom Client wählbare Auflösung (Qualität): 1K (low) / 2K (medium) / 4K (high).
@@ -57,9 +61,8 @@ function normalizeRatio(raw) {
 /**
  * Reicht einen Image-Edit-Job bei kie ein.
  * @param {{ prompt: string, images?: string[], imageUrls?: string[], aspectRatio?: string, resolution?: string, model?: string }} input
- *   `model` (optional): Slug z. B. "nano-banana-pro" für den Chat-Edit-Tab.
- *   Fehlt der Wert oder ist er nicht in der Allowlist, wird GPT Image 2
- *   verwendet — die anderen Templates bleiben unangetastet.
+ *   `model` (optional): Slug z. B. "nano-banana-2". Fehlt der Wert, wird Nano
+ *   Banana 2 verwendet (Clavic-Standard für Chat, Templates und Pipelines).
  * @returns {Promise<{ taskId: string, model: string }>}
  */
 export async function kieImageEditCreateTask(input = {}) {
@@ -91,12 +94,18 @@ export async function kieImageEditCreateTask(input = {}) {
   const ratio = normalizeRatio(input.aspectRatio)
   let resolution = normalizeResolution(input.resolution)
   // GPT Image 2: 1:1 unterstützt kein 4K → auf 2K herabstufen.
-  if (ratio === '1:1' && resolution === '4K') resolution = '2K'
+  if (!isNanoBananaModel(model) && ratio === '1:1' && resolution === '4K') resolution = '2K'
+
   const apiInput = {
     prompt,
-    input_urls: imageInput.slice(0, 16),
     aspect_ratio: ratio,
     resolution,
+  }
+  if (isNanoBananaModel(model)) {
+    apiInput.image_input = imageInput.slice(0, 16)
+    apiInput.output_format = 'png'
+  } else {
+    apiInput.input_urls = imageInput.slice(0, 16)
   }
 
   const { response, data } = await kieApiFetch('/api/v1/jobs/createTask', {
@@ -157,4 +166,4 @@ export async function kieImageEditTaskState({ taskId } = {}) {
   return { state: 'running' }
 }
 
-export { KIE_GPT_IMAGE_MODEL }
+export { KIE_GPT_IMAGE_MODEL, KIE_DEFAULT_IMAGE_EDIT_MODEL }

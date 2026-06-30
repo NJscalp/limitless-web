@@ -180,8 +180,7 @@ export default async function handler(req, res) {
           // iOS verwendet `responseUrl` als Job-Kennung -> taskId zurückgeben.
           responseUrl: created.taskId,
           state: 'processing',
-          // Tatsächlich genutztes kie-Modell (Default GPT Image 2, Override z. B.
-          // "nano-banana-pro" für den Chat-Edit-Tab).
+          // Tatsächlich genutztes kie-Modell (Default Nano Banana 2).
           model: created.model,
           provider: 'kie',
         },
