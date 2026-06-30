@@ -5,6 +5,7 @@
 // Läuft über die fal-Queue mit dem server-seitig hinterlegten FAL_KEY.
 
 import { isAuthorized, rejectUnauthorized } from '../_shared/auth.mjs'
+import { validateImagesPayload } from '../_shared/request-limits.mjs'
 
 async function loadGptImage() {
   return import('../_shared/gpt-image-edit.mjs')
@@ -74,6 +75,11 @@ export default async function handler(req, res) {
 
   // --- Nano Banana 2 (kie.ai) ---
   if (wantsKie(body)) {
+    const imageCheck = validateImagesPayload(body?.images)
+    if (!imageCheck.ok) {
+      return res.status(imageCheck.status).json({ error: imageCheck.error, message: imageCheck.message })
+    }
+
     // Imagen 4 (Text-to-Image, kein Bild-Input) — eigener Sub-Pfad.
     if (wantsImagen(body)) {
       let imagen

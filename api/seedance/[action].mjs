@@ -5,6 +5,7 @@
 // Beides läuft über die fal-Queue mit dem server-seitig hinterlegten FAL_KEY.
 
 import { isAuthorized, rejectUnauthorized } from '../_shared/auth.mjs'
+import { validateImagesPayload } from '../_shared/request-limits.mjs'
 
 async function loadSeedance() {
   return import('../_shared/seedance.mjs')
@@ -123,6 +124,11 @@ export default async function handler(req, res) {
 
   // --- kie.ai-Provider (z. B. Lego-Trend): eigener Pfad über die kie-Jobs-API ---
   if (provider === 'kie') {
+    const imageCheck = validateImagesPayload(body?.images)
+    if (!imageCheck.ok) {
+      return res.status(imageCheck.status).json({ error: imageCheck.error, message: imageCheck.message })
+    }
+
     let kie
     try {
       kie = await loadKieSeedance()
