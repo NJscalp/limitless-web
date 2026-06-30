@@ -1,0 +1,17 @@
+[
+  {
+    "title": "Pro-Look",
+    "subtitle": "Dein Foto sofort professionell",
+    "category": "new",
+    "hashtag": "prolook",
+    "previewURL": "https://limitless-web-beryl.vercel.app/preview_prolook.jpg",
+    "icon": "wand.and.stars",
+    "colors": ["#F4B8CB", "#6FA8DC"],
+    "ratio": "9:16",
+    "needsPhoto": true,
+    "isImageEdit": true,
+    "isFixed": true,
+    "useKie": true,
+    "prompt": "Enhance this exact photo to look like a professional high-end shot: improve the lighting, balance the exposure, richer and cleaner natural colors, more depth, increase sharpness, clarity and detail, subtle professional retouching, crisp and polished. Keep the SAME person, face, outfit, pose, objects, background and composition COMPLETELY unchanged - do not add, remove or alter anything, only improve photo quality and lighting. Photorealistic, natural, not over-edited, no plastic look."
+  }
+]
