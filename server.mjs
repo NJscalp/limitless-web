@@ -188,12 +188,20 @@ app.all(/^\/api\/(.+)$/, (req, res, next) => {
 // Dateiablage (Ersatz für Vercel Blob)
 // ---------------------------------------------------------------------------
 
+// Der Ordner wird hier ANGELEGT, nicht nur geprüft. Das Volume bringt nur
+// `/data` mit; `/data/blob` entsteht sonst erst beim ersten Schreibzugriff —
+// also nach dem Start. Eine Prüfung allein hätte die Auslieferung dauerhaft
+// übersprungen, und abgelegte Dateien wären trotz erfolgreichem Upload mit 404
+// beantwortet worden.
 const BLOB_DIR = (process.env.BLOB_DIR || '/data/blob').trim()
-if (fs.existsSync(BLOB_DIR)) {
+try {
+  fs.mkdirSync(BLOB_DIR, { recursive: true })
   app.use('/_blob', express.static(BLOB_DIR, { maxAge: '1h', fallthrough: false }))
   console.log(`[blob] Ablage unter ${BLOB_DIR}, öffentlich als /_blob`)
-} else {
-  console.log(`[blob] ${BLOB_DIR} existiert nicht — Uploads sind deaktiviert (Lesepfade fallen zurück)`)
+} catch (err) {
+  // Kein beschreibbarer Ort → die Aufrufer prüfen `blobConfigured()` und
+  // greifen auf ihre Rückfallwege zurück. Kein Grund, den Dienst zu stoppen.
+  console.log(`[blob] ${BLOB_DIR} nicht nutzbar (${String(err?.message || err)}) — Ablage deaktiviert`)
 }
 
 // ---------------------------------------------------------------------------
