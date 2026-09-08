@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "start": "node server.mjs",
     "preview": "vite preview",
     "check-apis": "node scripts/check-face-apis.mjs"
   },
@@ -16,7 +17,7 @@
     "@mediapipe/face_mesh": "^0.4.1633559619",
     "@tensorflow-models/face-landmarks-detection": "^1.0.6",
     "@tensorflow/tfjs": "^4.22.0",
-    "@vercel/blob": "^0.27.3",
+    "express": "^4.22.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "sharp": "^0.34.5"

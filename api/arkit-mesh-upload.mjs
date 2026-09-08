@@ -1,4 +1,4 @@
-import { put } from '@vercel/blob'
+import { put, blobConfigured } from './_shared/blob-store.mjs'
 import { isAuthorized, rejectUnauthorized } from './_shared/auth.mjs'
 import { BLOB_PATHNAME } from './_shared/arkit-mesh-store.mjs'
 
@@ -28,11 +28,10 @@ export default async function handler(req, res) {
     uploadedAt: new Date().toISOString(),
   }
 
-  const token = (process.env.BLOB_READ_WRITE_TOKEN || '').trim()
-  if (!token) {
+  if (!blobConfigured()) {
     return res.status(501).json({
       error: 'blob_not_configured',
-      hint: 'Enable Vercel Blob and set BLOB_READ_WRITE_TOKEN. Static mesh at /arkit-mesh.json still works.',
+      hint: 'Set BLOB_DIR to a writable volume and PUBLIC_BASE_URL. Static mesh at /arkit-mesh.json still works.',
     })
   }
 
@@ -42,7 +41,6 @@ export default async function handler(req, res) {
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: 'application/json',
-      token,
     })
     return res.status(200).json({
       ok: true,

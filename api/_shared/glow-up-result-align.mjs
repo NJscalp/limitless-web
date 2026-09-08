@@ -1,4 +1,4 @@
-import { put } from '@vercel/blob'
+import { put, blobConfigured } from './blob-store.mjs'
 import sharp from 'sharp'
 import { decodeBase64ImageBytes, readImageDimensionsFromBytes } from './image-dimensions.mjs'
 
@@ -102,8 +102,7 @@ export async function fetchAndAlignGlowUpResult(url, targetWidth, targetHeight) 
 }
 
 async function publishAlignedBytesToBlob(aligned, dims) {
-  const token = (process.env.BLOB_READ_WRITE_TOKEN || '').trim()
-  if (!token) return null
+  if (!blobConfigured()) return null
   try {
     const blob = await put(
       `glow-up/aligned/${dims.width}x${dims.height}-${Date.now()}.jpg`,
@@ -112,7 +111,6 @@ async function publishAlignedBytesToBlob(aligned, dims) {
         access: 'public',
         addRandomSuffix: true,
         contentType: 'image/jpeg',
-        token,
       },
     )
     return blob.url

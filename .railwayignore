@@ -1,0 +1,21 @@
+# Was NICHT zu Railway hochgeladen wird.
+#
+# `railway up` packt sonst den kompletten Ordner ein — mit node_modules, .git
+# und dem Vite-Ergebnis sind das über 850 MB, und der Upload läuft in eine
+# Zeitüberschreitung. Gebraucht wird davon nichts: Abhängigkeiten installiert
+# und `dist` baut das Dockerfile selbst im Container.
+#
+# `public/` bleibt bewusst drin — die Referenzvideos und Songs dort liefert das
+# Backend im Betrieb aus (siehe LIPSYNC_SLICE_FILES in api/upscale).
+
+node_modules
+dist
+.git
+.vercel
+_archive
+tmp
+*.log
+.env
+.env.local
+.env.*.local
+.DS_Store
