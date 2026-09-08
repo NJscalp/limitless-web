@@ -15,6 +15,10 @@ async function loadKieSeedance() {
   return import('../_shared/kie-seedance.mjs')
 }
 
+async function loadWavespeed() {
+  return import('../_shared/wavespeed.mjs')
+}
+
 function isTransient(status) {
   return status === 408 || status === 429 || status === 502 || status === 503 || status === 504
 }
@@ -119,6 +123,59 @@ export default async function handler(req, res) {
         error: String(err?.message || 'fruit_story_plan_failed'),
         detail: err?.detail || null,
       })
+    }
+  }
+
+  // --- WaveSpeed AI (dritter Provider): generischer Video/Model-Pfad ---
+  //   submit: { provider:"wavespeed", model, prompt, images?/imageUrls?, input?, duration?, resolution?, aspectRatio? } → { taskId }
+  //   status: { provider:"wavespeed", taskId } → { state, videoUrl }
+  if (provider === 'wavespeed') {
+    let ws
+    try { ws = await loadWavespeed() }
+    catch (err) { return res.status(500).json({ error: 'wavespeed_module_load_failed', message: String(err?.message || err) }) }
+
+    if (action === 'status') {
+      const taskId = String(body?.taskId || body?.task_id || body?.responseUrl || '').trim()
+      if (!taskId) return res.status(400).json({ error: 'missing_task_id' })
+      try {
+        const state = await ws.wavespeedTaskState({ taskId, getUrl: body?.getUrl || body?.get_url })
+        return res.status(200).json({ code: 200, msg: 'success', data: state })
+      } catch (err) {
+        const httpStatus = err?.status ?? err?.detail?.status
+        if (isTransient(httpStatus)) return res.status(200).json({ code: 200, msg: 'success', data: { state: 'running', transient: true } })
+        return res.status(502).json({ error: String(err?.message || 'wavespeed_status_failed'), detail: err?.detail || null })
+      }
+    }
+
+    const imageCheck = validateImagesPayload(body?.images)
+    if (!imageCheck.ok) return res.status(imageCheck.status).json({ error: imageCheck.error, message: imageCheck.message })
+    try {
+      const created = await ws.wavespeedCreateTask({
+        model: body?.model,
+        input: (body?.input && typeof body.input === 'object') ? body.input : undefined,
+        prompt: body?.prompt,
+        images: Array.isArray(body?.images) ? body.images : undefined,
+        imageUrls: Array.isArray(body?.imageUrls || body?.image_urls) ? (body.imageUrls || body.image_urls) : undefined,
+        imagesField: body?.imagesField || body?.images_field,
+        videosField: body?.videosField || body?.videos_field,
+        // Referenz-Videos (Kling 3.0 Motion Control: `video`): base64 → Upload.
+        videos: Array.isArray(body?.videos) ? body.videos : undefined,
+        videoUrls: Array.isArray(body?.videoUrls || body?.video_urls) ? (body.videoUrls || body.video_urls) : undefined,
+        lastImage: body?.lastImage || body?.last_image,
+        aspectRatio: body?.aspectRatio ?? body?.aspect_ratio,
+        resolution: body?.resolution,
+        duration: body?.duration,
+        generateAudio: body?.generateAudio ?? body?.generate_audio,
+        seed: body?.seed,
+      })
+      return res.status(200).json({
+        code: 200, msg: 'success',
+        data: { taskId: created.taskId, responseUrl: created.taskId, getUrl: created.getUrl, state: 'processing', model: created.model, provider: 'wavespeed' },
+      })
+    } catch (err) {
+      console.error('wavespeed submit', err?.detail || err)
+      const status = err?.status && err.status >= 400 && err.status < 600 ? err.status : 502
+      return res.status(status).json({ error: String(err?.message || 'wavespeed_submit_failed'), detail: err?.detail || null })
     }
   }
 
@@ -229,6 +286,118 @@ export default async function handler(req, res) {
         const status = err?.status && err.status >= 400 && err.status < 600 ? err.status : 502
         return res.status(status).json({
           error: String(err?.message || 'kie_kling_submit_failed'),
+          detail: err?.detail || null,
+        })
+      }
+    }
+
+    // --- HappyHorse 1.1 Reference-to-Video (happyhorse-1-1/reference-to-video) ---
+    if (body?.happyHorse === true || String(body?.model || '').trim() === 'happyhorse-1-1/reference-to-video') {
+      const hhPrompt = String(body?.prompt || '').trim()
+      if (!hhPrompt) return res.status(400).json({ error: 'missing_prompt' })
+      try {
+        const { kieHappyHorseR2vCreateTask } = await import('../_shared/kie-happyhorse.mjs')
+        const created = await kieHappyHorseR2vCreateTask({
+          prompt: hhPrompt,
+          images: Array.isArray(body?.images) ? body.images : undefined,
+          imageUrls: Array.isArray(body?.imageUrls || body?.image_urls)
+            ? (body.imageUrls || body.image_urls) : undefined,
+          resolution: body?.resolution,
+          aspectRatio: body?.aspectRatio ?? body?.aspect_ratio,
+          duration: body?.duration,
+          seed: body?.seed,
+        })
+        return res.status(200).json({
+          code: 200, msg: 'success',
+          data: {
+            taskId: created.taskId,
+            state: 'processing',
+            model: created.model,
+            provider: 'kie',
+          },
+        })
+      } catch (err) {
+        console.error('kie-happyhorse submit', err?.detail || err)
+        const status = err?.status && err.status >= 400 && err.status < 600 ? err.status : 502
+        return res.status(status).json({
+          error: String(err?.message || 'kie_happyhorse_submit_failed'),
+          detail: err?.detail || null,
+        })
+      }
+    }
+
+    // --- Gemini Omni Video (gemini-omni-video) — R2V @720p ---
+    if (body?.geminiOmni === true || String(body?.model || '').trim() === 'gemini-omni-video') {
+      const omniPrompt = String(body?.prompt || '').trim()
+      if (!omniPrompt) return res.status(400).json({ error: 'missing_prompt' })
+      try {
+        const { kieOmniVideoCreateTask } = await import('../_shared/kie-omni.mjs')
+        const created = await kieOmniVideoCreateTask({
+          prompt: omniPrompt,
+          images: Array.isArray(body?.images) ? body.images : undefined,
+          imageUrls: Array.isArray(body?.imageUrls || body?.image_urls)
+            ? (body.imageUrls || body.image_urls) : undefined,
+          videoUrls: Array.isArray(body?.videoUrls || body?.video_urls)
+            ? (body.videoUrls || body.video_urls) : undefined,
+          videoList: Array.isArray(body?.videoList || body?.video_list)
+            ? (body.videoList || body.video_list) : undefined,
+          aspectRatio: body?.aspectRatio ?? body?.aspect_ratio,
+          duration: body?.duration,
+          videoStart: body?.videoStart ?? body?.video_start,
+          videoEnds: body?.videoEnds ?? body?.video_ends,
+        })
+        return res.status(200).json({
+          code: 200, msg: 'success',
+          data: {
+            taskId: created.taskId,
+            state: 'processing',
+            model: created.model,
+            provider: 'kie',
+          },
+        })
+      } catch (err) {
+        console.error('kie-omni submit', err?.detail || err)
+        const status = err?.status && err.status >= 400 && err.status < 600 ? err.status : 502
+        return res.status(status).json({
+          error: String(err?.message || 'kie_omni_submit_failed'),
+          detail: err?.detail || null,
+        })
+      }
+    }
+
+    // --- Wan 2.7 Reference-to-Video (wan/2-7-r2v) ---
+    if (body?.wanR2v === true || String(body?.model || '').trim() === 'wan/2-7-r2v') {
+      const wanPrompt = String(body?.prompt || '').trim()
+      if (!wanPrompt) return res.status(400).json({ error: 'missing_prompt' })
+      try {
+        const { kieWanR2vCreateTask } = await import('../_shared/kie-wan.mjs')
+        const created = await kieWanR2vCreateTask({
+          prompt: wanPrompt,
+          images: Array.isArray(body?.images) ? body.images : undefined,
+          imageUrls: Array.isArray(body?.imageUrls || body?.image_urls)
+            ? (body.imageUrls || body.image_urls) : undefined,
+          videoUrls: Array.isArray(body?.videoUrls || body?.video_urls)
+            ? (body.videoUrls || body.video_urls) : undefined,
+          resolution: body?.resolution,
+          duration: body?.duration,
+          aspectRatio: body?.aspectRatio ?? body?.aspect_ratio,
+          negativePrompt: body?.negativePrompt ?? body?.negative_prompt,
+          nsfwChecker: body?.nsfwChecker ?? body?.nsfw_checker,
+        })
+        return res.status(200).json({
+          code: 200, msg: 'success',
+          data: {
+            taskId: created.taskId,
+            state: 'processing',
+            model: created.model,
+            provider: 'kie',
+          },
+        })
+      } catch (err) {
+        console.error('kie-wan-r2v submit', err?.detail || err)
+        const status = err?.status && err.status >= 400 && err.status < 600 ? err.status : 502
+        return res.status(status).json({
+          error: String(err?.message || 'kie_wan_r2v_submit_failed'),
           detail: err?.detail || null,
         })
       }

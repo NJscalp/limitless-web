@@ -30,6 +30,8 @@ function isNanoBananaModel(model) {
 
 function kieEditModelFor(rawModel) {
   const v = String(rawModel || '').trim().toLowerCase()
+  // Clavic nutzt überall Nano Banana 2 — alte GPT-Image-Slugs umleiten.
+  if (!v || v.includes('gpt-image')) return KIE_DEFAULT_IMAGE_EDIT_MODEL
   if (KIE_MODEL_OVERRIDES.has(v)) return v
   return KIE_DEFAULT_IMAGE_EDIT_MODEL
 }
