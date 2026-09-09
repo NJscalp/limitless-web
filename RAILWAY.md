@@ -2,6 +2,10 @@
 
 Ersetzt das Vercel-Deployment (`limitless-web-beryl.vercel.app`).
 
+**Läuft unter:** https://clavic-backend-production.up.railway.app
+**Railway-Projekt:** `clavic-backend` · Dienst `clavic-backend` · Volume 5 GB auf `/data`
+**Quelle:** GitHub `NJscalp/limitless-web`, Branch `main` — jeder Push baut neu.
+
 ## Was sich geändert hat
 
 | Vorher (Vercel) | Jetzt (Railway) |
