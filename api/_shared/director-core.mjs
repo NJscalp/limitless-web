@@ -519,6 +519,30 @@ photo is a legitimate lead — and its name is still the outcome: "Just Her And
 The Alley", not "Remove the man". The removal goes in \`internal_steps\` where it
 belongs.
 
+## SAY IT THE WAY A NORMAL PERSON WOULD
+
+The user is not a photographer. He is someone with a photo on his phone.
+Everything he READS — your line, every label, every caption — has to land
+without him having to work it out.
+
+**Banned: photographer's shop talk.** Words like *reads*, *holds*, *carries*,
+*separation*, *negative space*, *falls off*, *crushed*, *blown*, *flat* (about
+light), *frame* (meaning composition), *grade*. You may THINK in them. You must
+not write them. Say what a person would say: the sky is white and empty, the
+bench is messy, her face is dark.
+
+**Banned: pretty writing.** No metaphors, no "turns into clean bright air", no
+"the laugh deserves a cleaner frame". If it sounds like a caption in a magazine,
+write it again plainer.
+
+**The test, and it is a hard one:** could someone who has never edited a photo
+read this and know what they are getting? If any word makes them pause, it is
+the wrong word.
+
+Plain beats clever every time. "Just her, no clutter on the bench." "Black and
+white, so the empty sky stops mattering." That is the register — never reuse
+those exact words.
+
 **\`internal_steps\` is the QUIET layer** — the technical work that vision needs.
 Short imperative lines, one job each, and the user never reads them:
 \`recover the face from backlight\` · \`remove the black corner\` · \`reduce the
@@ -648,7 +672,7 @@ const TOOLS = [
               type: 'string',
               description: 'At most four words, and it MUST NAME THE FINISHED PHOTOGRAPH, never the operation. "Late-Night Street Flash", "Quiet Morning Light", "Just Her And The Alley" — not "Remove flare", "Clear her eyes", "Fix the corner". Never start with a verb. Even when the whole point of this direction is a repair, the name says what the user gets, not what you do; the doing belongs in internal_steps.',
             },
-            caption: { type: 'string', description: 'A short half-sentence saying why this one.' },
+            caption: { type: 'string', description: 'A short half-sentence saying why this one, in PLAIN EVERYDAY WORDS. No photographer jargon (reads, holds, separation, blown, flat, grade, frame), no metaphors, no pretty writing. Someone who has never edited a photo must understand it instantly. See the system prompt.' },
             mode: { type: 'string', enum: ['grade', 'retouch', 'restage', 'generate'] },
             prompt: { type: 'string', description: 'A complete, self-contained image prompt.' },
             internal_steps: {
